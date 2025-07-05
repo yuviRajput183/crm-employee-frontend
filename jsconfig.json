@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [ // this tell vs code compiler that whenever we use '@' look inside src folder
+                "./src/*"
+            ]
+        }
+    }
+}
