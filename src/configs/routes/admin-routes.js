@@ -130,5 +130,50 @@ export const adminRoutes = [
         path: "backup",
         name: "Backup",
         component: lazy(() => import('@/pages/admin/backup/Backup'))
+    },
+    {
+        path: "add_lead",
+        name: "Add Lead",
+        component: lazy(() => import('@/components/shared/AddLead'))
+    },
+    {
+        path: "new_leads",
+        name: "New Lead",
+        component: lazy(() => import('@/components/shared/NewLead'))
+    },
+    {
+        path: "my_leads",
+        name: "My Leads",
+        component: lazy(() => import('@/components/shared/MyLead'))
+    },
+    {
+        path: "advisor_payout",
+        name: "Advisor Payout",
+        component: lazy(() => import('@/components/shared/AdvisorPayout'))
+    },
+    {
+        path: "invoices",
+        name: "Invoices",
+        component: lazy(() => import('@/components/shared/Invoices'))
+    },
+    {
+        path: "receivables_payout",
+        name: "Receivables Payout",
+        component: lazy(() => import('@/components/shared/Receivables'))
+    },
+    {
+        path: "payable_payout",
+        name: "Payable Payout",
+        component: lazy(() => import('@/components/shared/Payables'))
+    },
+    {
+        path: "delete_attachments",
+        name: "Delete Attachments",
+        component: lazy(() => import('@/components/shared/DeleteAttachments'))
+    },
+    {
+        path: "reports",
+        name: "Reports",
+        component: lazy(() => import('@/components/shared/Reports'))
     }
 ]

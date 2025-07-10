@@ -13,15 +13,15 @@ import { useNavigate } from 'react-router-dom'
 
 const sidebarMenuList = [
     { id: 1, title: "Dashboard", path: "/admin/dashboard", icon: <Monitor /> },
-    { id: 2, title: "Add Lead", path: "/dashboard", icon: <NotebookPen /> },
-    { id: 3, title: "New Lead", path: "/dashboard", icon: <LayoutDashboard /> },
-    { id: 4, title: "My Lead", path: "/dashboard", icon: <ChartNoAxesCombined /> },
-    { id: 5, title: "Advisor Payout", path: "/dashboard", icon: <NotebookPen /> },
-    { id: 6, title: "Invoices", path: "/dashboard", icon: <NotebookPen /> },
-    { id: 7, title: "Receivables", path: "/dashboard", icon: <NotebookPen /> },
-    { id: 8, title: "Payables", path: "/dashboard", icon: <NotebookPen /> },
-    { id: 9, title: "Delete Attachments", path: "/dashboard", icon: <ChartNoAxesCombined /> },
-    { id: 10, title: "Reports", path: "/dashboard", icon: <NotebookPen /> },
+    { id: 2, title: "Add Lead", path: "/admin/add_lead", icon: <NotebookPen /> },
+    { id: 3, title: "New Lead", path: "/admin/new_leads", icon: <LayoutDashboard /> },
+    { id: 4, title: "My Lead", path: "/admin/my_leads", icon: <ChartNoAxesCombined /> },
+    { id: 5, title: "Advisor Payout", path: "/admin/advisor_payout", icon: <NotebookPen /> },
+    { id: 6, title: "Invoices", path: "/admin/invoices", icon: <NotebookPen /> },
+    { id: 7, title: "Receivables", path: "/admin/receivables_payout", icon: <NotebookPen /> },
+    { id: 8, title: "Payables", path: "/admin/payable_payout", icon: <NotebookPen /> },
+    { id: 9, title: "Delete Attachments", path: "/admin/delete_attachments", icon: <ChartNoAxesCombined /> },
+    { id: 10, title: "Reports", path: "/admin/reports", icon: <NotebookPen /> },
 ]
 
 // sidebar menu for admin only
@@ -94,7 +94,7 @@ const masterMenuList = [
     { id: 16, title: "Transactions", path: "/dashboard", icon: <Gauge />, subList: [], shouldCloseMaster: true }
 ]
 
-const Sidebar = () => {
+const Sidebar = ({ onMenuClick }) => {
     const [isMasterOpen, setIsMasterOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState({}); // store which menus are expanded
     const navigate = useNavigate();
@@ -119,7 +119,10 @@ const Sidebar = () => {
 
             <div>
                 {!isMasterOpen && sidebarMenuList.map((menu) => (
-                    <div key={menu.id} className='flex gap-2 items-center p-4 bg-gray-800 text-white hover:bg-black'>
+                    <div
+                        key={menu.id} className='flex gap-2 items-center p-4 bg-gray-800 text-white hover:bg-black'
+                        onClick={() => { onMenuClick(); navigate(menu.path) }}
+                    >
                         {menu.icon}
                         <h1>{menu.title}</h1>
                     </div>
@@ -130,7 +133,11 @@ const Sidebar = () => {
                         <div key={menu.id}>
 
                             {/* always show the parent menu */}
-                            <div key={menu.id} onClick={() => toggleMenu(menu.id)} className='flex gap-2 items-center p-4 bg-gray-800 text-gray-100 hover:bg-black border-b-1 border-white '>
+                            <div
+                                key={menu.id}
+                                onClick={() => toggleMenu(menu.id)}
+                                className='flex gap-2 items-center p-4 bg-gray-800 text-gray-100 hover:bg-black border-b-1 border-white '
+                            >
                                 {menu.icon}
                                 <h1>{menu.title}</h1>
                                 <span className=' ml-auto text-xs'>▼</span>
@@ -140,7 +147,8 @@ const Sidebar = () => {
                             {openMenus[menu.id] && menu.subList.map((sub) => (
                                 <div
                                     key={sub.id} className=' pl-5 text-[12px] flex gap-2 items-center p-3 bg-gray-800 text-white hover:bg-black'
-                                    onClick={() => navigate(sub.path)}>
+                                    onClick={() => { onMenuClick(); navigate(sub.path) }}
+                                >
                                     {sub.icon}
                                     <h3>{sub.title}</h3>
                                 </div>
@@ -165,7 +173,7 @@ const Sidebar = () => {
                     )
                 ))}
             </div>
-        </div>
+        </div >
     )
 }
 

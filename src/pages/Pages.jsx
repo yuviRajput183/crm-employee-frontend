@@ -4,6 +4,8 @@ import ProtectedRoutes from '@/components/layouts/ProtectedRoutes'
 import { adminRoutes } from '@/configs/routes/admin-routes'
 import AppRoute from '@/components/layouts/AppRoute'
 import PageLoader from '@/components/loaders/PageLoader'
+import { employeeRoutes } from '@/configs/routes/employee-routes'
+import { advisorRoutes } from '@/configs/routes/advisor-routes'
 
 
 const AllRoutes = () => {
@@ -21,6 +23,33 @@ const AllRoutes = () => {
                     ))
                 }
             </Route>
+
+            {/* All employee routes */}
+            <Route path="/employee" element={<ProtectedRoutes />}>
+                {
+                    employeeRoutes?.map((route) => (
+                        <Route
+                            key={route.name}
+                            path={route.path}
+                            element={<AppRoute {...route} />}
+                        />
+                    ))
+                }
+            </Route>
+
+            {/* All Advisor Routes */}
+            <Route path="/advisor" element={<ProtectedRoutes />}>
+                {
+                    advisorRoutes?.map((route) => (
+                        <Route
+                            key={route.name}
+                            path={route.path}
+                            element={<AppRoute {...route} />}
+                        />
+                    ))
+                }
+            </Route>
+
         </Routes>
     )
 }

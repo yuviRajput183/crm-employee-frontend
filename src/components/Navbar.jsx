@@ -9,12 +9,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { KeySquare, LogOut, UserRound } from 'lucide-react';
+import { KeySquare, LogOut, UserRound, Menu } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 
 
-const Navbar = () => {
+const Navbar = ({ setIsSidebarOpen, isSidebarOpen }) => {
     return (
         <nav className=' h-16 px-4 sm:px-8 md:px-12 flex items-center justify-between border-b-2 overflow-hidden'>
 
@@ -24,7 +24,7 @@ const Navbar = () => {
             </div>
 
             {/* right navbar */}
-            <div className=' flex gap-4'>
+            <div className=' flex gap-4 items-center'>
                 <Button className=' bg-blue-500 hover:bg-black'>New Leads</Button>
 
                 <DropdownMenu>
@@ -57,6 +57,12 @@ const Navbar = () => {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
+                {/* Hamburger menu - visible only on small screens */}
+                <div className="flex items-center justify-center md:hidden border-2 bg-gray-200">
+                    <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                        <Menu className="w-6 h-6 text-gray-700" />
+                    </button>
+                </div>
             </div>
         </nav>
     )

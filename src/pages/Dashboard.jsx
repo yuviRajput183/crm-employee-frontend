@@ -39,7 +39,7 @@ const leadStatusData = [
 ];
 
 const statusColors = {
-    total: "text-rose-500",
+    total: "text-red-500",
     process: "text-blue-500",
     approved: "text-orange-500",
     disbursed: "text-teal-500",
