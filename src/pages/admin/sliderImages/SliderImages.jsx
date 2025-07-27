@@ -14,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { usePayout } from '@/lib/hooks/usePayout';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
 
 const sliderSchema = z.object({
     firstImage: z.any().refine((file) => file?.[0] instanceof File, {
@@ -37,6 +40,10 @@ const sliderSchema = z.object({
 
 const SliderImages = () => {
 
+    const { addSliderImages } = usePayout();
+    const { mutateAsync, isLoading, isError, error } = addSliderImages;
+
+
     const form = useForm({
         resolver: zodResolver(sliderSchema),
         defaultValues: {
@@ -48,16 +55,30 @@ const SliderImages = () => {
         },
     });
 
-    const onSubmit = (data) => {
-        const formData = new FormData();
-        formData.append("firstImage", data.firstImage[0]);
-        formData.append("secondImage", data.secondImage[0]);
-        formData.append("thirdImage", data.thirdImage[0]);
-        formData.append("fourthImage", data.fourthImage[0]);
-        formData.append("fifthImage", data.fifthImage[0]);
+    const onSubmit = async (data) => {
+        try {
+            const formData = new FormData();
+            formData.append("slider1", data.firstImage[0]);
+            formData.append("slider2", data.secondImage[0]);
+            formData.append("slider3", data.thirdImage[0]);
+            formData.append("slider4", data.fourthImage[0]);
+            formData.append("slider5", data.fifthImage[0]);
 
-        console.log("FormData ready for upload!");
-        // Use fetch/axios to send formData to backend
+            console.log("FormData ready for upload!");
+            // Use fetch/axios to send formData to backend
+            const res = await mutateAsync(formData);
+            console.log('✅ payout added successfully:', res);
+
+            form.reset(); // clear form
+            if (res?.data?.success) {
+                alert(res?.data?.message);
+                window.location.reload();
+            }
+
+
+        } catch (err) {
+            console.error('❌ Error adding slider images:', err);
+        }
     };
 
 
@@ -78,6 +99,10 @@ const SliderImages = () => {
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="flex flex-col gap-2 p-2 border mt-3 border-gray-300 rounded-md"
                 >
+                    {isError && (
+                        <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                    )}
+
                     {/* File Upload Fields */}
                     {[
                         { label: "First Slider Image", name: "firstImage" },

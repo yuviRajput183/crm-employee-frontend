@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,13 +22,14 @@ import {
     SelectItem,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { apiListDepartment } from "@/services/department.api";
+import { Alert } from "@/components/ui/alert";
+import { getErrorMessage } from "@/lib/helpers/get-message";
+import { useDepartment } from "@/lib/hooks/useDepartment";
+import { useNavigate } from "react-router-dom";
 
-// Sample departments list (You can replace this with API data)
-const departments = [
-    { id: "1", name: "Admin Department" },
-    { id: "2", name: "Sales Department" },
-    { id: "3", name: "Operations" },
-];
+
 
 // Zod Schema
 const formSchema = z.object({
@@ -38,6 +39,13 @@ const formSchema = z.object({
 
 
 const AddDesignation = () => {
+    const [departments, setDepartments] = useState([]);
+    const [selectedDepartment, setSelectedDepartment] = useState(null);
+    const navigate = useNavigate();
+
+    const { addDesignation } = useDepartment();
+    const { mutateAsync, isLoading, isError: isAddDesignationError, error: addDesignationError } = addDesignation;
+
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -47,10 +55,47 @@ const AddDesignation = () => {
         },
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = async (data) => {
         console.log("Submitted:", data);
         // You can handle API submission here
+
+        try {
+            const res = await mutateAsync({
+                departmentId: selectedDepartment?._id,
+                designation: data?.designationName
+            });
+
+            if (res?.data?.success) {
+                alert(res?.data?.message);
+                navigate("/admin/list_designation");
+            }
+            console.log("response of add designation api call>>", res);
+        } catch (error) {
+            console.log("Error in add designation api call>>", error);
+        }
     };
+
+
+    // query to  fetch list of department on component mount
+    const {
+        isError: isListDepartmentError,
+        error: listDepartmentError,
+    } = useQuery({
+        queryKey: [''],
+        queryFn: async () => {
+            const res = await apiListDepartment();
+            console.log("📦 queryFn response of list department:", res);
+            setDepartments(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching list departments api :", err);
+        }
+    });
 
 
     return (
@@ -69,6 +114,14 @@ const AddDesignation = () => {
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="flex flex-col gap-2 p-2 border mt-3 border-gray-300 rounded-md"
                 >
+
+                    {isListDepartmentError && (
+                        <Alert variant="destructive">{getErrorMessage(listDepartmentError)}</Alert>
+                    )}
+                    {isAddDesignationError && (
+                        <Alert variant="destructive">{getErrorMessage(addDesignationError)}</Alert>
+                    )}
+
                     {/* Department Name - Dropdown */}
                     <div className="w-full md:w-1/2">
                         <FormField
@@ -79,7 +132,14 @@ const AddDesignation = () => {
                                     <FormLabel>
                                         Department Name <span className="text-red-500">*</span>
                                     </FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select
+                                        onValueChange={(value) => {
+                                            field.onChange(value);
+                                            const selected = departments.find((dep) => dep.name === value);
+                                            setSelectedDepartment(selected);
+                                        }}
+                                        value={field.value}
+                                    >
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select" />
@@ -87,7 +147,7 @@ const AddDesignation = () => {
                                         </FormControl>
                                         <SelectContent>
                                             {departments.map((dept) => (
-                                                <SelectItem key={dept.id} value={dept.name}>
+                                                <SelectItem key={dept?._id} value={dept.name}>
                                                     {dept.name}
                                                 </SelectItem>
                                             ))}
@@ -121,6 +181,7 @@ const AddDesignation = () => {
                     {/* Submit Button */}
                     <div className="pt-2">
                         <Button
+                            loading={isLoading}
                             type="submit"
                             className="bg-blue-950 hover:bg-blue-400 text-white"
                         >

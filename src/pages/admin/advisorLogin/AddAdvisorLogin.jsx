@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import React from 'react'
+import React, { useState } from 'react'
 import {
     Form,
     FormControl,
@@ -14,6 +14,12 @@ import { Button } from "@/components/ui/button"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useQuery } from '@tanstack/react-query'
+import { apiAdvisorWithoutCred } from '@/services/advisor.api'
+import { getErrorMessage } from '@/lib/helpers/get-message'
+import { Alert } from '@/components/ui/alert'
+import { useAdvisor } from '@/lib/hooks/useAdvisor'
+import { useNavigate } from 'react-router-dom'
 
 const formSchema = z.object({
     advisorName: z.string().min(1, "Advisor Name is required"),
@@ -21,16 +27,15 @@ const formSchema = z.object({
     loginPassword: z.string().min(1, "Password is required"),
 })
 
-const advisors = [
-    { id: "1", name: "UV" },
-    { id: "2", name: "Yuvi" },
-    { id: "3", name: "Yuvraj" },
-    { id: "4", name: "CA Davinder Sharma" },
-    { id: "5", name: "Geetansh Bhutani" },
-]
 
 
 const AddAdvisorLogin = () => {
+    const [advisors, setAdvisors] = useState([]);
+    const [selectedAdvisor, setSelectedAdvisor] = useState(null);
+
+    const { setAdvisorCredentials } = useAdvisor();
+    const { mutateAsync, isLoading, isError: isAdvisorLoginCredError, error: advisorLoginCredError } = setAdvisorCredentials;
+    const navigate = useNavigate();
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -41,11 +46,47 @@ const AddAdvisorLogin = () => {
         },
     })
 
-    const onSubmit = (data) => {
+    const onSubmit = async (data) => {
         console.log("Form Submitted", data)
+
+        try {
+            const res = await mutateAsync({
+                advisorId: selectedAdvisor?._id,
+                loginName: data?.loginName,
+                password: data?.loginPassword
+            });
+
+            if (res?.data?.success) {
+                alert(res?.data?.message);
+                navigate("/admin/list_advisor_login");
+            }
+            console.log("response of set advisor credentials api call>>", res);
+        } catch (error) {
+            console.log("Error in set advisor credentials api call>>", error);
+        }
     }
 
 
+    // query to  fetch all the advisor names without cred -> on component mount
+    const {
+        isError: isAdvisorLoginError,
+        error: advisorLoginError,
+    } = useQuery({
+        queryKey: [''],
+        queryFn: async () => {
+            const res = await apiAdvisorWithoutCred();
+            console.log("📦 queryFn response of all advisor without cred:", res);
+            setAdvisors(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching advisor without cred:", err);
+        }
+    });
 
     return (
         <div className=' px-6 py-3 bg-white rounded shadow'>
@@ -62,8 +103,19 @@ const AddAdvisorLogin = () => {
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
-                    className="flex flex-col gap-2 p-2 border mt-3 border-gray-300"
+                    className="flex flex-col gap-2 p-2 mt-3 shadow"
                 >
+
+                    {isAdvisorLoginError && (
+                        <Alert variant="destructive">{getErrorMessage(advisorLoginError)}</Alert>
+                    )}
+                    {
+                        isAdvisorLoginCredError && (
+                            <Alert variant="destructive">{getErrorMessage(advisorLoginCredError)}</Alert>
+                        )
+                    }
+
+
                     {/* Advisor Name */}
                     <div className="w-full md:w-1/2">
                         <FormField
@@ -74,7 +126,14 @@ const AddAdvisorLogin = () => {
                                     <FormLabel>
                                         Advisor Name <span className="text-red-500">*</span>
                                     </FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select
+                                        onValueChange={(value) => {
+                                            field.onChange(value);
+                                            const selected = advisors.find((dep) => dep.name === value);
+                                            setSelectedAdvisor(selected);
+                                        }}
+                                        value={field.value}
+                                    >
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select" />
@@ -82,7 +141,7 @@ const AddAdvisorLogin = () => {
                                         </FormControl>
                                         <SelectContent>
                                             {advisors.map((adv) => (
-                                                <SelectItem key={adv.id} value={adv.name}>
+                                                <SelectItem key={adv?._id} value={adv.name}>
                                                     {adv.name}
                                                 </SelectItem>
                                             ))}
@@ -134,7 +193,7 @@ const AddAdvisorLogin = () => {
 
                     {/* Submit Button */}
                     <div className="w-full pt-2">
-                        <Button type="submit" className="bg-blue-950 hover:bg-blue-400 text-white">
+                        <Button loading={isLoading} type="submit" className="bg-blue-950 hover:bg-blue-400 text-white">
                             Save
                         </Button>
                     </div>

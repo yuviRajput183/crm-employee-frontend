@@ -13,6 +13,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useProcessedBy } from '@/lib/hooks/useProcessedBy';
+import { useNavigate } from 'react-router-dom';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
 
 // Zod schema for validation
 const schema = z.object({
@@ -21,6 +25,12 @@ const schema = z.object({
 
 
 const AddProcessed = () => {
+
+    const { addProcessedBy } = useProcessedBy();
+    const { mutateAsync, isLoading, isError, error } = addProcessedBy;
+    const navigate = useNavigate();
+
+
     const form = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -28,9 +38,22 @@ const AddProcessed = () => {
         },
     });
 
-    const onSubmit = (values) => {
-        console.log("✅ Submitted Data: ", values);
+    const onSubmit = async (data) => {
+        console.log("✅ Submitted Data: ", data);
         // Add API call here if needed
+        try {
+            const res = await mutateAsync({
+                processedBy: data?.processedByName
+            });
+
+            if (res?.data?.success) {
+                alert(res?.data?.message);
+                navigate("/admin/list_processed_by");
+            }
+            console.log("response of add processedBy api call>>", res);
+        } catch (error) {
+            console.log("Error in add processedBy api call>>", error);
+        }
     };
 
     return (
@@ -49,6 +72,9 @@ const AddProcessed = () => {
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="flex flex-col gap-2 p-2 border mt-3 border-gray-300 rounded-md"
                 >
+                    {isError && (
+                        <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                    )}
                     {/* Processed By Name - Input */}
                     <div className=' w-full md:w-1/2'>
                         <FormField
@@ -71,6 +97,7 @@ const AddProcessed = () => {
                     {/* Submit Button */}
                     <div className="pt-2">
                         <Button
+                            loading={isLoading}
                             type="submit"
                             className="bg-blue-950 hover:bg-blue-400 text-white"
                         >

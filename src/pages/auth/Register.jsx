@@ -135,7 +135,7 @@ const Register = () => {
                                 {/* <Link to="/login" className="text-blue-600 font-medium hover:underline">
                                     Sign In
                                 </Link> */}
-                                <p className="text-blue-600 font-medium hover:underline">Sign In</p>
+                                <span className="text-blue-600 font-medium hover:underline">Sign In</span>
                             </p>
                         </form>
                     </Form>
@@ -143,7 +143,7 @@ const Register = () => {
 
             </div>
 
-        </div>
+        </div >
     )
 }
 

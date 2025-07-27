@@ -32,6 +32,11 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/admin/advisor/AddAdvisor'))
     },
     {
+        path: "edit_loan_advisor/:id",
+        name: "Edit Loan Advisor",
+        component: lazy(() => import('@/pages/admin/advisor/AddAdvisor'))
+    },
+    {
         path: "list_loan_advisor",
         name: "List Loan Advisor",
         component: lazy(() => import('@/pages/admin/advisor/ListAdvisor'))

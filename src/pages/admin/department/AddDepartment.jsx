@@ -14,6 +14,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useDepartment } from '@/lib/hooks/useDepartment';
+import { useNavigate } from 'react-router-dom';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
 
 // Zod Schema for validation
 const formSchema = z.object({
@@ -22,6 +26,10 @@ const formSchema = z.object({
 
 const AddDepartment = () => {
 
+    const { addDepartment } = useDepartment();
+    const { mutateAsync, isLoading, isError, error } = addDepartment;
+    const navigate = useNavigate();
+
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -29,9 +37,22 @@ const AddDepartment = () => {
         },
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = async (data) => {
         console.log("Form Submitted:", data);
         // API call can be done here
+        try {
+            const res = await mutateAsync({
+                name: data?.departmentName
+            });
+
+            if (res?.data?.success) {
+                alert(res?.data?.message);
+                navigate("/admin/list_department");
+            }
+            console.log("response of add department api call>>", res);
+        } catch (error) {
+            console.log("Error in add department api call>>", error);
+        }
     };
 
 
@@ -50,8 +71,11 @@ const AddDepartment = () => {
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
-                    className="flex flex-col gap-2 p-2 border mt-3 border-gray-300 rounded-md"
+                    className="flex flex-col gap-2 p-2 mt-3  rounded-md shadow"
                 >
+                    {isError && (
+                        <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                    )}
                     {/* Advisor Name */}
                     <div className="w-full md:w-1/2">
                         <FormField
@@ -77,7 +101,7 @@ const AddDepartment = () => {
 
                     {/* Submit Button */}
                     <div className="w-full pt-2">
-                        <Button type="submit" className="bg-blue-950 hover:bg-blue-400 text-white">
+                        <Button loading={isLoading} type="submit" className="bg-blue-950 hover:bg-blue-400 text-white">
                             Save
                         </Button>
                     </div>

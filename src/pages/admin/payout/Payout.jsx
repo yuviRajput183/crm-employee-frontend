@@ -14,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { usePayout } from '@/lib/hooks/usePayout';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
 
 const payoutSchema = z.object({
     payout: z
@@ -26,6 +29,10 @@ const payoutSchema = z.object({
 
 const Payout = () => {
 
+    const { addPayout } = usePayout();
+    const { mutateAsync, isLoading, isError, error } = addPayout;
+
+
     const form = useForm({
         resolver: zodResolver(payoutSchema),
         defaultValues: {
@@ -33,12 +40,24 @@ const Payout = () => {
         },
     });
 
-    const onSubmit = (values) => {
-        console.log("Submitted:", values);
-        const formData = new FormData();
-        formData.append("payout", values.payout[0]);
+    const onSubmit = async (values) => {
+        try {
+            console.log("Submitted:", values);
+            const formData = new FormData();
+            formData.append("file", values.payout[0]);
 
-        // you can now send formData via fetch/axios
+            // you can now send formData via fetch/axios
+            const res = await mutateAsync(formData);
+            console.log('✅ payout added successfully:', res);
+
+            form.reset(); // clear form
+            if (res?.data?.success) {
+                alert(res?.data?.message);
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error('❌ Error adding payout:', err);
+        }
     };
 
 
@@ -58,6 +77,12 @@ const Payout = () => {
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="flex flex-col gap-2 p-2 border mt-3 border-gray-300 rounded-md"
                 >
+
+                    {isError && (
+                        <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                    )}
+
+
                     {/* File Upload */}
                     <div className=' w-full md:w-1/2'>
                         <FormField
@@ -84,6 +109,7 @@ const Payout = () => {
                     {/* Submit Button */}
                     <div className="pt-4">
                         <Button
+                            loading={isLoading}
                             type="submit"
                             className="bg-blue-950 hover:bg-blue-400 text-white"
                         >

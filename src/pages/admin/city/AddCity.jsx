@@ -22,6 +22,10 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select";
+import { useCity } from '@/lib/hooks/useCity';
+import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { Alert } from '@/components/ui/alert';
 
 // All Indian States
 const indianStates = [
@@ -42,6 +46,11 @@ const formSchema = z.object({
 
 
 const AddCity = () => {
+    const { addCity } = useCity();
+    const { mutateAsync, isLoading, isError, error } = addCity;
+    const navigate = useNavigate();
+
+
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -50,9 +59,23 @@ const AddCity = () => {
         },
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = async (data) => {
         console.log("City Form Data:", data);
-        // Handle backend call here
+        // API call can be done here
+        try {
+            const res = await mutateAsync({
+                stateName: data?.stateName,
+                cityName: data?.cityName,
+            });
+
+            if (res?.data?.success) {
+                alert(res?.data?.message);
+                navigate("/admin/list_city");
+            }
+            console.log("response of add city api call>>", res);
+        } catch (error) {
+            console.log("Error in add city api call>>", error);
+        }
     };
 
     return (
@@ -71,6 +94,9 @@ const AddCity = () => {
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="flex flex-col gap-2 p-2 border mt-3 border-gray-300 rounded-md"
                 >
+                    {isError && (
+                        <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                    )}
                     {/* State Name - Dropdown */}
                     <div className="w-full md:w-1/2">
                         <FormField
@@ -122,7 +148,7 @@ const AddCity = () => {
 
                     {/* Submit Button */}
                     <div className="pt-2">
-                        <Button type="submit" className="bg-blue-950 hover:bg-blue-400 text-white">
+                        <Button loading={isLoading} type="submit" className="bg-blue-950 hover:bg-blue-400 text-white">
                             Save
                         </Button>
                     </div>

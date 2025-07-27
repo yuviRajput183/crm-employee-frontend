@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +20,13 @@ import {
     SelectContent,
     SelectItem,
 } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
+import { apiGetAllReportingOfficer } from '@/services/employee.api';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { useAdvisor } from '@/lib/hooks/useAdvisor';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Alert } from '@/components/ui/alert';
+import { apiFetchAdvisorDetails } from '@/services/advisor.api';
 
 const indianStates = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -43,6 +50,7 @@ const formSchema = z.object({
     aadharNo: z.string().optional(),
     panNo: z.string().optional(),
     dateOfJoining: z.string().min(1, 'Required'),
+    dateOfResign: z.string().optional(),
     bankName: z.string().optional(),
     accountHolderName: z.string().optional(),
     accountNo: z.string().optional(),
@@ -56,8 +64,16 @@ const formSchema = z.object({
 
 
 const AddAdvisor = () => {
-    const [photoPreview, setPhotoPreview] = useState(null);
 
+    const { id: advisorId } = useParams();
+
+    const [photoPreview, setPhotoPreview] = useState(null);
+    const [reportingOfficers, setReportingOfficers] = useState([]);
+    const [selectedReportingOfficer, setSelectedReportingOfficer] = useState(null);
+    const navigate = useNavigate();
+
+    const { addAdvisor, updateAdvisor } = useAdvisor();
+    const { mutateAsync, isLoading, isError, error } = advisorId ? updateAdvisor : addAdvisor;
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -73,6 +89,7 @@ const AddAdvisor = () => {
             aadharNo: '',
             panNo: '',
             dateOfJoining: '',
+            dateOfResign: '',
             bankName: '',
             accountHolderName: '',
             accountNo: '',
@@ -81,9 +98,141 @@ const AddAdvisor = () => {
         },
     });
 
-    const onSubmit = (data) => {
-        console.log('Form Submitted:', data);
+    const handleAddAdvisor = async (data) => {
+        try {
+            console.log('Form Submitted:', data);
+
+            const formData = new FormData();
+
+            formData.append('name', data.advisorName);
+            formData.append('email', data.email);
+            formData.append('mobile', data.mobileNo);
+            formData.append('aadharNo', data.aadharNo);
+            formData.append('accountHolderName', data.accountHolderName);
+            formData.append('accountNumber', data.accountNo);
+            formData.append('ifscCode', data.ifscCode);
+            formData.append('address', data.address);
+            formData.append('altContact', data.altContactNo);
+            formData.append('bankName', data.bankName);
+            formData.append('companyName', data.companyName);
+            formData.append('stateName', data.stateName);
+            formData.append('cityName', data.cityName);
+            formData.append('reportingOfficer', selectedReportingOfficer?._id);
+            formData.append('panNo', data.panNo);
+            formData.append('dateOfJoining', data.dateOfJoining);
+            if (data?.photograph) {
+                formData.append('photo', data?.photograph);
+            }
+            if (data?.dateOfResign) {
+                formData.append('dateOfResign', data?.dateOfResign);
+            }
+
+            let res;
+            if (advisorId) {
+                // Edit Mode
+                res = await mutateAsync({ formData, advisorId });
+                console.log("✅ Advisor updated successfully:", res);
+            } else {
+                // Add Mode
+                res = await mutateAsync(formData);
+                console.log("✅ Advisor added successfully:", res);
+            }
+
+
+            form.reset(); // clear form
+            if (res?.data?.success) {
+                navigate("/admin/list_loan_advisor");
+            }
+
+        } catch (err) {
+            console.error('❌ Error adding advisor:', err)
+        }
+
     };
+
+
+
+    // fetching all reporting officer on component mount
+    const {
+        isError: isReportingOfficersError,
+        error: reportingOfficersError,
+    } = useQuery({
+        queryKey: [],
+        queryFn: async () => {
+            const res = await apiGetAllReportingOfficer();
+            console.log("📦 queryFn response of reporting officers:", res);
+            setReportingOfficers(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching reporting officers:", err);
+        }
+    });
+
+
+    // query to  fetch the advisor detail on component mount
+    const {
+        data: advisorData,
+        // isLoading,
+        isError: isAdvisorDetailError,
+        error: advisorDetailError,
+    } = useQuery({
+        queryKey: [advisorId],
+        queryFn: () => apiFetchAdvisorDetails(advisorId),
+        enabled: !!advisorId, // Only run if advisorId exists,
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("fetched data of the advisor >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching advisor detail:", err);
+        }
+    });
+
+    console.log("advisorData>>", advisorData);
+
+
+    useEffect(() => {
+        if (advisorData?.data) {
+            const advisor = advisorData?.data?.data;
+            console.log("advisor>>", advisor);
+
+
+            form.reset({
+                advisorName: advisor.name || '',
+                companyName: advisor.companyName || '',
+                mobileNo: advisor.mobile || '',
+                altContactNo: advisor.altContact || '',
+                email: advisor.email || '',
+                address: advisor.address || '',
+                reportingOfficer: advisor.reportingOfficer?.name || '',
+                stateName: advisor?.city?.stateName || '',
+                cityName: advisor?.city?.cityName || '',
+                aadharNo: advisor.aadharNo || '',
+                panNo: advisor.panNo || '',
+                dateOfJoining: advisor.dateOfJoining?.split('T')[0] || '',
+                dateOfResign: advisor.dateOfResign?.split('T')[0] || '',
+                bankName: advisor.bankName || '',
+                accountHolderName: advisor.accountHolderName || '',
+                accountNo: advisor.accountNumber || '',
+                ifscCode: advisor.ifscCode || '',
+                photograph: null,
+            });
+
+            if (advisor.photo) {
+                setPhotoPreview(advisor.photo);
+            }
+
+            if (advisor.reportingOfficer) {
+                setSelectedReportingOfficer(advisor.reportingOfficer);
+            }
+        }
+    }, [advisorData]);
+
 
     return (
         <div className='  p-3 bg-white rounded shadow'>
@@ -94,14 +243,26 @@ const AddAdvisor = () => {
                     <AvatarImage src="https://github.com/shadcn.png" />
                     <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
-                <h1 className=' text-2xl text-bold'>Add Advisor</h1>
+                <h1 className=' text-2xl text-bold'>{advisorId ? "Edit Advisor Details" : "Add Advisor"}</h1>
             </div>
 
             {/* limit */}
-            <p className=' ml-auto bg-green-300 w-fit my-4 text-[15px]'>Advisor Licenses : 50 of 50 Used</p>
+            {/* <p className=' ml-auto bg-green-300 w-fit my-4 text-[15px]'>Advisor Licenses : 50 of 50 Used</p> */}
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className=" border border-gray-200 p-2 py-4">
+                <form onSubmit={form.handleSubmit(handleAddAdvisor)} className=" border border-gray-200 p-2 py-4 mt-3">
+
+
+                    {isReportingOfficersError && (
+                        <Alert variant="destructive">{getErrorMessage(reportingOfficersError)}</Alert>
+                    )}
+                    {isError && (
+                        <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                    )}
+                    {isAdvisorDetailError && (
+                        <Alert variant="destructive">{getErrorMessage(advisorDetailError)}</Alert>
+                    )}
+
 
                     {/* Basic Fields */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 border-b-2 pb-2 border-black">
@@ -155,17 +316,24 @@ const AddAdvisor = () => {
                         <FormField name="reportingOfficer" control={form.control} render={({ field }) => (
                             <FormItem className=" flex flex-col gap-1">
                                 <FormLabel>Reporting Officer</FormLabel>
-                                <Select value={field.value} onValueChange={field.onChange}>
+                                <Select value={field.value}
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        const selected = reportingOfficers?.find((rof) => rof.name === value);
+                                        setSelectedReportingOfficer(selected);
+                                    }}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select Officer" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="Admin">Admin</SelectItem>
-                                        <SelectItem value="Pankaj">Pankaj</SelectItem>
-                                        <SelectItem value="Juhi">Juhi</SelectItem>
-                                        <SelectItem value="Ankit">Ankit</SelectItem>
+                                        {reportingOfficers?.map((officer) => (
+                                            <SelectItem key={officer?._id} value={officer?.name}>
+                                                {officer?.name}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </FormItem>
@@ -221,6 +389,14 @@ const AddAdvisor = () => {
                                 <FormMessage />
                             </FormItem>
                         )} />
+
+                        {advisorId && <FormField name="dateOfResign" control={form.control} render={({ field }) => (
+                            <FormItem className=" flex flex-col gap-1">
+                                <FormLabel>Date of Resign <span className=' text-red-500'>*</span></FormLabel>
+                                <FormControl><Input type="date" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />}
                     </div>
 
                     {/* Bank Section */}
@@ -289,13 +465,13 @@ const AddAdvisor = () => {
                             />
                         )}
 
-                        <Button type="submit" className="mt-4 bg-blue-800">Upload</Button>
+                        {/* <Button type="submit" className="mt-4 bg-blue-800">Upload</Button> */}
 
                     </div>
 
                     {/* Submit */}
                     <div className="sm:col-span-2">
-                        <Button type="submit" className="mt-4 bg-blue-800">Save</Button>
+                        <Button type="submit" loading={isLoading} className="mt-4 bg-blue-800">Save</Button>
                     </div>
 
                 </form>

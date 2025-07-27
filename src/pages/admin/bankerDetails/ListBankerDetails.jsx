@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import React from 'react'
+import React, { useState } from 'react'
 import {
     Table,
     TableHeader,
@@ -9,75 +9,42 @@ import {
     TableHead,
     TableCell,
 } from "@/components/ui/table";
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { apiListBankers } from '@/services/banker.api';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
 
-const bankers = [
-    {
-        product: "Business Loan",
-        state: "Haryana",
-        city: "Hissar",
-        bank: "Axis Bank Ltd",
-        name: "Mukesh Mittal",
-        designation: "ASM",
-        mobile: "9999999999",
-        email: "a@a.com",
-    },
-    {
-        product: "Business Loan",
-        state: "Haryana",
-        city: "Hissar",
-        bank: "Bajaj Finserv Ltd",
-        name: "Om Parkash",
-        designation: "SM",
-        mobile: "9416447862",
-        email: "om.parkash@bajajfinserv.in",
-    },
-    {
-        product: "Business Loan",
-        state: "Haryana",
-        city: "Hissar",
-        bank: "Fullerton India Credit Company Ltd",
-        name: "Sparsh Gupta",
-        designation: "ASM",
-        mobile: "9896278123",
-        email: "sparsh.1@fullertonindia.com",
-    },
-    {
-        product: "Business Loan",
-        state: "Haryana",
-        city: "Hissar",
-        bank: "Axis Bank Ltd",
-        name: "Mukesh Mittal",
-        designation: "ASM",
-        mobile: "9999999999",
-        email: "a@a.com",
-    },
-    {
-        product: "Business Loan",
-        state: "Haryana",
-        city: "Hissar",
-        bank: "Bajaj Finserv Ltd",
-        name: "Om Parkash",
-        designation: "SM",
-        mobile: "9416447862",
-        email: "om.parkash@bajajfinserv.in",
-    },
-    {
-        product: "Business Loan",
-        state: "Haryana",
-        city: "Hissar",
-        bank: "Fullerton India Credit Company Ltd",
-        name: "Sparsh Gupta",
-        designation: "ASM",
-        mobile: "9896278123",
-        email: "sparsh.1@fullertonindia.com",
-    },
 
-    // Add more dummy objects here as needed...
-];
 
 
 
 const ListBankerDetails = () => {
+    const [bankers, setBankers] = useState([]);
+    const navigate = useNavigate();
+
+
+    // query to  fetch all the bankers on component mount
+    const {
+        isError: isListBankersError,
+        error: listBankersError,
+    } = useQuery({
+        queryKey: ['bankers'],
+        queryFn: async () => {
+            const res = await apiListBankers();
+            console.log("📦 queryFn response of list bankers:", res);
+            setBankers(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching list bankers:", err);
+        }
+    });
+
     return (
         <div className=' bg-white rounded shadow p-3 w-full'>
 
@@ -89,6 +56,10 @@ const ListBankerDetails = () => {
                 </Avatar>
                 <h1 className=' text-2xl text-bold'>List Banker Details</h1>
             </div>
+
+            {isListBankersError && (
+                <Alert variant="destructive">{getErrorMessage(listBankersError)}</Alert>
+            )}
 
             <div className=" overflow-x-auto  scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full ">
                 <Table>
@@ -108,12 +79,12 @@ const ListBankerDetails = () => {
 
                     <TableBody>
                         {bankers.map((b, index) => (
-                            <TableRow key={index} className={index % 2 === 0 ? "bg-gray-100" : ""}>
+                            <TableRow key={b?._id} className={index % 2 === 0 ? "bg-gray-100" : ""}>
                                 <TableCell>{b.product}</TableCell>
-                                <TableCell>{b.state}</TableCell>
-                                <TableCell>{b.city}</TableCell>
-                                <TableCell>{b.bank}</TableCell>
-                                <TableCell>{b.name}</TableCell>
+                                <TableCell>{b?.city?.stateName}</TableCell>
+                                <TableCell>{b?.city?.cityName}</TableCell>
+                                <TableCell>{b?.bank?.name}</TableCell>
+                                <TableCell>{b.bankerName}</TableCell>
                                 <TableCell>{b.designation}</TableCell>
                                 <TableCell>{b.mobile}</TableCell>
                                 <TableCell>{b.email}</TableCell>
@@ -122,6 +93,7 @@ const ListBankerDetails = () => {
                                         variant="default"
                                         size="sm"
                                         className="bg-blue-500 hover:bg-blue-600"
+                                        onClick={() => navigate("/admin/add_banker_details", { state: { banker: b } })}
                                     >
                                         Edit
                                     </Button>
@@ -134,7 +106,9 @@ const ListBankerDetails = () => {
 
             {/* Add Button */}
             <div className="mt-4">
-                <Button className=" bg-blue-500 hover:bg-blue-500">Add Another Banker Details</Button>
+                <Button
+                    onClick={() => navigate("/admin/add_banker_details")}
+                    className=" bg-blue-500 hover:bg-blue-500">Add Another Banker Details</Button>
             </div>
         </div>
     )

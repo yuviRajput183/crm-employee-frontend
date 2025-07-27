@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import React from 'react'
+import React, { useState } from 'react'
 import {
     Table,
     TableBody,
@@ -10,111 +10,43 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Pencil } from "lucide-react"
+import { useQuery } from '@tanstack/react-query'
+import { apiListAdvisor } from '@/services/advisor.api'
+import { getErrorMessage } from '@/lib/helpers/get-message'
+import { Alert } from '@/components/ui/alert'
+import { useNavigate } from 'react-router-dom'
 
-const advisors = [
-    {
-        advisorCode: "DSA154",
-        advisorName: "UV",
-        mobile: "9350435960",
-        email: "thunderyuvi911@gmail.com",
-        active: "No",
-    },
-    {
-        advisorCode: "DSA153",
-        advisorName: "Yuvi",
-        mobile: "9876543201",
-        email: "thunderyuvi911@gmail.com",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA152",
-        advisorName: "Yuvraj",
-        mobile: "9801234567",
-        email: "yuvraj091102@gmail.com",
-        active: "No",
-    },
-    {
-        advisorCode: "DSA151",
-        advisorName: "Yuvi",
-        mobile: "9876543210",
-        email: "thunderyuvi911@gmail.com",
-        active: "No",
-    },
-    {
-        advisorCode: "DSA150",
-        advisorName: "CA Davinder Sharma",
-        mobile: "9814114154",
-        email: "navitas@yahoo.co.in",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA149",
-        advisorName: "Geetansh Bhutani",
-        mobile: "7400070010",
-        email: "hello@loanbandhu.in",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA148",
-        advisorName: "Yuvraj",
-        mobile: "9350435963",
-        email: "thunderyuvi911@gmail.com",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA147",
-        advisorName: "Rubal Shridhar",
-        mobile: "9728977111",
-        email: "rubalshridhar@gmail.com",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA146",
-        advisorName: "Shivam",
-        mobile: "9999999998",
-        email: "a@a.com",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA145",
-        advisorName: "Manoj Kumar",
-        mobile: "8059136024",
-        email: "A@A.COM",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA144",
-        advisorName: "Raushan Kumar Tiwari",
-        mobile: "6299926797",
-        email: "info@neoloansfin.com",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA144",
-        advisorName: "Raushan Kumar Tiwari",
-        mobile: "6299926797",
-        email: "info@neoloansfin.com",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA144",
-        advisorName: "Raushan Kumar Tiwari",
-        mobile: "6299926797",
-        email: "info@neoloansfin.com",
-        active: "Yes",
-    },
-    {
-        advisorCode: "DSA144",
-        advisorName: "Raushan Kumar Tiwari",
-        mobile: "6299926797",
-        email: "info@neoloansfin.com",
-        active: "Yes",
-    }
-
-]
 
 
 const ListAdvisor = () => {
+
+    const [advisors, setAdvisors] = useState([]);
+    const navigate = useNavigate();
+
+    // query to  fetch all the advisor on component mount
+    const {
+        isError: isListAdvisorError,
+        error: listAdvisorError,
+    } = useQuery({
+        queryKey: ['departments'],
+        queryFn: async () => {
+            const res = await apiListAdvisor();
+            console.log("📦 queryFn response of list advisor:", res);
+            setAdvisors(res?.data?.data?.advisors || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching advisords:", err);
+        }
+    });
+
+
+
+
     return (
         <div className=' bg-white rounded shadow p-3'>
 
@@ -124,11 +56,15 @@ const ListAdvisor = () => {
                     <AvatarImage src="https://github.com/shadcn.png" />
                     <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
-                <h1 className=' text-2xl text-bold'>List Employees</h1>
+                <h1 className=' text-2xl text-bold'>List Advisor</h1>
             </div>
 
             {/* limit */}
             <p className=' ml-auto bg-green-300 w-fit mt-2 border-b-2 text-[15px]'>Users Licenses : 5 of 5 Used</p>
+
+            {isListAdvisorError && (
+                <Alert variant="destructive">{getErrorMessage(listAdvisorError)}</Alert>
+            )}
 
             <div className="overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full">
                 <Table className=" w-[98%] mx-auto">
@@ -143,15 +79,17 @@ const ListAdvisor = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {advisors.map((advisor, index) => (
+                        {advisors?.map((advisor, index) => (
                             <TableRow key={index} className={index % 2 === 0 ? "bg-gray-100" : ""}>
                                 <TableCell>{advisor.advisorCode}</TableCell>
-                                <TableCell>{advisor.advisorName}</TableCell>
+                                <TableCell>{advisor.name}</TableCell>
                                 <TableCell>{advisor.mobile}</TableCell>
                                 <TableCell>{advisor.email}</TableCell>
-                                <TableCell>{advisor.active}</TableCell>
+                                <TableCell>{advisor.isActive ? "Yes" : "No"}</TableCell>
                                 <TableCell>
-                                    <Button variant="default" size="sm" className="bg-blue-500 hover:bg-blue-600 flex items-center gap-1">
+                                    <Button
+                                        onClick={() => navigate(`/admin/edit_loan_advisor/${advisor?._id}`)}
+                                        variant="default" size="sm" className="bg-blue-500 hover:bg-blue-600 flex items-center gap-1">
                                         <Pencil size={14} />
                                         Edit Advisor
                                     </Button>
@@ -164,7 +102,7 @@ const ListAdvisor = () => {
 
             {/* Add Button */}
             <div className="mt-4">
-                <Button className=" bg-blue-500 hover:bg-blue-500">Add Another Employee</Button>
+                <Button onClick={() => navigate("/admin/add_loan_advisor")} className=" bg-blue-500 hover:bg-blue-500">Add Another Advisor</Button>
             </div>
 
         </div>

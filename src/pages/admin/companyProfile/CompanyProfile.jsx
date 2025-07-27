@@ -52,10 +52,10 @@ const CompanyProfile = () => {
     const form = useForm({
         resolver: zodResolver(companyProfileSchema),
         defaultValues: {
-            companyName: "",
-            shortName: "",
-            crmUrl: "",
-            address: "",
+            companyName: "Loan Sahayak",
+            shortName: "Loan Sahayak",
+            crmUrl: "http://crm.loansahayak.com",
+            address: "DSS-61, 1st Floor, Urban Estate - II, Delhi Road, Adjancent to Pushpa Complex, Hisar - 125001(HR)",
             emailDisplayName: "",
             email: "",
             emailPassword: "",

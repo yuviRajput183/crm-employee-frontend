@@ -14,7 +14,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { getErrorMessage, getSuccessMessage } from '@/lib/helpers/get-message';
+import { Alert } from "@/components/ui/alert"
 
 
 // Schema validation
@@ -26,6 +29,11 @@ const loginSchema = z.object({
 
 const SignIn = () => {
 
+    const { signIn } = useAuth();
+    const navigate = useNavigate();
+
+    const { mutateAsync, isLoading, isError, error, isSuccess, data } = signIn;
+    // role, loginName, password 
     const form = useForm({
         resolver: zodResolver(loginSchema),
         defaultValues: {
@@ -35,7 +43,27 @@ const SignIn = () => {
         },
     });
 
-    const handleLogin = () => { }
+    const handleLogin = async (data) => {
+        console.log("sign-in form data >>", data);
+        try {
+            const res = await mutateAsync({
+                role: data?.userType,
+                loginName: data?.username,
+                password: data?.password
+            });
+
+            console.log("response of login api call>>", res);
+
+            if (res?.data?.success) {
+                alert(res?.data?.message);
+                localStorage.setItem("token", res?.data?.data?.token);
+                const redirectPath = res?.data?.data?.role === "employee" ? "/admin/dashboard" : "/advisor/dashboard";
+                navigate(redirectPath);
+            }
+        } catch (error) {
+            console.log("Error in Login Api call>>", error);
+        }
+    }
 
     return (
         <div className=' w-[100vw] h-[100vh] md:flex items-center justify-center overflow-y-auto'>
@@ -54,6 +82,12 @@ const SignIn = () => {
 
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4 font-semibold">
+                            {isError && (
+                                <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                            )}
+                            {isSuccess && (
+                                <Alert variant="success">{getSuccessMessage(data)}</Alert>
+                            )}
                             <FormField
                                 control={form.control}
                                 name="userType"
@@ -102,7 +136,7 @@ const SignIn = () => {
                                 )}
                             />
 
-                            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                            <Button loading={isLoading} type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
                                 Submit
                             </Button>
 
