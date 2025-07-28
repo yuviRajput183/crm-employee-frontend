@@ -180,5 +180,10 @@ export const adminRoutes = [
         path: "reports",
         name: "Reports",
         component: lazy(() => import('@/components/shared/Reports'))
+    },
+    {
+        path: "personal_loan",
+        name: "Personal Loan",
+        component: lazy(() => import('@/pages/AddLead/PersonalLoan/PersonalLoan'))
     }
 ]

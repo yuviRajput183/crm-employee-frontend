@@ -9,10 +9,11 @@ import carLoan from '@/assets/images/carLoan.jpg';
 import usedCarLoan from '@/assets/images/usedCarLoan.jpg';
 import insurance from '@/assets/images/insurance.jpg';
 import services from '@/assets/images/services.png';
+import { useNavigate } from 'react-router-dom';
 
 
 const products = [
-    { name: 'Personal Loan', img: personalLoan },
+    { name: 'Personal Loan', img: personalLoan, path: "/admin/personal_loan" },
     { name: 'Business Loan', img: businessLoan },
     { name: 'Home Loan', img: homeLoan },
     { name: 'Loan Against Property', img: loanAgainstProperty },
@@ -23,7 +24,11 @@ const products = [
     { name: 'Services', img: services },
 ];
 
-const AddLead = () => { 
+const AddLead = () => {
+
+    const navigate = useNavigate();
+
+
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
 
@@ -40,6 +45,7 @@ const AddLead = () => {
             <div className="flex flex-col md:flex-row md:flex-wrap gap-4 mt-4">
                 {products.map((product, index) => (
                     <div
+                        onClick={() => navigate(product?.path)}
                         key={index}
                         className="flex items-center justify-between border-2 border-indigo-300 rounded-md p-4 bg-white shadow-sm w-full md:w-[calc(33.33%-1rem)] min-w-[250px] hover:shadow-md transition-shadow cursor-pointer"
                     >

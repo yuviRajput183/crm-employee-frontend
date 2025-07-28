@@ -1,4 +1,4 @@
-import { apiSignIn } from "@/services/auth.api";
+import { apiLogout, apiSignIn } from "@/services/auth.api";
 import { useMutation } from "@tanstack/react-query";
 
 export const useAuth = () => {
@@ -15,7 +15,19 @@ export const useAuth = () => {
         }
     });
 
+    const logOut = useMutation({
+        mutationFn: apiLogout,
+        onSuccess: (res) => {
+            console.log("response of logout api call>>", res);
+            localStorage.clear();
+        },
+        onError: (err) => {
+            console.log("Error in logout api call >>", err);
+        }
+    });
+
     return {
-        signIn
+        signIn,
+        logOut
     }
 }

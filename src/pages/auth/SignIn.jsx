@@ -52,11 +52,12 @@ const SignIn = () => {
                 password: data?.password
             });
 
-            console.log("response of login api call>>", res);
+            console.log("response of login api call>>", res?.data?.data);
 
             if (res?.data?.success) {
                 alert(res?.data?.message);
                 localStorage.setItem("token", res?.data?.data?.token);
+                localStorage.setItem("profile", JSON.stringify(res?.data?.data?.profile));
                 const redirectPath = res?.data?.data?.role === "employee" ? "/admin/dashboard" : "/advisor/dashboard";
                 navigate(redirectPath);
             }

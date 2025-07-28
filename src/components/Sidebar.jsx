@@ -94,11 +94,13 @@ const masterMenuList = [
     { id: 16, title: "Transactions", path: "/dashboard", icon: <Gauge />, subList: [], shouldCloseMaster: true }
 ]
 
-const Sidebar = ({ onMenuClick }) => {
+const Sidebar = ({ onMenuClick, isOwner }) => {
     const [isMasterOpen, setIsMasterOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState({}); // store which menus are expanded
     const navigate = useNavigate();
 
+
+    console.log("isOwner>>", isOwner);
 
     // this function is called when the parent menu is clicked
     const toggleMenu = (id) => {
@@ -107,6 +109,7 @@ const Sidebar = ({ onMenuClick }) => {
             [id]: !prev[id]  // flips the current state (open to close, close to open)
         }));
     };
+
 
 
     return (
@@ -128,7 +131,13 @@ const Sidebar = ({ onMenuClick }) => {
                     </div>
                 ))}
 
-                {isMasterOpen && masterMenuList.map((menu) => (
+                {isMasterOpen && masterMenuList.filter((menu) => {
+                    // Hide these 3 menus if not owner (i.e., admin)
+                    if (!isOwner && ["Department", "Designation", "City", "Company Profile", "Backup Database"].includes(menu.title)) {
+                        return false;
+                    }
+                    return true;
+                })?.map((menu) => (
                     menu.subList.length > 0 ? (
                         <div key={menu.id}>
 
