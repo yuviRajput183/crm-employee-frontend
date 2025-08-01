@@ -30,8 +30,9 @@ const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name }) => {
 
         try {
             const res = await mutateAsync();
+            console.log("res>>", res);
 
-            console.log("response of logOut api call>>", res?.data?.data);
+            console.log("response of logOut api call inside navbar>>", res?.data?.data);
 
             if (res?.data?.success) {
                 alert(res?.data?.message);
@@ -41,7 +42,7 @@ const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name }) => {
                 navigate("/sign-in");
             }
         } catch (error) {
-            console.log("Error in LogOut api call>>", error);
+            console.log("Error in LogOut api call inside navbar>>", error);
         }
     }
 
@@ -51,6 +52,8 @@ const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name }) => {
             {isError && (
                 <Alert variant="destructive">{getErrorMessage(error)}</Alert>
             )}
+
+
             {/* left navbar */}
             <div className=' h-full'>
                 <img src={logo} className=' h-full cursor-pointer'></img>

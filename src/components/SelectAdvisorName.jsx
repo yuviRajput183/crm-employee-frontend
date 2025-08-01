@@ -1,5 +1,12 @@
-import React from 'react';
-
+import React from "react";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const advisorOptions = [
     { label: 'ANAS KHAN', code: 'DSA155' },
@@ -24,29 +31,31 @@ const advisorOptions = [
     { label: 'YUVRAJ', code: 'DSA148' },
 ];
 
-
 const SelectAdvisorName = ({ selectedAdvisor, setSelectedAdvisor }) => {
-    return (
-        <div className="mt-4 h-auto border rounded shadow p-4">
-            <div className=' max-w-md mx-auto'>
 
-                <select
-                    id="advisor"
-                    name="advisor"
-                    className="w-full cursor-pointer outline-none p-2 border border-gray-300 rounded bg-blue-800 text-white font-semibold"
-                    value={selectedAdvisor}
-                    onChange={(e) => setSelectedAdvisor(e.target.value)}
-                    required
-                >
-                    <option value="" disabled className=' text-center'>
-                        SELECT ADVISOR NAME
-                    </option>
-                    {advisorOptions.map((advisor) => (
-                        <option key={advisor.code} value={advisor.code} className=' text-center'>
-                            {advisor.label} - {advisor.code}
-                        </option>
-                    ))}
-                </select>
+    console.log("selectedAdvisor>>", selectedAdvisor);
+
+    return (
+        <div className="mt-4 border rounded shadow p-4">
+            <div className="w-[90%] md:max-w-md mx-auto">
+                <Select value={selectedAdvisor} onValueChange={setSelectedAdvisor}>
+                    <SelectTrigger className="w-full bg-blue-950 text-white font-semibold outline-none">
+                        <SelectValue placeholder="SELECT ADVISOR NAME" />
+                    </SelectTrigger>
+                    <SelectContent className="w-full">
+                        <SelectGroup>
+                            {advisorOptions.map((advisor) => (
+                                <SelectItem
+                                    key={advisor.code}
+                                    value={advisor.code}
+                                    className="whitespace-normal break-words outline-none"
+                                >
+                                    {advisor.label} - {advisor.code}
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
             </div>
         </div>
     );

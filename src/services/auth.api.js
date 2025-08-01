@@ -18,6 +18,8 @@ export const apiSignIn = async (payload) => {
 
 
 export const apiLogout = async () => {
+    console.log("token>>", token);
+
     return await axios.post(
         `${baseURL}/auth/logout`,
         {

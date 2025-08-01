@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import personalLoan from '@/assets/images/personalLoan.jpg';
+import instantLoan from '@/assets/images/instantLoan.jpg';
 import SelectAdvisorName from '@/components/SelectAdvisorName';
-import PersonalLoanForm from './PersonalLoanForm';
+import InstantLoanForm from './InstantLoanForm';
 
-const PersonalLoan = () => {
 
+
+const InstantLoan = () => {
     const [selectedAdvisor, setSelectedAdvisor] = useState('');
 
     return (
@@ -14,10 +15,10 @@ const PersonalLoan = () => {
             {/* Heading */}
             <div className=' flex gap-2 items-center pb-2 border-b-2 '>
                 <Avatar>
-                    <AvatarImage src={personalLoan} />
+                    <AvatarImage src={instantLoan} />
                     <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
-                <h1 className=' text-2xl text-bold'>Personal Loan</h1>
+                <h1 className=' text-2xl text-bold'>Instant Loan</h1>
             </div>
 
 
@@ -26,11 +27,11 @@ const PersonalLoan = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <PersonalLoanForm></PersonalLoanForm>}
+            {selectedAdvisor && <InstantLoanForm></InstantLoanForm>}
 
 
         </div>
     )
 }
 
-export default PersonalLoan
+export default InstantLoan;

@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import personalLoan from '@/assets/images/personalLoan.jpg';
+import insurance from '@/assets/images/insurance.jpg';
 import SelectAdvisorName from '@/components/SelectAdvisorName';
-import PersonalLoanForm from './PersonalLoanForm';
+import InsuranceForm from './InsuranceForm';
 
-const PersonalLoan = () => {
 
+
+const Insurance = () => {
     const [selectedAdvisor, setSelectedAdvisor] = useState('');
 
     return (
@@ -14,10 +15,10 @@ const PersonalLoan = () => {
             {/* Heading */}
             <div className=' flex gap-2 items-center pb-2 border-b-2 '>
                 <Avatar>
-                    <AvatarImage src={personalLoan} />
+                    <AvatarImage src={insurance} />
                     <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
-                <h1 className=' text-2xl text-bold'>Personal Loan</h1>
+                <h1 className=' text-2xl text-bold'>Insurance</h1>
             </div>
 
 
@@ -26,11 +27,11 @@ const PersonalLoan = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <PersonalLoanForm></PersonalLoanForm>}
+            {selectedAdvisor && <InsuranceForm></InsuranceForm>}
 
 
         </div>
     )
 }
 
-export default PersonalLoan
+export default Insurance

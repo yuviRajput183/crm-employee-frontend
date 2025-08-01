@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import personalLoan from '@/assets/images/personalLoan.jpg';
+import businessLoan from '@/assets/images/businessLoan.jpg';
 import SelectAdvisorName from '@/components/SelectAdvisorName';
-import PersonalLoanForm from './PersonalLoanForm';
+import BusinessLoanForm from './BusinessLoanForm';
 
-const PersonalLoan = () => {
+
+const BusinessLoan = () => {
 
     const [selectedAdvisor, setSelectedAdvisor] = useState('');
+
 
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
@@ -14,10 +16,10 @@ const PersonalLoan = () => {
             {/* Heading */}
             <div className=' flex gap-2 items-center pb-2 border-b-2 '>
                 <Avatar>
-                    <AvatarImage src={personalLoan} />
+                    <AvatarImage src={businessLoan} />
                     <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
-                <h1 className=' text-2xl text-bold'>Personal Loan</h1>
+                <h1 className=' text-2xl text-bold'>Business Loan</h1>
             </div>
 
 
@@ -26,11 +28,11 @@ const PersonalLoan = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <PersonalLoanForm></PersonalLoanForm>}
+            {selectedAdvisor && <BusinessLoanForm></BusinessLoanForm>}
 
 
         </div>
     )
 }
 
-export default PersonalLoan
+export default BusinessLoan

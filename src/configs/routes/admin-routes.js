@@ -182,8 +182,58 @@ export const adminRoutes = [
         component: lazy(() => import('@/components/shared/Reports'))
     },
     {
+        path: "instant_loan",
+        name: "Instant Loan",
+        component: lazy(() => import('@/pages/AddLead/InstantLoan/InstantLoan'))
+    },
+    {
         path: "personal_loan",
         name: "Personal Loan",
         component: lazy(() => import('@/pages/AddLead/PersonalLoan/PersonalLoan'))
+    },
+    {
+        path: "business_loan",
+        name: "Business Loan",
+        component: lazy(() => import('@/pages/AddLead/BusinessLoan/BusinessLoan'))
+    },
+    {
+        path: "home_loan",
+        name: "Home Loan",
+        component: lazy(() => import('@/pages/AddLead/HomeLoan/HomeLoan'))
+    },
+    {
+        path: "loan_against_property",
+        name: "Loan Against Property",
+        component: lazy(() => import('@/pages/AddLead/LoanAgainstProperty/LoanAgainstProperty'))
+    },
+    {
+        path: "car_loan",
+        name: "Car Loan",
+        component: lazy(() => import('@/pages/AddLead/CarLoan/CarLoan'))
+    },
+    {
+        path: "used_car_loan",
+        name: "Used Car Loan",
+        component: lazy(() => import('@/pages/AddLead/UsedCarLoan/UsedCarLoan'))
+    },
+    {
+        path: "insurance",
+        name: "Insurance",
+        component: lazy(() => import('@/pages/AddLead/Insurance/Insurance'))
+    },
+    {
+        path: "services",
+        name: "Services",
+        component: lazy(() => import('@/pages/AddLead/Services/Services'))
+    },
+    {
+        path: "credit_card",
+        name: "Credit Card",
+        component: lazy(() => import('@/pages/AddLead/CreditCard/CreditCard'))
+    },
+    {
+        path: "others",
+        name: "Others",
+        component: lazy(() => import('@/pages/AddLead/Others/Others'))
     }
 ]
