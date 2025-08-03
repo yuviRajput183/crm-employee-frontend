@@ -19,6 +19,13 @@ import {
     SelectItem,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { apiListAllocatedTo } from '@/services/lead.api';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { apiGetCitiesByStateName } from '@/services/city.api';
+import { useLead } from '@/lib/hooks/useLead';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -33,34 +40,63 @@ const indianStates = [
 ];
 
 const insuranceFormSchema = z.object({
-    insuranceType: z.string().min(1, "Required"),
-    insuranceAmount: z.string().min(1, "Required"),
-    clientName: z.string().min(1, "Required"),
-    mobileNo: z.string().min(10, "Must be 10 digits"),
-    emailId: z.string().email("Invalid email").optional(),
+    // Required Fields
+    insuranceType: z.string().min(1, "Insurance Type is required"),
+    insuranceAmount: z.string().min(1, "Insurance Amount is required"),
+    clientName: z.string().min(1, "Client Name is required"),
+    mobileNo: z.string().min(10, "Mobile No must be at least 10 digits").max(10, "Mobile No must be at most 10 digits"),
+
+
+    emailId: z.string().optional().refine(val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
+        message: "Invalid email",
+    }),
     dateOfBirth: z.string().optional(),
-    panNo: z.string().optional(),
-    aadharNo: z.string().optional(),
+
+    panNo: z.string().optional().refine(val => !val || /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val), {
+        message: "Invalid PAN number",
+    }),
+
+    aadharNo: z.string().optional().refine(val => !val || /^\d{12}$/.test(val), {
+        message: "Aadhar number must be 12 digits",
+    }),
+
     spouseName: z.string().optional(),
-    otherContactNo: z.string().optional(),
-    maritalStatus: z.string().optional(),
-    qualification: z.string().optional(),
-    occupation: z.string().optional(),
+    otherContactNo: z.string().optional().refine(val => !val || /^\d{10}$/.test(val), {
+        message: "Other contact number must be 10 digits",
+    }),
+
+    maritalStatus: z.enum(["married", "divorced"]).optional(),
+    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
+
+    occupation: z.enum(["salaried", "self employeed", "professional"]).optional(),
+
     residentialAddress: z.string().optional(),
     stateName: z.string().optional(),
     cityName: z.string().optional(),
-    pinCode: z.string().optional(),
+    pinCode: z.string().optional().refine(val => !val || /^\d{6}$/.test(val), {
+        message: "Pin code must be 6 digits",
+    }),
+
     nomineeName: z.string().optional(),
     relationWithNominee: z.string().optional(),
-    monthlyIncome: z.string().optional(),
+    monthlyIncome: z
+        .string()
+        .optional()
+        .refine(val => !val || /^[0-9]+$/.test(val), {
+            message: "Income must be a number",
+        }),
     allocateTo: z.string().optional()
 });
 
 
 
-const InsuranceForm = () => {
+const InsuranceForm = ({ selectedAdvisor }) => {
 
     const [cities, setCities] = useState([]);
+    const [selectedState, setSelectedState] = useState(null);
+    const [allocatedToUsers, setAllocatedToUsers] = useState([]);
+
+    const navigate = useNavigate();
 
     const form = useForm({
         resolver: zodResolver(insuranceFormSchema),
@@ -75,9 +111,9 @@ const InsuranceForm = () => {
             aadharNo: "",
             spouseName: "",
             otherContactNo: "",
-            maritalStatus: "",
-            qualification: "",
-            occupation: "",
+            maritalStatus: undefined,
+            qualification: undefined,
+            occupation: undefined,
             residentialAddress: "",
             stateName: "",
             cityName: "",
@@ -90,11 +126,109 @@ const InsuranceForm = () => {
     });
 
 
+    const { addLead } = useLead();
+    const { mutateAsync, isLoading, isError, error } = addLead;
 
-    const handleInsurance = async (values) => {
-        console.log("Submitted values>>", values);
+    const handleInsurance = async (data) => {
+        console.log("Submitted values>>", data);
 
+        try {
+            const fd = new FormData();
+
+            // Required fixed fields
+            fd.append('productType', 'Insurance');
+            fd.append('advisorId', selectedAdvisor);
+            fd.append('insuranceType', data.insuranceType);
+            fd.append('insuranceAmount', data.insuranceAmount);
+            fd.append('clientName', data.clientName);
+            fd.append('mobileNo', data.mobileNo);
+
+            // Optional personal info
+            if (data.emailId) fd.append('emailId', data.emailId);
+            if (data.dateOfBirth) fd.append('dob', data.dateOfBirth);
+            if (data.panNo) fd.append('panNo', data.panNo);
+            if (data.aadharNo) fd.append('aadharNo', data.aadharNo);
+            if (data.maritalStatus) fd.append('maritalStatus', data.maritalStatus);
+            if (data.spouseName) fd.append('spouseName', data.spouseName);
+            if (data.otherContactNo) fd.append('otherContactNo', data.otherContactNo);
+            if (data.qualification) fd.append('qualification', data.qualification);
+            if (data.occupation) fd.append("occupation", data.occupation);
+            if (data.residentialAddress) fd.append('residentialAddress', data.residentialAddress);
+            if (data.stateName) fd.append('stateName', data.stateName);
+            if (data.cityName) fd.append('cityName', data.cityName);
+            if (data.pinCode) fd.append('pinCode', data.pinCode);
+
+            // Employment info
+
+            if (data.nomineeName) fd.append('nomineeName', data.nomineeName);
+            if (data.relationWithNominee) fd.append('relationWithNominee', data.relationWithNominee);
+            if (data.monthlyIncome) fd.append('monthlyIncome', data.monthlyIncome);
+
+
+            // Allocated To
+            if (data.allocateTo) {
+                fd.append('allocatedTo', data.allocateTo);
+            }
+
+            const res = await mutateAsync(fd);
+            console.log('✅ Personal Loan lead added successfully:', res);
+
+            form.reset(); // clear form
+            if (res?.data?.success) {
+                navigate("/admin/my_leads");
+            }
+
+
+        } catch (error) {
+            console.error('handlePersonalLoan error:', error);
+            // show user error message, etc.
+        }
     }
+
+
+    // query to  fetch all the allocated To users on component mount
+    const {
+        isError: isListAllocatedToError,
+        error: listAllocatedToError,
+    } = useQuery({
+        queryKey: [''],
+        queryFn: async () => {
+            const res = await apiListAllocatedTo();
+            console.log("📦 queryFn response of list allocated To users:", res);
+            setAllocatedToUsers(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching list allocated To Users:", err);
+        }
+    });
+
+
+    // Query: Fetch cities when state changes
+    const {
+        isError: isCitiesError,
+        error: citiesError,
+    } = useQuery({
+        queryKey: [selectedState],
+        enabled: !!selectedState,
+        queryFn: async () => {
+            const res = await apiGetCitiesByStateName(selectedState);
+            console.log("📦 queryFn response of fetching cities when state change:", res);
+            setCities(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching cities:", err);
+        }
+    });
 
     return (
         <Form {...form}>
@@ -102,6 +236,17 @@ const InsuranceForm = () => {
                 onSubmit={form.handleSubmit(handleInsurance)}
                 className=" w-full mt-2 py-4 rounded-md"
             >
+
+                {isListAllocatedToError && (
+                    <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
+                )}
+                {isCitiesError && (
+                    <Alert variant="destructive">{getErrorMessage(citiesError)}</Alert>
+                )}
+                {isError && (
+                    <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                )}
+
 
                 <div className=' p-2 bg-[#FED8B1] rounded-md shadow'>
                     <h1 className=' font-semibold'>Client Details</h1>
@@ -114,7 +259,7 @@ const InsuranceForm = () => {
                         name="insuranceType"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Insurance Type</FormLabel>
+                                <FormLabel>Insurance Type<span className="text-red-500">*</span></FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select" />
@@ -134,7 +279,7 @@ const InsuranceForm = () => {
                         name="insuranceAmount"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Insurance Amount</FormLabel>
+                                <FormLabel>Insurance Amount<span className="text-red-500">*</span></FormLabel>
                                 <Input {...field} placeholder="Enter amount" />
                             </FormItem>
                         )}
@@ -145,7 +290,7 @@ const InsuranceForm = () => {
                         name="clientName"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Client Name</FormLabel>
+                                <FormLabel>Client Name<span className="text-red-500">*</span></FormLabel>
                                 <Input {...field} placeholder="Enter name" />
                             </FormItem>
                         )}
@@ -156,7 +301,7 @@ const InsuranceForm = () => {
                         name="mobileNo"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Mobile No</FormLabel>
+                                <FormLabel>Mobile No<span className="text-red-500">*</span></FormLabel>
                                 <Input {...field} placeholder="Enter mobile number" />
                             </FormItem>
                         )}
@@ -257,10 +402,10 @@ const InsuranceForm = () => {
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="10th">10th</SelectItem>
-                                        <SelectItem value="12th">12th</SelectItem>
-                                        <SelectItem value="graduate">Graduate</SelectItem>
-                                        <SelectItem value="postgraduate">Postgraduate</SelectItem>
+                                        <SelectItem value="10th Pass">10th Pass</SelectItem>
+                                        <SelectItem value="12th Pass">12th Pass</SelectItem>
+                                        <SelectItem value="Graduate">Graduate</SelectItem>
+                                        <SelectItem value="Post Graduate">Post Graduate</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormItem>
@@ -302,7 +447,14 @@ const InsuranceForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>State Name</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setSelectedState(value);
+                                    }}
+                                    defaultValue={field.value}
+                                    value={field.value}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -411,10 +563,9 @@ const InsuranceForm = () => {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {/* Replace with dynamic user options if needed */}
-                                            <SelectItem value="user1">User 1</SelectItem>
-                                            <SelectItem value="user2">User 2</SelectItem>
-                                            <SelectItem value="user3">User 3</SelectItem>
+                                            {allocatedToUsers?.map((allocate) => (
+                                                <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </FormControl>
@@ -423,7 +574,7 @@ const InsuranceForm = () => {
                     />
                 </div>
 
-                <Button type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
 
 
 

@@ -9,6 +9,8 @@ import ServicesForm from './ServicesForm';
 const Services = () => {
     const [selectedAdvisor, setSelectedAdvisor] = useState('');
 
+    console.log("selectedAdvisor>>", selectedAdvisor);
+
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
 
@@ -27,7 +29,7 @@ const Services = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <ServicesForm></ServicesForm>}
+            {selectedAdvisor && <ServicesForm selectedAdvisor={selectedAdvisor}></ServicesForm>}
 
 
         </div>

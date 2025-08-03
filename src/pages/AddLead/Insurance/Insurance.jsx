@@ -9,6 +9,9 @@ import InsuranceForm from './InsuranceForm';
 const Insurance = () => {
     const [selectedAdvisor, setSelectedAdvisor] = useState('');
 
+    console.log("selectedAdvisor>>", selectedAdvisor);
+
+
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
 
@@ -27,7 +30,7 @@ const Insurance = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <InsuranceForm></InsuranceForm>}
+            {selectedAdvisor && <InsuranceForm selectedAdvisor={selectedAdvisor}></InsuranceForm>}
 
 
         </div>

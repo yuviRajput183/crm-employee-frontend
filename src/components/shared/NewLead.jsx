@@ -320,13 +320,13 @@ const NewLead = () => {
                             >
                                 <TableCell>{lead.leadNo}</TableCell>
                                 <TableCell>{lead.productType}</TableCell>
-                                <TableCell>{lead.loanRequirementAmount}</TableCell>
+                                <TableCell>{lead?.loanRequirementAmount || lead?.insuranceAmount || lead?.amount}</TableCell>
                                 <TableCell>{lead.clientName}</TableCell>
                                 <TableCell>{lead.mobileNo}</TableCell>
                                 <TableCell>{lead.createdAt.split('T')[0]}</TableCell>
                                 <TableCell>{lead?.advisorId?.name}</TableCell>
                                 <TableCell>{lead.allocatedTo?.name}</TableCell>
-                                <TableCell>{lead.feedback}</TableCell>
+                                <TableCell>{lead?.history[lead?.history?.length - 1].feedback}</TableCell>
                                 <TableCell>
                                     <Button
                                         variant="default"

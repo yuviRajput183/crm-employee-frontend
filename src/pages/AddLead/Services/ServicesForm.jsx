@@ -19,6 +19,13 @@ import {
     SelectItem,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { apiListAllocatedTo } from '@/services/lead.api';
+import { apiGetCitiesByStateName } from '@/services/city.api';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { useLead } from '@/lib/hooks/useLead';
 
 
 const indianStates = [
@@ -32,36 +39,59 @@ const indianStates = [
 ];
 
 
-const basicInfoSchema = z.object({
-    servicesType: z.string().min(1, "Required"),
+const servicesSchema = z.object({
+    servicesType: z.string().min(1, "Services Type is Required"),
     description: z.string().optional(),
-    amount: z.string().min(1, "Required"),
-    clientName: z.string().min(1, "Required"),
-    mobileNo: z.string().min(1, "Required"),
-    emailId: z.string().email().optional(),
+    amount: z.string().min(1, "Amount is Required"),
+    clientName: z.string().min(1, "Client Name is required"),
+    mobileNo: z.string().min(10, "Mobile No must be at least 10 digits").max(10, "Mobile No must be at most 10 digits"),
+
+
+    emailId: z.string().optional().refine(val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
+        message: "Invalid email",
+    }),
     dateOfBirth: z.string().optional(),
-    panNo: z.string().optional(),
-    aadhaarNo: z.string().optional(),
-    maritalStatus: z.string().optional(),
+
+    panNo: z.string().optional().refine(val => !val || /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val), {
+        message: "Invalid PAN number",
+    }),
+
+    aadharNo: z.string().optional().refine(val => !val || /^\d{12}$/.test(val), {
+        message: "Aadhar number must be 12 digits",
+    }),
+
+
+    maritalStatus: z.enum(["married", "unmarried"]).optional(),
     spouseName: z.string().optional(),
-    otherContactNo: z.string().optional(),
-    qualification: z.string().optional(),
-    occupation: z.string().optional(),
+    otherContactNo: z.string().optional().refine(val => !val || /^\d{10}$/.test(val), {
+        message: "Other contact number must be 10 digits",
+    }),
+    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
+    occupation: z.enum(["salaried", "self employeed", "professional"]).optional(),
     residentialAddress: z.string().optional(),
     stateName: z.string().optional(),
     cityName: z.string().optional(),
     pinCode: z.string().optional(),
     nomineeName: z.string().optional(),
     relationWithNominee: z.string().optional(),
-    monthlyIncome: z.string().optional()
+    monthlyIncome: z
+        .string()
+        .optional()
+        .refine(val => !val || /^[0-9]+$/.test(val), {
+            message: "Income must be a number",
+        }),
+    allocateTo: z.string().optional()
 });
 
-const ServicesForm = () => {
-
+const ServicesForm = ({ selectedAdvisor }) => {
+    const [selectedState, setSelectedState] = useState(null);
+    const [allocatedToUsers, setAllocatedToUsers] = useState([]);
     const [cities, setCities] = useState([]);
 
+    const navigate = useNavigate();
+
     const form = useForm({
-        resolver: zodResolver(basicInfoSchema),
+        resolver: zodResolver(servicesSchema),
         defaultValues: {
             servicesType: "",
             description: "",
@@ -72,11 +102,11 @@ const ServicesForm = () => {
             dateOfBirth: "",
             panNo: "",
             aadhaarNo: "",
-            maritalStatus: "",
+            maritalStatus: undefined,
             spouseName: "",
             otherContactNo: "",
-            qualification: "",
-            occupation: "",
+            qualification: undefined,
+            occupation: undefined,
             residentialAddress: "",
             stateName: "",
             cityName: "",
@@ -84,13 +114,116 @@ const ServicesForm = () => {
             nomineeName: "",
             relationWithNominee: "",
             monthlyIncome: "",
+            allocateTo: ""
         },
     });
 
-    const handleServices = async (values) => {
-        console.log("Submitted values>>", values);
 
+    const { addLead } = useLead();
+    const { mutateAsync, isLoading, isError, error } = addLead;
+
+
+
+    const handleServices = async (data) => {
+        console.log("Submitted values>>", data);
+
+        try {
+            const fd = new FormData();
+
+            // Required fixed fields
+            fd.append('productType', 'Services');
+            fd.append('advisorId', selectedAdvisor);
+            fd.append('servicesType', data.servicesType);
+            if (data.description) fd.append("description", data.description);
+            fd.append('amount', data.amount);
+            fd.append('clientName', data.clientName);
+            fd.append('mobileNo', data.mobileNo);
+
+            // Optional personal info
+            if (data.emailId) fd.append('emailId', data.emailId);
+            if (data.dateOfBirth) fd.append('dob', data.dateOfBirth);
+            if (data.panNo) fd.append('panNo', data.panNo);
+            if (data.aadharNo) fd.append('aadharNo', data.aadharNo);
+            if (data.maritalStatus) fd.append('maritalStatus', data.maritalStatus);
+            if (data.spouseName) fd.append('spouseName', data.spouseName);
+            if (data.otherContactNo) fd.append('otherContactNo', data.otherContactNo);
+            if (data.qualification) fd.append('qualification', data.qualification);
+            if (data.occupation) fd.append("occupation", data.occupation);
+            if (data.residentialAddress) fd.append('residentialAddress', data.residentialAddress);
+            if (data.stateName) fd.append('stateName', data.stateName);
+            if (data.cityName) fd.append('cityName', data.cityName);
+            if (data.pinCode) fd.append('pinCode', data.pinCode);
+
+            // Employment info
+
+            if (data.nomineeName) fd.append('nomineeName', data.nomineeName);
+            if (data.relationWithNominee) fd.append('relationWithNominee', data.relationWithNominee);
+            if (data.monthlyIncome) fd.append('monthlyIncome', data.monthlyIncome);
+
+
+            // Allocated To
+            if (data.allocateTo) {
+                fd.append('allocatedTo', data.allocateTo);
+            }
+
+            const res = await mutateAsync(fd);
+            console.log('✅ Personal Loan lead added successfully:', res);
+
+            form.reset(); // clear form
+            if (res?.data?.success) {
+                navigate("/admin/my_leads");
+            }
+
+
+        } catch (error) {
+            console.error('handlePersonalLoan error:', error);
+            // show user error message, etc.
+        }
     }
+
+    // query to  fetch all the allocated To users on component mount
+    const {
+        isError: isListAllocatedToError,
+        error: listAllocatedToError,
+    } = useQuery({
+        queryKey: [''],
+        queryFn: async () => {
+            const res = await apiListAllocatedTo();
+            console.log("📦 queryFn response of list allocated To users:", res);
+            setAllocatedToUsers(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching list allocated To Users:", err);
+        }
+    });
+
+
+    // Query: Fetch cities when state changes
+    const {
+        isError: isCitiesError,
+        error: citiesError,
+    } = useQuery({
+        queryKey: [selectedState],
+        enabled: !!selectedState,
+        queryFn: async () => {
+            const res = await apiGetCitiesByStateName(selectedState);
+            console.log("📦 queryFn response of fetching cities when state change:", res);
+            setCities(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching cities:", err);
+        }
+    });
 
     return (
         <Form {...form}>
@@ -98,6 +231,16 @@ const ServicesForm = () => {
                 onSubmit={form.handleSubmit(handleServices)}
                 className=" w-full mt-2 py-4 rounded-md"
             >
+
+                {isListAllocatedToError && (
+                    <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
+                )}
+                {isCitiesError && (
+                    <Alert variant="destructive">{getErrorMessage(citiesError)}</Alert>
+                )}
+                {isError && (
+                    <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                )}
 
                 <div className=' p-2 bg-[#FED8B1] rounded-md shadow'>
                     <h1 className=' font-semibold'>Client Details</h1>
@@ -111,7 +254,7 @@ const ServicesForm = () => {
                         name="servicesType"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Services Type</FormLabel>
+                                <FormLabel>Services Type<span className="text-red-500">*</span></FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select" />
@@ -140,7 +283,7 @@ const ServicesForm = () => {
 
                     <FormField name="amount" control={form.control} render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Amount</FormLabel>
+                            <FormLabel>Amount<span className="text-red-500">*</span></FormLabel>
                             <FormControl><Input type="number" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
@@ -148,7 +291,7 @@ const ServicesForm = () => {
 
                     <FormField name="clientName" control={form.control} render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Client Name</FormLabel>
+                            <FormLabel>Client Name<span className="text-red-500">*</span></FormLabel>
                             <FormControl><Input {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
@@ -156,7 +299,7 @@ const ServicesForm = () => {
 
                     <FormField name="mobileNo" control={form.control} render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Mobile No</FormLabel>
+                            <FormLabel>Mobile No<span className="text-red-500">*</span></FormLabel>
                             <FormControl><Input {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
@@ -202,7 +345,7 @@ const ServicesForm = () => {
                                     <SelectValue placeholder="Select" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="single">Single</SelectItem>
+                                    <SelectItem value="unmarried">Unmarried</SelectItem>
                                     <SelectItem value="married">Married</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -235,10 +378,10 @@ const ServicesForm = () => {
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="10th">10th</SelectItem>
-                                        <SelectItem value="12th">12th</SelectItem>
-                                        <SelectItem value="graduate">Graduate</SelectItem>
-                                        <SelectItem value="postgraduate">Postgraduate</SelectItem>
+                                        <SelectItem value="10th Pass">10th Pass</SelectItem>
+                                        <SelectItem value="12th Pass">12th Pass</SelectItem>
+                                        <SelectItem value="Graduate">Graduate</SelectItem>
+                                        <SelectItem value="Post Graduate">Post Graduate</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormItem>
@@ -279,7 +422,14 @@ const ServicesForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>State Name</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setSelectedState(value);
+                                    }}
+                                    defaultValue={field.value}
+                                    value={field.value}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -375,10 +525,9 @@ const ServicesForm = () => {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {/* Replace with dynamic user options if needed */}
-                                            <SelectItem value="user1">User 1</SelectItem>
-                                            <SelectItem value="user2">User 2</SelectItem>
-                                            <SelectItem value="user3">User 3</SelectItem>
+                                            {allocatedToUsers?.map((allocate) => (
+                                                <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </FormControl>
@@ -387,7 +536,7 @@ const ServicesForm = () => {
                     />
                 </div>
 
-                <Button type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
 
 
             </form>
