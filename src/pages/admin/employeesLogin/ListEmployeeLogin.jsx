@@ -107,7 +107,7 @@ const ListEmployeeLogin = () => {
             </div>
 
             {/* limit */}
-            <p className=' ml-auto bg-green-300 w-fit mt-2 border-b-2 text-[15px]'>Users Licenses : 5 of 5 Used</p>
+            {/* <p className=' ml-auto bg-green-300 w-fit mt-2 border-b-2 text-[15px]'>Users Licenses : 5 of 5 Used</p> */}
 
             {isListEmployeesLoginError && (
                 <Alert variant="destructive">{getErrorMessage(listEmployeesLoginError)}</Alert>
@@ -120,7 +120,7 @@ const ListEmployeeLogin = () => {
             <div className="overflow-x-auto">
                 <Table className="w-full">
                     <TableHeader>
-                        <TableRow className=" bg-teal-800 text-white">
+                        <TableRow className=" bg-teal-800 text-white hover:bg-teal-800">
                             <TableHead className="text-white">Employee Name</TableHead>
                             <TableHead className="text-white">Login Name</TableHead>
                             <TableHead className="text-white">Login Password</TableHead>

@@ -12,6 +12,7 @@ export const useEmployee = () => {
             console.log("Error in add employee api call >>", err);
         }
     });
+
     const updateEmployee = useMutation({
         mutationFn: apiUpdateEmployee,
         onSuccess: (res) => {

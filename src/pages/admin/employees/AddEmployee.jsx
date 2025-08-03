@@ -25,15 +25,14 @@ import {
     PopoverTrigger,
     PopoverContent,
 } from '@/components/ui/popover';
-import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useQuery } from '@tanstack/react-query';
 import { apiGetAllDepartments, apiGetAllDesignationOfDepartment } from '@/services/department.api';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { Alert } from '@/components/ui/alert';
-import { apiGetAllReportingOfficer } from '@/services/employee.api';
+import { apiFetchEmployeeDetails, apiGetAllReportingOfficer } from '@/services/employee.api';
 import { useEmployee } from '@/lib/hooks/useEmployee';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 
 const formSchema = z.object({
@@ -41,24 +40,25 @@ const formSchema = z.object({
     mobileNo: z.string().min(10, 'Enter valid mobile number'),
     department: z.string().min(1, 'Required'),
     designation: z.string().min(1, 'Required'),
-    reportingOfficer: z.string().min(1, 'Required'),
+    reportingOfficer: z.string(),
     altContact: z.string().optional(),
     address: z.string().optional(),
     email: z.string().email().optional(),
-    joiningDate: z.date({ required_error: 'Joining date is required' }),
-    photograph: z.any().optional(),
-    resignDate: z.date().optional(),
+    joiningDate: z.string().min(1, 'Required'),
+    photograph: z.union([z.instanceof(File), z.string(), z.undefined()]).optional().default(undefined),
+    resignDate: z.string().optional(),
 });
 
 const AddEmployee = () => {
 
-    const location = useLocation();
-    const editData = location.state?.employee || null;
-    const isEditMode = !!editData;
+    const { id: employeeId } = useParams();
+
+    const isEditMode = !!employeeId;
 
     const [departments, setDepartments] = useState([]);
     const [designations, setDesignations] = useState([]);
     const [selectedDept, setSelectedDept] = useState(null);
+    const [selectedDesignation, setSelectedDesignation] = useState(null);
     const [reportingOfficers, setReportingOfficers] = useState([]);
     const [selectedReportingOfficer, setSelectedReportingOfficer] = useState(null);
     const navigate = useNavigate();
@@ -68,24 +68,79 @@ const AddEmployee = () => {
     const { mutateAsync, isLoading, isError, error } = mutation;
 
 
+    // query to  fetch the employee detail on component mount
+    const {
+        data: employeeData,
+        // isLoading,
+        isError: isEmployeeDetailError,
+        error: employeeDetailError,
+    } = useQuery({
+        queryKey: [employeeId],
+        queryFn: () => apiFetchEmployeeDetails(employeeId),
+        enabled: !!employeeId, // Only run if employeeId exists,
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("fetched data of the employee >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching employee detail:", err);
+        }
+    });
+
+    useEffect(() => {
+        if (employeeData?.data) {
+            const editData = employeeData?.data?.data;
+            console.log("employee fetched data>>", editData);
+
+
+            form.reset({
+                employeeName: editData?.name || '',
+                mobileNo: editData?.mobile || '',
+                department: editData?.department?.name || '',
+                designation: editData?.designation || '',
+                reportingOfficer: editData?.reportingOfficer?.name || '',
+                altContact: editData?.altContact || '',
+                address: editData?.address || '',
+                email: editData?.email || '',
+                joiningDate: editData?.dateOfJoining?.split('T')[0] || '',
+                resignDate: editData?.dateOfResign?.split('T')[0] || '', // for later
+                photograph: editData?.photoUrl || ''
+            });
+
+            form.setValue("designation", editData?.designation);
+
+            setSelectedDept(editData?.department);
+            setSelectedDesignation(editData?.designation);
+            setSelectedReportingOfficer(editData?.reportingOfficer);
+
+        }
+    }, [employeeData]);
+
+
+
+    console.log("isEditMode>>", isEditMode);
+
+
+
+
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            employeeName: editData?.name || '',
-            mobileNo: editData?.mobile || '',
-            department: editData?.department?.name || '',
-            designation: editData?.designation || '',
-            reportingOfficer: editData?.reportingOfficer?.name || '',
-            altContact: editData?.altContact || '',
-            address: editData?.address || '',
-            email: editData?.email || '',
-            joiningDate: editData?.dateOfJoining ? new Date(editData.dateOfJoining) : undefined,
-            resignDate: editData?.resignDate ? new Date(editData.resignDate) : undefined, // for later
+            employeeName: '',
+            mobileNo: '',
+            department: '',
+            designation: '',
+            reportingOfficer: '',
+            altContact: '',
+            address: '',
+            email: '',
+            joiningDate: undefined,
+            resignDate: undefined, // for later
+            photograph: undefined, // default
         },
     });
 
-    console.log("editData>>", editData);
-    console.log("isEditMode>>", isEditMode);
+
 
 
     const handleAddEmployee = async (data) => {
@@ -103,17 +158,17 @@ const AddEmployee = () => {
             formData.append('address', data.address || '');
             formData.append('email', data.email || '');
             formData.append('dateOfJoining', data.joiningDate); // date passed directly
-            if (data?.photograph) {
+            if (data.photograph instanceof File) {
                 formData.append('photo', data?.photograph);
             }
             if (data?.resignDate) {
-                formData.append('resignDate', data.resignDate);
+                formData.append('dateOfResign', data.resignDate);
             }
 
 
             let res;
             if (isEditMode) {
-                res = await mutateAsync({ employeeId: editData._id, payload: formData });
+                res = await mutateAsync({ employeeId: employeeId, payload: formData });
                 console.log('✅ Employee updated successfully:', res);
             } else {
                 res = await mutateAsync(formData);
@@ -134,13 +189,15 @@ const AddEmployee = () => {
     };
 
     useEffect(() => {
+        const editData = employeeData?.data?.data;
         if (editData?.department) {
-            setSelectedDept(editData.department);
+            setSelectedDept(editData?.department);
         }
         if (editData?.reportingOfficer) {
-            setSelectedReportingOfficer(editData.reportingOfficer);
+            setSelectedReportingOfficer(editData?.reportingOfficer);
         }
-    }, [editData]);
+    }, [employeeData]);
+
 
 
 
@@ -190,12 +247,14 @@ const AddEmployee = () => {
     });
 
 
+
+
     // query to  fetch all the reporting officers
     const {
         isError: isReportingOfficersError,
         error: reportingOfficersError,
     } = useQuery({
-        queryKey: ['departments', 'designations'],
+        queryKey: ['', employeeId],
         queryFn: async () => {
             const res = await apiGetAllReportingOfficer();
             console.log("📦 queryFn response of reporting officers:", res);
@@ -214,26 +273,28 @@ const AddEmployee = () => {
 
 
 
+
+
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
 
             {/* Heading */}
-            <div className=' flex gap-2 items-center pb-2 border-b-2 '>
+            <div className=' flex gap-2 items-center pb-2 border-b-2 mb-3 '>
                 <Avatar>
                     <AvatarImage src="https://github.com/shadcn.png" />
                     <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
-                <h1 className=' text-2xl text-bold'>Add Employee</h1>
+                <h1 className=' text-2xl text-bold'>{employeeId ? "Edit Employee" : "Add Employee"}</h1>
             </div>
 
             {/* limit */}
-            <p className=' ml-auto bg-green-300 w-fit my-4 border-b-2 text-[15px]'>Users Licenses : 5 of 5 Used</p>
+            {/* <p className=' ml-auto bg-green-300 w-fit my-4 border-b-2 text-[15px]'>Users Licenses : 5 of 5 Used</p> */}
 
             {/* add employee form */}
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(handleAddEmployee)}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-3 py-4 border border-gray-300 rounded-md px-2"
+                    className="grid grid-cols-1 md:grid-cols-2 gap-3 py-4 border border-gray-300 rounded-md px-2 shadowx"
                 >
 
                     {isDepartmentsError && (
@@ -247,6 +308,9 @@ const AddEmployee = () => {
                     )}
                     {isError && (
                         <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                    )}
+                    {isEmployeeDetailError && (
+                        <Alert variant="destructive">{getErrorMessage(employeeDetailError)}</Alert>
                     )}
 
 
@@ -318,25 +382,31 @@ const AddEmployee = () => {
                         name="designation"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Designation <span className=' text-red-500'>*</span></FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <FormLabel>Designation</FormLabel>
+                                <Select
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setSelectedDesignation(value);
+                                    }}
+                                    value={field.value}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select Designation" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {designations.map((des, i) => (
-                                            <SelectItem key={i} value={des}>
-                                                {des}
+                                        {designations?.map((desig) => (
+                                            <SelectItem key={desig} value={desig}>
+                                                {desig}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormMessage />
                             </FormItem>
                         )}
                     />
+
 
                     {/* Reporting Officer */}
                     <FormField
@@ -423,27 +493,12 @@ const AddEmployee = () => {
                         render={({ field }) => (
                             <FormItem className="flex flex-col  ">
                                 <FormLabel>Date of Joining <span className=' text-red-500'>*</span></FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button variant="outline" className="text-left font-normal">
-                                                {field.value ? format(field.value, 'PPP') : 'Pick a date'}
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={field.value}
-                                            onSelect={field.onChange}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                <FormControl><Input type="date" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
+
 
                     {/* Photograph */}
                     <FormField
@@ -451,17 +506,31 @@ const AddEmployee = () => {
                         name="photograph"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Photograph <span className=' text-red-500 text-xs'>(Size 150 * 150 pixels)</span></FormLabel>
+                                <FormLabel>Photograph</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        type="file"
-                                        onChange={(e) => field.onChange(e.target.files?.[0])}
-                                    />
+                                    <div>
+                                        <Input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    field.onChange(file); // new file replaces old
+                                                }
+                                            }}
+                                        />
+                                        {typeof field.value === "string" && field.value && (
+                                            <p className="text-sm font-bold text-gray-500 mt-1">Current: {field.value}</p>
+                                        )}
+                                        {field.value instanceof File && (
+                                            <p className="text-sm font-bold text-green-600 mt-1">New: {field.value.name}</p>
+                                        )}
+                                    </div>
                                 </FormControl>
-                                <FormMessage />
                             </FormItem>
                         )}
                     />
+
 
                     {/* date of resign */}
                     {isEditMode && (
@@ -471,23 +540,7 @@ const AddEmployee = () => {
                             render={({ field }) => (
                                 <FormItem className="flex flex-col  ">
                                     <FormLabel>Date of Resign</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button variant="outline" className="text-left font-normal">
-                                                    {field.value ? format(field.value, 'PPP') : 'Pick a date'}
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={field.onChange}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <FormControl><Input type="date" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -495,8 +548,8 @@ const AddEmployee = () => {
                     )}
 
 
-                    <div className="">
-                        <Button type="submit" loading={isLoading} className=" ml-auto mt-3 bg-blue-950 hover:bg-blue-500">Save</Button>
+                    <div className=" flex items-end mr-auto">
+                        <Button type="submit" loading={isLoading} className=" ml-auto mt-3 bg-blue-950 hover:bg-blue-500 ">Save</Button>
                     </div>
 
                 </form>

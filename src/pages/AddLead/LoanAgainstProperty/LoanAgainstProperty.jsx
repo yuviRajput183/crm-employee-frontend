@@ -9,6 +9,10 @@ import LoanAgainstPropertyForm from './LoanAgainstPropertyForm';
 const LoanAgainstProperty = () => {
     const [selectedAdvisor, setSelectedAdvisor] = useState('');
 
+
+    console.log("selectedAdvisor>>", selectedAdvisor);
+
+
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
 
@@ -27,7 +31,7 @@ const LoanAgainstProperty = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <LoanAgainstPropertyForm></LoanAgainstPropertyForm>}
+            {selectedAdvisor && <LoanAgainstPropertyForm selectedAdvisor={selectedAdvisor}></LoanAgainstPropertyForm>}
 
 
         </div>

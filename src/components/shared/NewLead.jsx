@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import barchart from "@/assets/images/barchat.png";
 import { Button } from '../ui/button';
@@ -11,6 +11,14 @@ import {
     TableHead,
     TableCell,
 } from "@/components/ui/table";
+import FilterSection from './FilterSection';
+import { useQuery } from '@tanstack/react-query';
+import { apiListNewLead } from '@/services/lead.api';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Alert } from '../ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
 
 
 
@@ -22,6 +30,13 @@ const leadStatusData = [
     { label: "Approved", count: 6, percent: 18, colorKey: "approved" },
     { label: "Under Process", count: 15, percent: 45, colorKey: "process" },
 ];
+
+const statusKeyMap = {
+    "Allocated": "allocated",
+    "Approved": "approved",
+    "Docs Query": "docs",
+    "Under Process": "process",
+};
 
 const statusColors = {
     total: "text-[#3b82f6]",         // Blue
@@ -75,8 +90,100 @@ const leads = [
 ];
 
 
+// Optional schema (you can add validations later)
+const filterSchema = z.object({
+    productType: z.string().optional(),
+    advisorName: z.string().optional(),
+    clientName: z.string().optional(),
+    feedback: z.string().optional(),
+    allocatedTo: z.string().optional(),
+    fromDate: z.string().optional(),
+    toDate: z.string().optional(),
+})
 
 const NewLead = () => {
+
+    const [showFilter, setShowFilter] = useState(false);
+    const [filterParams, setFilterParams] = useState({});
+    const [newLeadsData, setNewLeadsData] = useState([]);
+    const [leads, setLeads] = useState([]);
+    const [stats, setStats] = useState(null);
+    const [total, setTotal] = useState(null);
+
+    // fetching new leads on component mount and on filtering
+    const {
+        isError: isNewLeadsError,
+        error: newLeadsError,
+        refetch
+    } = useQuery({
+        queryKey: ['new-leads', filterParams],
+        queryFn: async () => {
+            const res = await apiListNewLead(filterParams);
+            console.log("📦 queryFn response of my lead:", res);
+            setNewLeadsData(res?.data?.data || []);
+            return res;
+        },
+        enabled: true,  // for fetching on component mount
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching my leads:", err);
+        }
+    });
+
+
+    useEffect(() => {
+
+        if (newLeadsData?.leads?.length > 0) {
+            setLeads(newLeadsData?.leads);
+        }
+        if (newLeadsData?.stats) {
+            setStats(newLeadsData?.stats);
+        }
+        if (newLeadsData?.total) {
+            setTotal(newLeadsData?.total);
+        }
+    }, [newLeadsData]);
+
+
+    const form = useForm({
+        resolver: zodResolver(filterSchema),
+        defaultValues: {
+            productType: '',
+            advisorName: '',
+            clientName: '',
+            feedback: '',
+            allocatedTo: '',
+            fromDate: '',
+            toDate: '',
+        },
+    })
+
+
+
+    console.log("newLeadsData>>", newLeadsData);
+    // console.log("leads array >>", leads);
+    // console.log("total>>", total);
+    // console.log("stats>>", stats);
+
+    const handleFilter = async (values) => {
+        console.log("submitting values for filter>>", values);
+
+        const cleanParams = Object.fromEntries(
+            Object.entries(values).filter(([, val]) => val !== '')
+        );
+
+        // update local state for queryKey + pass to API
+        setFilterParams(cleanParams);
+
+        // manually trigger query
+        refetch();
+        setShowFilter(false);
+
+    }
+
     return (
         <div className=' p-3 bg-white rounded shadow'>
 
@@ -89,12 +196,68 @@ const NewLead = () => {
                     </Avatar>
                     <h1 className=' text-2xl text-bold'>New Leads</h1>
                 </div>
-                <Button className=" bg-purple-950 px-10">Show Filter</Button>
+                <Button className=" bg-purple-950 px-10" onClick={() => setShowFilter(!showFilter)}>{showFilter ? "Hide Filter" : "Show Filter"}</Button>
             </div>
 
+            {isNewLeadsError && (
+                <Alert variant="destructive">{getErrorMessage(newLeadsError)}</Alert>
+            )}
+
+
             {/* slider */}
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 shadow mt-4 border border-gray-100 rounded-md ">
-                {leadStatusData.map((item, index) => (
+            {!showFilter && <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 shadow mt-4 border border-gray-100 rounded-md ">
+
+                {total && <div className="p-4 flex flex-col gap-2 bg-white ">
+                    <h2 className="font-semibold text-gray-700">Total Leads</h2>
+                    <div className="flex items-center gap-2">
+                        <span className="text-gray-800 font-medium text-lg">{total}</span>
+                    </div>
+                    {total !== undefined && (
+                        <Slider
+                            defaultValue={[parseFloat(total)]}
+                            max={100}
+                            step={1}
+                            disabled
+                            className="mt-2"
+                            style={{
+                                background: `linear-gradient(to right, #3b82f6 ${total}%, #e5e7eb ${total}%)`,
+                                height: "6px",
+                                borderRadius: "9999px",
+                            }}
+                            thumbClassName={`border-2 text-[#3b82f6] bg-white`}
+                        />
+                    )}
+                </div>}
+
+                {stats && Object.entries(stats)?.map(([key, value]) => (
+                    <div key={key} className="p-4 flex flex-col gap-2 bg-white ">
+                        <h2 className="font-semibold text-gray-700">{key}</h2>
+                        <div className="flex items-center gap-2">
+                            <span className="text-gray-800 font-medium text-lg">{value?.count}</span>
+                            <span className={`text-xl font-semibold ${statusColors[statusKeyMap[key]]}`}>
+                                {value?.percentage}
+                            </span>
+                        </div>
+                        {value?.percentage !== undefined && (
+                            <Slider
+                                defaultValue={[parseFloat(value?.percentage)]}
+                                max={100}
+                                step={1}
+                                disabled
+                                className="mt-2"
+                                style={{
+                                    background: `linear-gradient(to right, ${sliderColors[statusKeyMap[key]]} ${value.percentage}%, #e5e7eb ${value.percentage}%)`,
+                                    height: "6px",
+                                    borderRadius: "9999px",
+                                }}
+                                thumbClassName={`border-2 ${statusColors[statusKeyMap[key]]} bg-white`}
+                            />
+                        )}
+                    </div>
+                ))}
+
+
+                {/* {leadStatusData.map((item, index) => (
                     <div key={index} className="p-4 flex flex-col gap-2 bg-white ">
                         <h2 className="font-semibold text-gray-700">{item.label}</h2>
                         <div className="flex items-center gap-2">
@@ -121,14 +284,21 @@ const NewLead = () => {
                             />
                         )}
                     </div>
-                ))}
-            </div>
+                ))} */}
+
+
+            </div>}
+
+
+            {showFilter && <FilterSection handleFilter={handleFilter} form={form} showFilter={showFilter}></FilterSection>}
+
+
 
             {/* table */}
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] pverflow-y-auto">
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-green-900 text-white">
+                        <TableRow className="bg-green-900 text-white hover:bg-green-900">
                             <TableHead className="text-white">Lead No</TableHead>
                             <TableHead className="text-white">Product Type</TableHead>
                             <TableHead className="text-white">Amount</TableHead>
@@ -150,12 +320,12 @@ const NewLead = () => {
                             >
                                 <TableCell>{lead.leadNo}</TableCell>
                                 <TableCell>{lead.productType}</TableCell>
-                                <TableCell>{lead.amount}</TableCell>
-                                <TableCell>{lead.customer}</TableCell>
-                                <TableCell>{lead.mobile}</TableCell>
-                                <TableCell>{lead.leadDate}</TableCell>
-                                <TableCell>{lead.advisor}</TableCell>
-                                <TableCell>{lead.allocatedTo}</TableCell>
+                                <TableCell>{lead.loanRequirementAmount}</TableCell>
+                                <TableCell>{lead.clientName}</TableCell>
+                                <TableCell>{lead.mobileNo}</TableCell>
+                                <TableCell>{lead.createdAt.split('T')[0]}</TableCell>
+                                <TableCell>{lead?.advisorId?.name}</TableCell>
+                                <TableCell>{lead.allocatedTo?.name}</TableCell>
                                 <TableCell>{lead.feedback}</TableCell>
                                 <TableCell>
                                     <Button

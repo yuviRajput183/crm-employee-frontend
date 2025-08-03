@@ -69,7 +69,7 @@ const ListAdvisor = () => {
             <div className="overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full">
                 <Table className=" w-[98%] mx-auto">
                     <TableHeader>
-                        <TableRow className="bg-green-900 text-white">
+                        <TableRow className="bg-green-900 text-white hover:bg-green-900">
                             <TableHead className="text-white">Advisor Code</TableHead>
                             <TableHead className="text-white">Advisor Name</TableHead>
                             <TableHead className="text-white">Mobile No</TableHead>

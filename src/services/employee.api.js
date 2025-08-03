@@ -47,6 +47,20 @@ export const apiListEmployee = async () => {
     );
 }
 
+export const apiFetchEmployeeDetails = async (employeeId) => {
+
+    return await axios.get(
+        `${baseURL}/employees/employee-detail/${employeeId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
 export const apiUpdateEmployee = async ({ employeeId, payload }) => {
     return await axios.put(
         `${baseURL}/employees/edit-employee/${employeeId}`,
@@ -118,3 +132,5 @@ export const apiUpdateEmployeeCredentials = async (payload) => {
         }
     );
 }
+
+

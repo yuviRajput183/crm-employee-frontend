@@ -48,7 +48,7 @@ const ListEmployee = () => {
         <div className=' bg-white rounded shadow  py-3 w-full'>
 
             {/* Heading */}
-            <div className=' flex gap-2 items-center pb-2 border-b-2 px-2'>
+            <div className=' flex gap-2 items-center pb-2 border-b-2 px-2 mb-3'>
                 <Avatar>
                     <AvatarImage src="https://github.com/shadcn.png" />
                     <AvatarFallback>CN</AvatarFallback>
@@ -57,7 +57,7 @@ const ListEmployee = () => {
             </div>
 
             {/* limit */}
-            <p className=' ml-auto bg-green-300 w-fit mt-2 border-b-2 text-[15px] mr-2'>Users Licenses : 5 of 5 Used</p>
+            {/* <p className=' ml-auto bg-green-300 w-fit mt-2 border-b-2 text-[15px] mr-2'>Users Licenses : 5 of 5 Used</p> */}
 
             {isListEmployeesError && (
                 <Alert variant="destructive">{getErrorMessage(listEmployeesError)}</Alert>
@@ -67,7 +67,7 @@ const ListEmployee = () => {
             <div className=" overflow-x-auto  scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 ">
                 <Table className="">
                     <TableHeader>
-                        <TableRow className="bg-green-900 text-white">
+                        <TableRow className="bg-green-900 text-white hover:bg-green-900">
                             <TableHead className="text-white">Employee Name</TableHead>
                             <TableHead className="text-white">Department</TableHead>
                             <TableHead className="text-white">Designation</TableHead>
@@ -89,7 +89,7 @@ const ListEmployee = () => {
                                 <TableCell>
                                     <Button
                                         variant="default" size="sm" className="bg-blue-500"
-                                        onClick={() => navigate("/admin/add_employee", { state: { employee: emp } })}
+                                        onClick={() => navigate(`/admin/edit_employee/${emp?._id}`)}
                                     >
                                         Edit Employee
                                     </Button>

@@ -7,7 +7,7 @@ import BusinessLoanForm from './BusinessLoanForm';
 
 const BusinessLoan = () => {
 
-    const [selectedAdvisor, setSelectedAdvisor] = useState('');
+    const [selectedAdvisor, setSelectedAdvisor] = useState(null);
 
 
     return (
@@ -28,7 +28,7 @@ const BusinessLoan = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <BusinessLoanForm></BusinessLoanForm>}
+            {selectedAdvisor && <BusinessLoanForm selectedAdvisor={selectedAdvisor}></BusinessLoanForm>}
 
 
         </div>

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
     Form,
     FormControl,
@@ -16,6 +16,11 @@ import {
     SelectItem,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { apiListAllocatedTo } from '@/services/lead.api';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { Alert } from './ui/alert';
+
 
 
 const attachmentTypeOptions = [
@@ -34,11 +39,44 @@ const attachmentTypeOptions = [
 
 
 const CommonLoanSections = ({ form }) => {
+
+    const [allocatedToUsers, setAllocatedToUsers] = useState([]);
+
+    // query to  fetch all the allocated To users on component mount
+    const {
+        isError: isListAllocatedToError,
+        error: listAllocatedToError,
+    } = useQuery({
+        queryKey: [''],
+        queryFn: async () => {
+            const res = await apiListAllocatedTo();
+            console.log("📦 queryFn response of list allocated To users:", res);
+            setAllocatedToUsers(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching list allocated To Users:", err);
+        }
+    });
+
+
+    console.log('allocateTo Users>>', allocatedToUsers);
+
+
+
+
     return (
         <>
             <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
                 <h1 className=' font-semibold'>Any Running Loan?</h1>
             </div>
+            {isListAllocatedToError && (
+                <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
+            )}
 
             <div className="w-full overflow-x-auto p-2 border border-gray-200 shadow rounded">
                 {/* === Running Loans Section (up to 4 loans) === */}
@@ -305,10 +343,9 @@ const CommonLoanSections = ({ form }) => {
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {/* Replace with dynamic user options if needed */}
-                                        <SelectItem value="user1">User 1</SelectItem>
-                                        <SelectItem value="user2">User 2</SelectItem>
-                                        <SelectItem value="user3">User 3</SelectItem>
+                                        {allocatedToUsers?.map((allocate) => (
+                                            <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </FormControl>

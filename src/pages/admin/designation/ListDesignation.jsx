@@ -102,7 +102,7 @@ const ListDesignation = () => {
             <div className="overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 mt-2">
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-green-900 text-white">
+                        <TableRow className="bg-green-900 text-white hover:bg-green-900">
                             <TableHead className="text-white">Department Name</TableHead>
                             <TableHead className="text-white">Designation Name</TableHead>
                             <TableHead className="text-white text-right md:pr-10">Edit</TableHead>

@@ -112,7 +112,7 @@ const ListAdvisorLogin = () => {
             <div className="overflow-x-auto mt-3">
                 <Table className="w-full">
                     <TableHeader>
-                        <TableRow className="bg-teal-800 text-white">
+                        <TableRow className="bg-teal-800 text-white hover:bg-teal-800">
                             <TableHead className="text-white">Advisor Name</TableHead>
                             <TableHead className="text-white">Login Name</TableHead>
                             <TableHead className="text-white">Login Password</TableHead>

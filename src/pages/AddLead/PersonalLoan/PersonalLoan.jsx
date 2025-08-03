@@ -6,7 +6,11 @@ import PersonalLoanForm from './PersonalLoanForm';
 
 const PersonalLoan = () => {
 
-    const [selectedAdvisor, setSelectedAdvisor] = useState('');
+    const [selectedAdvisor, setSelectedAdvisor] = useState(null);
+
+
+
+    console.log("selectedAdvisor>>", selectedAdvisor);
 
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
@@ -26,7 +30,7 @@ const PersonalLoan = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <PersonalLoanForm></PersonalLoanForm>}
+            {selectedAdvisor && <PersonalLoanForm selectedAdvisor={selectedAdvisor}></PersonalLoanForm>}
 
 
         </div>

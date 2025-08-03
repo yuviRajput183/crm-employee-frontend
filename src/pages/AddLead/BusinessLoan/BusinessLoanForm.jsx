@@ -20,6 +20,12 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import CommonLoanSections from '@/components/CommonLoanSections';
+import { useQuery } from '@tanstack/react-query';
+import { apiGetCitiesByStateName } from '@/services/city.api';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { useNavigate } from 'react-router-dom';
+import { useLead } from '@/lib/hooks/useLead';
 
 
 
@@ -34,33 +40,38 @@ const indianStates = [
 ];
 
 
-const personalLoanSchema = z.object({
+
+
+
+const businessLoanSchema = z.object({
+    // Required
     loanRequirementAmount: z.string().min(1, "Loan amount is required"),
     clientName: z.string().min(1, "Client name is required"),
     mobileNo: z
         .string()
-        .min(10, "Mobile number must be at least 10 digits")
-        .max(10, "Mobile number must be exactly 10 digits")
-        .regex(/^\d{10}$/, "Invalid mobile number"),
+        .regex(/^\d{10}$/, "Mobile number must be 10 digits"),
 
-    emailId: z.string().email("Invalid email").optional(),
+    // Optional with validation
+    emailId: z.string().optional().refine(val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
+        message: "Invalid email",
+    }),
     dateOfBirth: z.string().optional(),
-    panNo: z
-        .string()
-        .regex(/[A-Z]{5}[0-9]{4}[A-Z]{1}/, "Invalid PAN number")
-        .optional(),
-    aadharNo: z
-        .string()
-        .regex(/^\d{12}$/, "Aadhar number must be 12 digits")
-        .optional(),
+
+    panNo: z.string().optional().refine(val => !val || /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val), {
+        message: "Invalid PAN number",
+    }),
+
+    aadharNo: z.string().optional().refine(val => !val || /^\d{12}$/.test(val), {
+        message: "Aadhar number must be 12 digits",
+    }),
 
     maritalStatus: z.enum(["Married", "Unmarried"]).optional(),
     spouseName: z.string().optional(),
     motherName: z.string().optional(),
-    otherContactNo: z
-        .string()
-        .regex(/^\d{10}$/, "Other contact number must be 10 digits")
-        .optional(),
+
+    otherContactNo: z.string().optional().refine(val => !val || /^\d{10}$/.test(val), {
+        message: "Other contact number must be 10 digits",
+    }),
 
     qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
 
@@ -72,20 +83,44 @@ const personalLoanSchema = z.object({
 
     stateName: z.string().optional(),
     cityName: z.string().optional(),
-    creditCardOutstanding: z.string().regex(/^\d+$/, "Must be a number").optional(),
-    pinCode: z.string().regex(/^\d{6}$/, "Pin code must be 6 digits").optional(),
+
+    creditCardOutstanding: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
+        message: "Must be a number",
+    }),
+
+    pinCode: z.string().optional().refine(val => !val || /^\d{6}$/.test(val), {
+        message: "Pin code must be 6 digits",
+    }),
+
     businessName: z.string().optional(),
     annualTurnover: z.enum(["20 Lacs", "50 Lacs", "80 Lacs", "1 crore +"]).optional(),
     businessAddress: z.string().optional(),
     businessAddressTakenFrom: z.string().optional(),
+
     businessAge: z.enum(["6 months", "1 Year", "2 Year", "3 Year +"]).optional(),
     businessType: z.enum(["propritership", "partnership", "private limited"]).optional(),
     natureOfBusiness: z.enum(["manufacturing", "trading", "service", "retailer"]).optional(),
-    businessRegistration: z.enum(["GST", "VAT", "TIN", "TAN", "MSME", "Labour license", "MSME certificate"]).optional(),
-    noOfEmployees: z.string().regex(/^\d+$/, "Must be a number").optional(),
+    businessRegistration: z.enum([
+        "GST",
+        "VAT",
+        "TIN",
+        "TAN",
+        "MSME",
+        "Labour license",
+        "MSME certificate",
+    ]).optional(),
+
+    noOfEmployees: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
+        message: "Must be a number",
+    }),
+
     businessPremises: z.enum(["owned", "rented"]).optional(),
     itrAvailable: z.enum(["1 year", "2 year", "3 year +"]).optional(),
-    noOfDependent: z.string().regex(/^\d+$/, "Must be a number").optional(),
+
+    noOfDependent: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
+        message: "Must be a number",
+    }),
+
     runningLoans: z.array(
         z.object({
             loanType: z.string().optional(),
@@ -97,30 +132,37 @@ const personalLoanSchema = z.object({
     ).length(4),
 
     reference1: z.object({
-        name: z.string().min(1, "Required"),
-        mobile: z.string().min(1, "Required"),
-        address: z.string().min(1, "Required"),
-        relation: z.string().min(1, "Required"),
+        name: z.string().optional(),
+        mobile: z.string().optional(),
+        address: z.string().optional(),
+        relation: z.string().optional(),
     }),
 
     reference2: z.object({
-        name: z.string().min(1, "Required"),
-        mobile: z.string().min(1, "Required"),
-        address: z.string().min(1, "Required"),
-        relation: z.string().min(1, "Required"),
+        name: z.string().optional(),
+        mobile: z.string().optional(),
+        address: z.string().optional(),
+        relation: z.string().optional(),
     }),
+
+    attachmentType: z.string().optional(),
+    uploadFile: z.any().optional(), // For file uploads, we use z.any() since File objects are complex
+    filePassword: z.string().optional(),
+    allocateTo: z.string().optional()
 });
 
 
 
 
+const BusinessLoanForm = ({ selectedAdvisor }) => {
 
-const HomeLoanForm = () => {
-
+    const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
 
+    const navigate = useNavigate();
+
     const form = useForm({
-        resolver: zodResolver(personalLoanSchema),
+        resolver: zodResolver(businessLoanSchema),
         defaultValues: {
             loanRequirementAmount: '',
             clientName: '',
@@ -171,21 +213,186 @@ const HomeLoanForm = () => {
                 mobile: '',
                 address: '',
                 relation: ''
-            }
+            },
+            attachmentType: '',
+            uploadFile: null,
+            filePassword: '',
+            allocateTo: ""
         },
     });
 
+    const { addLead } = useLead();
+    const { mutateAsync, isLoading, isError, error } = addLead;
 
-    const handlePersonalLoan = async (values) => {
-        console.log("Submitted values>>", values);
+    const handleBusinessLoan = async (data) => {
+        console.log("Submitted values>>", data);
 
+        try {
+            const fd = new FormData();
+
+            // Required fixed fields
+            fd.append('productType', 'Business Loan');
+            fd.append('advisorId', selectedAdvisor);
+            fd.append('loanRequirementAmount', data.loanRequirementAmount);
+            fd.append('clientName', data.clientName);
+            fd.append('mobileNo', data.mobileNo);
+
+            // Optional personal info
+            if (data.emailId) fd.append('emailId', data.emailId);
+            if (data.dateOfBirth) fd.append('dob', data.dateOfBirth);
+            if (data.panNo) fd.append('panNo', data.panNo);
+            if (data.aadharNo) fd.append('aadharNo', data.aadharNo);
+            if (data.maritalStatus) fd.append('maritalStatus', data.maritalStatus);
+            if (data.spouseName) fd.append('spouseName', data.spouseName);
+            if (data.motherName) fd.append('motherName', data.motherName);
+            if (data.otherContactNo) fd.append('otherContactNo', data.otherContactNo);
+            if (data.qualification) fd.append('qualification', data.qualification);
+            if (data.residenceType) fd.append('residenceType', data.residenceType);
+            if (data.residentialAddress) fd.append('residentialAddress', data.residentialAddress);
+            if (data.residentialAddressTakenFrom) fd.append('residentialAddressTakenFrom', data.residentialAddressTakenFrom);
+            if (data.residenceStability) fd.append('residentialStability', data.residenceStability);
+            if (data.stateName) fd.append('stateName', data.stateName);
+            if (data.cityName) fd.append('cityName', data.cityName);
+            if (data.pinCode) fd.append('pinCode', data.pinCode);
+
+            // Employment info
+            if (data.businessName) fd.append('businessName', data.businessName);
+            if (data.annualTurnover) fd.append('annualTurnover', data.annualTurnover);
+            if (data.businessAddress) fd.append('businessAddress', data.businessAddress);
+            if (data.businessAddressTakenFrom) fd.append('businessAddressTakenFrom', data.businessAddressTakenFrom);
+            if (data.businessAge) fd.append('businessAge', data.businessAge);
+            if (data.businessType) fd.append('businessType', data.businessType);
+            if (data.natureOfBusiness) fd.append('natureOfBusiness', data.natureOfBusiness);
+            if (data.businessRegistration) fd.append('businessRegistrationProof', data.businessRegistration);
+            if (data.noOfEmployees) fd.append('noOfEmployee', data.noOfEmployees);
+            if (data.businessPremises) fd.append("businessPremises", data.businessPremises);
+            if (data.itrAvailable) fd.append("howManyYearItrAvailable", data.itrAvailable);
+
+            if (data.dependents) fd.append('noOfDependent', data.dependents);
+            if (data.creditCardOutstanding) fd.append('creditCardOutstandingAmount', data.creditCardOutstanding);
+
+            // Running loans as JSON string
+            // Filter out empty loans and convert string numbers to actual numbers
+            const validRunningLoans = data.runningLoans
+                .filter(loan => loan.loanType || loan.loanAmount || loan.bankName || loan.emiAmount || loan.paidEmi)
+                .map(loan => ({
+                    loanType: loan.loanType || '',
+                    loanAmount: loan.loanAmount ? Number(loan.loanAmount) : 0,
+                    bankName: loan.bankName || '',
+                    emiAmount: loan.emiAmount ? Number(loan.emiAmount) : 0,
+                    paidEmi: loan.paidEmi ? Number(loan.paidEmi) : 0
+                }));
+
+            if (validRunningLoans.length > 0) {
+                fd.append('runningLoans', JSON.stringify(validRunningLoans));
+            }
+
+
+            //  References as JSON string
+            const validReferences = [];
+            if (data.reference1.name || data.reference1.mobile || data.reference1.address || data.reference1.relation) {
+                validReferences.push({
+                    name: data.reference1.name || '',
+                    mobileNo: data.reference1.mobile || '',
+                    address: data.reference1.address || '',
+                    relation: data.reference1.relation || ''
+                });
+            }
+            if (data.reference2.name || data.reference2.mobile || data.reference2.address || data.reference2.relation) {
+                validReferences.push({
+                    name: data.reference2.name || '',
+                    mobileNo: data.reference2.mobile || '',
+                    address: data.reference2.address || '',
+                    relation: data.reference2.relation || ''
+                });
+            }
+
+            if (validReferences.length > 0) {
+                fd.append('references', JSON.stringify(validReferences));
+            }
+
+
+            //  Documents as JSON string (if file upload)
+            // if (data.uploadFile) {
+            //     const documentData = [{
+            //         attachmentType: data.attachmentType || '',
+            //         password: data.filePassword || ''
+            //     }];
+            //     fd.append('document', JSON.stringify(documentData));
+            //     // fd.append('file', data.uploadFile);
+            // }
+
+
+            const documentsArray = [];
+            if (data.uploadFile) {
+                documentsArray.push({
+                    attachmentType: data.attachmentType || '',
+                    fileUrl: '', // Will be set by backend
+                    password: data.filePassword || ''
+                });
+                // fd.append('file', data.uploadFile); // Single file
+                fd.append('documents', JSON.stringify(documentsArray));
+            }
+
+
+
+            // Allocated To
+            if (data.allocateTo) {
+                fd.append('allocatedTo', data.allocateTo);
+            }
+
+            const res = await mutateAsync(fd);
+            console.log('✅ Personal Loan lead added successfully:', res);
+
+            form.reset(); // clear form
+            if (res?.data?.success) {
+                navigate("/admin/my_leads");
+            }
+
+
+        } catch (error) {
+            console.error('handleBusinessLoan error:', error);
+            // show user error message, etc.
+        }
     }
+
+
+    // Query: Fetch cities when state changes
+    const {
+        isError: isCitiesError,
+        error: citiesError,
+    } = useQuery({
+        queryKey: [selectedState],
+        enabled: !!selectedState,
+        queryFn: async () => {
+            const res = await apiGetCitiesByStateName(selectedState);
+            console.log("📦 queryFn response of fetching cities when state change:", res);
+            setCities(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching cities:", err);
+        }
+    });
+
     return (
         <Form {...form}>
             <form
-                onSubmit={form.handleSubmit(handlePersonalLoan)}
+                onSubmit={form.handleSubmit(handleBusinessLoan)}
                 className=" w-full mt-2 py-4 rounded-md"
             >
+
+                {isCitiesError && (
+                    <Alert variant="destructive">{getErrorMessage(citiesError)}</Alert>
+                )}
+                {isError && (
+                    <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                )}
+
 
                 <div className=' p-2 bg-[#FED8B1] rounded-md shadow'>
                     <h1 className=' font-semibold'>Client Details</h1>
@@ -483,7 +690,14 @@ const HomeLoanForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>State Name</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setSelectedState(value);
+                                    }}
+                                    defaultValue={field.value}
+                                    value={field.value}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -812,11 +1026,11 @@ const HomeLoanForm = () => {
                 />
 
 
-                <Button type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
 
             </form>
         </Form>
     )
 }
 
-export default HomeLoanForm;
+export default BusinessLoanForm;

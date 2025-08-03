@@ -12,6 +12,11 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/admin/employees/AddEmployee'))
     },
     {
+        path: "edit_employee/:id",
+        name: "Edit Employee",
+        component: lazy(() => import('@/pages/admin/employees/AddEmployee'))
+    },
+    {
         path: "list_employee",
         name: "List Employee",
         component: lazy(() => import('@/pages/admin/employees/ListEmployee'))

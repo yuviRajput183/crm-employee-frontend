@@ -9,6 +9,8 @@ import UsedCarLoanForm from './UsedCarLoanForm';
 const UsedCarLoan = () => {
     const [selectedAdvisor, setSelectedAdvisor] = useState('');
 
+    console.log("selectedAdvisor>>", selectedAdvisor);
+
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
 
@@ -27,7 +29,7 @@ const UsedCarLoan = () => {
                 setSelectedAdvisor={setSelectedAdvisor}
             />}
 
-            {selectedAdvisor && <UsedCarLoanForm></UsedCarLoanForm>}
+            {selectedAdvisor && <UsedCarLoanForm selectedAdvisor={selectedAdvisor}></UsedCarLoanForm>}
 
 
         </div>

@@ -64,7 +64,7 @@ const ListBankerDetails = () => {
             <div className=" overflow-x-auto  scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full ">
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-green-900 text-white">
+                        <TableRow className="bg-green-900 text-white hover:bg-green-900">
                             <TableHead className="text-white">Product</TableHead>
                             <TableHead className="text-white">State</TableHead>
                             <TableHead className="text-white">City</TableHead>
