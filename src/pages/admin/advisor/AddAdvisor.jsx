@@ -27,6 +27,7 @@ import { useAdvisor } from '@/lib/hooks/useAdvisor';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert } from '@/components/ui/alert';
 import { apiFetchAdvisorDetails } from '@/services/advisor.api';
+import { apiGetCitiesByStateName } from '@/services/city.api';
 
 const indianStates = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -70,6 +71,10 @@ const AddAdvisor = () => {
     const [photoPreview, setPhotoPreview] = useState(null);
     const [reportingOfficers, setReportingOfficers] = useState([]);
     const [selectedReportingOfficer, setSelectedReportingOfficer] = useState(null);
+    const [selectedState, setSelectedState] = useState(null);
+    const [cities, setCities] = useState([]);
+
+
     const navigate = useNavigate();
 
     const { addAdvisor, updateAdvisor } = useAdvisor();
@@ -234,6 +239,30 @@ const AddAdvisor = () => {
     }, [advisorData]);
 
 
+
+    // Query: Fetch cities when state changes
+    const {
+        isError: isCitiesError,
+        error: citiesError,
+    } = useQuery({
+        queryKey: [selectedState],
+        enabled: !!selectedState,
+        queryFn: async () => {
+            const res = await apiGetCitiesByStateName(selectedState);
+            console.log("📦 queryFn response of fetching cities when state change:", res);
+            setCities(res?.data?.data || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching cities:", err);
+        }
+    });
+
+
     return (
         <div className='  p-3 bg-white rounded shadow'>
 
@@ -261,6 +290,9 @@ const AddAdvisor = () => {
                     )}
                     {isAdvisorDetailError && (
                         <Alert variant="destructive">{getErrorMessage(advisorDetailError)}</Alert>
+                    )}
+                    {isCitiesError && (
+                        <Alert variant="destructive">{getErrorMessage(citiesError)}</Alert>
                     )}
 
 
@@ -340,33 +372,64 @@ const AddAdvisor = () => {
                         )} />
 
 
-                        {/* State Dropdown */}
-                        <FormField name="stateName" control={form.control} render={({ field }) => (
-                            <FormItem className=" flex flex-col gap-1">
-                                <FormLabel>State Name <span className=' text-red-500'>*</span></FormLabel>
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select State" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {indianStates.map((state) => (
-                                            <SelectItem key={state} value={state}>{state}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                        {/* State */}
+                        <FormField
+                            control={form.control}
+                            name="state"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>State Name <span className=' text-red-500'>*</span></FormLabel>
+                                    <Select
+                                        onValueChange={(value) => {
+                                            field.onChange(value);
+                                            // const selected = indianStates?.find(() => dep.name === value);
+                                            setSelectedState(value);
+                                        }}
+                                        value={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {indianStates.map((state) => (
+                                                <SelectItem key={state} value={state}>
+                                                    {state}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-                        <FormField name="cityName" control={form.control} render={({ field }) => (
-                            <FormItem className=" flex flex-col gap-1">
-                                <FormLabel>City Name <span className=' text-red-500'>*</span></FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                        {/* City */}
+                        <FormField
+                            control={form.control}
+                            name="city"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>City Name <span className=' text-red-500'>*</span></FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {cities.map((city) => (
+                                                <SelectItem key={city?._id} value={city?._id}>
+                                                    {city?.cityName}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField name="aadharNo" control={form.control} render={({ field }) => (
                             <FormItem className=" flex flex-col gap-1">
