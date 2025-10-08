@@ -21,6 +21,22 @@ export const apiAddLead = async (payload) => {
 }
 
 
+export const apiUpdateLead = async ({ leadId, payload }) => {
+
+    return await axios.put(
+        `${baseURL}/leads/edit-lead/${leadId}`,
+        payload,
+        {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+
 export const apiListAllocatedTo = async () => {
     return await axios.get(
         `${baseURL}/employees/non-admin-department`,
@@ -71,5 +87,55 @@ export const apiListNewLead = async (params = {}) => {
 
             withCredentials: true
         },
+    );
+}
+
+
+export const apiCustomerByAdvisorId = async (params = {}) => {
+
+
+    return await axios.get(
+        `${baseURL}/leads/customers-by-advisorId`,
+        {
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+
+            withCredentials: true
+        },
+    );
+}
+
+
+export const apiEditLeadAdvisor = async ({ leadId, payload }) => {
+
+
+    return await axios.put(
+        `${baseURL}/leads/edit-lead-advisor/${leadId}`,
+        payload, // body
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true,
+        }
+    );
+}
+
+
+export const apiFetchLeadDetails = async (leadId) => {
+
+    return await axios.get(
+        `${baseURL}/leads/single-lead/${leadId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
     );
 }

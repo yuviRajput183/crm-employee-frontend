@@ -38,7 +38,7 @@ const attachmentTypeOptions = [
 ];
 
 
-const CommonLoanSections = ({ form }) => {
+const CommonLoanSections = ({ form, isEdit = false }) => {
 
     const [allocatedToUsers, setAllocatedToUsers] = useState([]);
 
@@ -338,7 +338,7 @@ const CommonLoanSections = ({ form }) => {
                     render={({ field }) => (
                         <FormItem className="col-span-1 mt-2">
                             <FormControl>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>

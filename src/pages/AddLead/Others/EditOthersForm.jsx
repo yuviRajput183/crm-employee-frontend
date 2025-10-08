@@ -1,5 +1,7 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import {
     Form,
     FormControl,
@@ -16,17 +18,8 @@ import {
     SelectContent,
     SelectItem,
 } from '@/components/ui/select';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import CommonLoanSections from '@/components/CommonLoanSections';
-import { useQuery } from '@tanstack/react-query';
-import { apiGetCitiesByStateName } from '@/services/city.api';
-import { Alert } from '@/components/ui/alert';
-import { getErrorMessage } from '@/lib/helpers/get-message';
-import { useNavigate } from 'react-router-dom';
-import { useLead } from '@/lib/hooks/useLead';
-
 
 
 const indianStates = [
@@ -40,38 +33,34 @@ const indianStates = [
 ];
 
 
-
-
-
-const businessLoanSchema = z.object({
-    // Required
+const othersSchema = z.object({
+    servicesType: z.string().min(1, "Required"),
     loanRequirementAmount: z.string().min(1, "Loan amount is required"),
     clientName: z.string().min(1, "Client name is required"),
     mobileNo: z
         .string()
-        .regex(/^\d{10}$/, "Mobile number must be 10 digits"),
+        .min(10, "Mobile number must be at least 10 digits")
+        .max(10, "Mobile number must be exactly 10 digits")
+        .regex(/^\d{10}$/, "Invalid mobile number"),
 
-    // Optional with validation
-    emailId: z.string().optional().refine(val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
-        message: "Invalid email",
-    }),
+    emailId: z.string().email("Invalid email").optional(),
     dateOfBirth: z.string().optional(),
-
-    panNo: z.string().optional().refine(val => !val || /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val), {
-        message: "Invalid PAN number",
-    }),
-
-    aadharNo: z.string().optional().refine(val => !val || /^\d{12}$/.test(val), {
-        message: "Aadhar number must be 12 digits",
-    }),
+    panNo: z
+        .string()
+        .regex(/[A-Z]{5}[0-9]{4}[A-Z]{1}/, "Invalid PAN number")
+        .optional(),
+    aadharNo: z
+        .string()
+        .regex(/^\d{12}$/, "Aadhar number must be 12 digits")
+        .optional(),
 
     maritalStatus: z.enum(["Married", "Unmarried"]).optional(),
     spouseName: z.string().optional(),
     motherName: z.string().optional(),
-
-    otherContactNo: z.string().optional().refine(val => !val || /^\d{10}$/.test(val), {
-        message: "Other contact number must be 10 digits",
-    }),
+    otherContactNo: z
+        .string()
+        .regex(/^\d{10}$/, "Other contact number must be 10 digits")
+        .optional(),
 
     qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
 
@@ -79,93 +68,80 @@ const businessLoanSchema = z.object({
     residentialAddress: z.string().optional(),
     residentialAddressTakenFrom: z.string().optional(),
 
-    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional(),
+    residenceStability: z.enum(["lessThan1Year", "1to3Years", "moreThan3Years"]).optional(),
 
     stateName: z.string().optional(),
     cityName: z.string().optional(),
-
-    creditCardOutstanding: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
-        message: "Must be a number",
+    pinCode: z
+        .string()
+        .regex(/^\d{6}$/, "Pin code must be 6 digits")
+        .optional(),
+    employment: z.enum(["Salaried", "Self Employed"], {
+        required_error: "Employment type is required",
     }),
+    companyName: z.string().optional(),
+    designation: z.string().optional(),
+    companyAddress: z.string().optional(),
+    netSalary: z
+        .string()
+        .regex(/^\d+$/, "Net salary must be a number")
+        .optional(),
 
-    pinCode: z.string().optional().refine(val => !val || /^\d{6}$/.test(val), {
-        message: "Pin code must be 6 digits",
-    }),
+    salaryTransferMode: z.enum(["account", "cash", "cheque"]).optional(),
 
-    businessName: z.string().optional(),
-    annualTurnover: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
-        message: "Annual Turnover must be a number",
-    }),
-    businessAddress: z.string().optional(),
-    businessAddressTakenFrom: z.string().optional(),
+    jobPeriod: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
+    totalExperience: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
 
-    businessAge: z.enum(["6 months", "1 Year", "2 Year", "3 Year +"]).optional(),
-    businessType: z.enum(["propritership", "partnership", "private limited"]).optional(),
-    natureOfBusiness: z.enum(["manufacturing", "trading", "service", "retailer"]).optional(),
-    businessRegistration: z.enum([
-        "GST",
-        "VAT",
-        "TIN",
-        "TAN",
-        "MSME",
-        "Labour license",
-        "MSME certificate",
-    ]).optional(),
+    officialEmail: z.string().email("Invalid official email").optional(),
+    officialNumber: z
+        .string()
+        .regex(/^\d{10}$/, "Official number must be 10 digits")
+        .optional(),
+    carExShowroomPrice: z.string().optional(),
+    carName: z.string().optional(),
+    dependents: z
+        .string()
+        .regex(/^\d+$/, "Dependents must be a number")
+        .optional(),
 
-    noOfEmployees: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
-        message: "Must be a number",
-    }),
-
-    businessPremises: z.enum(["owned", "rented"]).optional(),
-    itrAvailable: z.enum(["1 year", "2 year", "3 year +"]).optional(),
-
-    noOfDependent: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
-        message: "Must be a number",
-    }),
+    creditCardOutstanding: z
+        .string()
+        .regex(/^\d+$/, "Outstanding amount must be a number")
+        .optional(),
 
     runningLoans: z.array(
         z.object({
             loanType: z.string().optional(),
-            loanAmount: z.string().optional(),
+            loanAmount: z.number().optional(),
             bankName: z.string().optional(),
-            emiAmount: z.string().optional(),
-            paidEmi: z.string().optional(),
+            emiAmount: z.number().optional(),
+            paidEmi: z.number().optional(),
         })
     ).length(4),
 
     reference1: z.object({
-        name: z.string().optional(),
-        mobile: z.string().optional(),
-        address: z.string().optional(),
-        relation: z.string().optional(),
+        name: z.string().min(1, "Required"),
+        mobile: z.string().min(1, "Required"),
+        address: z.string().min(1, "Required"),
+        relation: z.string().min(1, "Required"),
     }),
 
     reference2: z.object({
-        name: z.string().optional(),
-        mobile: z.string().optional(),
-        address: z.string().optional(),
-        relation: z.string().optional(),
+        name: z.string().min(1, "Required"),
+        mobile: z.string().min(1, "Required"),
+        address: z.string().min(1, "Required"),
+        relation: z.string().min(1, "Required"),
     }),
+})
 
-    attachmentType: z.string().optional(),
-    uploadFile: z.any().optional(), // For file uploads, we use z.any() since File objects are complex
-    filePassword: z.string().optional(),
-    allocateTo: z.string().optional()
-});
+const EditOthersForm = () => {
 
-
-
-
-const BusinessLoanForm = ({ selectedAdvisor }) => {
-
-    const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
 
-    const navigate = useNavigate();
-
     const form = useForm({
-        resolver: zodResolver(businessLoanSchema),
+        resolver: zodResolver(othersSchema),
         defaultValues: {
+            servicesType: "",
             loanRequirementAmount: '',
             clientName: '',
             mobileNo: '',
@@ -185,18 +161,19 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
             stateName: '',
             cityName: '',
             pinCode: '',
-            businessName: '',
-            annualTurnover: undefined,
-            businessAddress: '',
-            businessAddressTakenFrom: '',
-            businessAge: undefined,
-            businessType: undefined,
-            natureOfBusiness: undefined,
-            businessRegistration: undefined,
-            noOfEmployees: '',
-            businessPremises: undefined,
-            itrAvailable: undefined,
-            noOfDependent: '',
+            employment: "Salaried",      // Default value
+            companyName: '',
+            designation: '',
+            companyAddress: '',
+            netSalary: '',
+            salaryTransferMode: undefined,
+            jobPeriod: undefined,
+            totalExperience: undefined,
+            officialEmail: '',
+            officialNumber: '',
+            carExShowroomPrice: "",
+            carName: "",
+            dependents: '',
             creditCardOutstanding: '',
             runningLoans: [
                 { loanType: '', loanAmount: '', bankName: '', emiAmount: '', paidEmi: '' },
@@ -215,185 +192,23 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                 mobile: '',
                 address: '',
                 relation: ''
-            },
-            attachmentType: '',
-            uploadFile: null,
-            filePassword: '',
-            allocateTo: ""
+            }
         },
     });
 
-    const { addLead } = useLead();
-    const { mutateAsync, isLoading, isError, error } = addLead;
 
-    const handleBusinessLoan = async (data) => {
-        console.log("Submitted values>>", data);
+    const handleOthers = async (values) => {
+        console.log("Submitted values>>", values);
 
-        try {
-            const fd = new FormData();
-
-            // Required fixed fields
-            fd.append('productType', 'Business Loan');
-            fd.append('advisorId', selectedAdvisor);
-            fd.append('loanRequirementAmount', data.loanRequirementAmount);
-            fd.append('clientName', data.clientName);
-            fd.append('mobileNo', data.mobileNo);
-
-            // Optional personal info
-            if (data.emailId) fd.append('emailId', data.emailId);
-            if (data.dateOfBirth) fd.append('dob', data.dateOfBirth);
-            if (data.panNo) fd.append('panNo', data.panNo);
-            if (data.aadharNo) fd.append('aadharNo', data.aadharNo);
-            if (data.maritalStatus) fd.append('maritalStatus', data.maritalStatus);
-            if (data.spouseName) fd.append('spouseName', data.spouseName);
-            if (data.motherName) fd.append('motherName', data.motherName);
-            if (data.otherContactNo) fd.append('otherContactNo', data.otherContactNo);
-            if (data.qualification) fd.append('qualification', data.qualification);
-            if (data.residenceType) fd.append('residenceType', data.residenceType);
-            if (data.residentialAddress) fd.append('residentialAddress', data.residentialAddress);
-            if (data.residentialAddressTakenFrom) fd.append('residentialAddressTakenFrom', data.residentialAddressTakenFrom);
-            if (data.residenceStability) fd.append('residentialStability', data.residenceStability);
-            if (data.stateName) fd.append('stateName', data.stateName);
-            if (data.cityName) fd.append('cityName', data.cityName);
-            if (data.pinCode) fd.append('pinCode', data.pinCode);
-
-            // Employment info
-            if (data.businessName) fd.append('businessName', data.businessName);
-            if (data.annualTurnover) fd.append('annualTurnover', Number(data.annualTurnover));
-            if (data.businessAddress) fd.append('businessAddress', data.businessAddress);
-            if (data.businessAddressTakenFrom) fd.append('businessAddressTakenFrom', data.businessAddressTakenFrom);
-            if (data.businessAge) fd.append('businessAge', data.businessAge);
-            if (data.businessType) fd.append('businessType', data.businessType);
-            if (data.natureOfBusiness) fd.append('natureOfBusiness', data.natureOfBusiness);
-            if (data.businessRegistration) fd.append('businessRegistrationProof', data.businessRegistration);
-            if (data.noOfEmployees) fd.append('noOfEmployee', data.noOfEmployees);
-            if (data.businessPremises) fd.append("businessPremises", data.businessPremises);
-            if (data.itrAvailable) fd.append("howManyYearItrAvailable", data.itrAvailable);
-
-            if (data.dependents) fd.append('noOfDependent', data.dependents);
-            if (data.creditCardOutstanding) fd.append('creditCardOutstandingAmount', data.creditCardOutstanding);
-
-            // Running loans as JSON string
-            // Filter out empty loans and convert string numbers to actual numbers
-            const validRunningLoans = data.runningLoans
-                .filter(loan => loan.loanType || loan.loanAmount || loan.bankName || loan.emiAmount || loan.paidEmi)
-                .map(loan => ({
-                    loanType: loan.loanType || '',
-                    loanAmount: loan.loanAmount ? Number(loan.loanAmount) : 0,
-                    bankName: loan.bankName || '',
-                    emiAmount: loan.emiAmount ? Number(loan.emiAmount) : 0,
-                    paidEmi: loan.paidEmi ? Number(loan.paidEmi) : 0
-                }));
-
-            if (validRunningLoans.length > 0) {
-                fd.append('runningLoans', JSON.stringify(validRunningLoans));
-            }
-
-
-            //  References as JSON string
-            const validReferences = [];
-            if (data.reference1.name || data.reference1.mobile || data.reference1.address || data.reference1.relation) {
-                validReferences.push({
-                    name: data.reference1.name || '',
-                    mobileNo: data.reference1.mobile || '',
-                    address: data.reference1.address || '',
-                    relation: data.reference1.relation || ''
-                });
-            }
-            if (data.reference2.name || data.reference2.mobile || data.reference2.address || data.reference2.relation) {
-                validReferences.push({
-                    name: data.reference2.name || '',
-                    mobileNo: data.reference2.mobile || '',
-                    address: data.reference2.address || '',
-                    relation: data.reference2.relation || ''
-                });
-            }
-
-            if (validReferences.length > 0) {
-                fd.append('references', JSON.stringify(validReferences));
-            }
-
-
-            //  Documents as JSON string (if file upload)
-            // if (data.uploadFile) {
-            //     const documentData = [{
-            //         attachmentType: data.attachmentType || '',
-            //         password: data.filePassword || ''
-            //     }];
-            //     fd.append('document', JSON.stringify(documentData));
-            //     // fd.append('file', data.uploadFile);
-            // }
-
-
-            const documentsArray = [];
-            if (data.uploadFile) {
-                documentsArray.push({
-                    attachmentType: data.attachmentType || '',
-                    fileUrl: '', // Will be set by backend
-                    password: data.filePassword || ''
-                });
-                // fd.append('file', data.uploadFile); // Single file
-                fd.append('documents', JSON.stringify(documentsArray));
-            }
-
-
-
-            // Allocated To
-            if (data.allocateTo) {
-                fd.append('allocatedTo', data.allocateTo);
-            }
-
-            const res = await mutateAsync(fd);
-            console.log('✅ Personal Loan lead added successfully:', res);
-
-            form.reset(); // clear form
-            if (res?.data?.success) {
-                navigate("/admin/my_leads");
-            }
-
-
-        } catch (error) {
-            console.error('handleBusinessLoan error:', error);
-            // show user error message, etc.
-        }
     }
 
-
-    // Query: Fetch cities when state changes
-    const {
-        isError: isCitiesError,
-        error: citiesError,
-    } = useQuery({
-        queryKey: [selectedState],
-        enabled: !!selectedState,
-        queryFn: async () => {
-            const res = await apiGetCitiesByStateName(selectedState);
-            console.log("📦 queryFn response of fetching cities when state change:", res);
-            setCities(res?.data?.data || []);
-            return res;
-        },
-        refetchOnWindowFocus: false,
-        onSuccess: (res) => {
-            console.log("data >>", res);
-        },
-        onError: (err) => {
-            console.error("Error fetching cities:", err);
-        }
-    });
 
     return (
         <Form {...form}>
             <form
-                onSubmit={form.handleSubmit(handleBusinessLoan)}
+                onSubmit={form.handleSubmit(handleOthers)}
                 className=" w-full mt-2 py-4 rounded-md"
             >
-
-                {isCitiesError && (
-                    <Alert variant="destructive">{getErrorMessage(citiesError)}</Alert>
-                )}
-                {isError && (
-                    <Alert variant="destructive">{getErrorMessage(error)}</Alert>
-                )}
 
 
                 <div className=' p-2 bg-[#FED8B1] rounded-md shadow'>
@@ -401,6 +216,37 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                 </div>
 
                 <div className=' grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2  p-2 border border-gray-200 shadow mt-3 rounded '>
+
+                    <FormField
+                        control={form.control}
+                        name="servicesType"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Services Type</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Cash Credit Limit">Cash Credit Limit</SelectItem>
+                                        <SelectItem value="Overdraft Limit">Overdraft Limit</SelectItem>
+                                        <SelectItem value="Education Loan">Education Loan</SelectItem>
+                                        <SelectItem value="Gold Loan">Gold Loan</SelectItem>
+                                        <SelectItem value="Commercial Vehicle">Commercial Vehicle</SelectItem>
+                                        <SelectItem value="Machinery Loan">Machinery Loan</SelectItem>
+                                        <SelectItem value="MSME">MSME</SelectItem>
+                                        <SelectItem value="CGTMSE">CGTMSE</SelectItem>
+                                        <SelectItem value="PMEGP">PMEGP</SelectItem>
+                                        <SelectItem value="MOFPE">MOFPE</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
 
                     {/* Loan Requirement Amount */}
                     <FormField
@@ -416,6 +262,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                             </FormItem>
                         )}
                     />
+
 
                     {/* Client Name */}
                     <FormField
@@ -446,6 +293,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                             </FormItem>
                         )}
                     />
+
 
                     {/* Email Id */}
                     <FormField
@@ -567,7 +415,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                     />
 
 
-                    {/* Other contact no */}
+
                     <FormField
                         control={form.control}
                         name="otherContactNo"
@@ -647,6 +495,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                         )}
                     />
 
+
                     <FormField
                         control={form.control}
                         name="residentialAddressTakenFrom"
@@ -668,16 +517,16 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Residence Stability</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="1Year">1 Year</SelectItem>
-                                        <SelectItem value="2Years">2 Year</SelectItem>
-                                        <SelectItem value="3Years">3 Year +</SelectItem>
+                                        <SelectItem value="lessThan1Year">Less than 1 year</SelectItem>
+                                        <SelectItem value="1to3Years">1 to 3 years</SelectItem>
+                                        <SelectItem value="moreThan3Years">More than 3 years</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -692,14 +541,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>State Name</FormLabel>
-                                <Select
-                                    onValueChange={(value) => {
-                                        field.onChange(value);
-                                        setSelectedState(value);
-                                    }}
-                                    defaultValue={field.value}
-                                    value={field.value}
-                                >
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -732,7 +574,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                                     </FormControl>
                                     <SelectContent>
                                         {cities.map((city) => (
-                                            <SelectItem key={city?._id} value={city?.cityName}>
+                                            <SelectItem key={city?._id} value={city?._id}>
                                                 {city?.cityName}
                                             </SelectItem>
                                         ))}
@@ -751,216 +593,117 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                             <FormItem>
                                 <FormLabel>Pin Code</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input  {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
 
-                    {/* Business Name */}
+
+                    {/* === Employment === */}
                     <FormField
                         control={form.control}
-                        name="businessName"
+                        name="employment"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Business Name</FormLabel>
+                                <FormLabel>Employment <span className="text-red-500">*</span></FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue value={field.value} />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Salaried">Salaried</SelectItem>
+                                        <SelectItem value="Self Employed">Self Employed</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+
+
+                    <FormField
+                        control={form.control}
+                        name="companyName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Company Name</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input  {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
 
-                    {/* Annual Turnover */}
                     <FormField
                         control={form.control}
-                        name="annualTurnover"
+                        name="companyAddress"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Annual Turnover</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="2000000">20 Lacs</SelectItem>
-                                        <SelectItem value="5000000">50 Lacs</SelectItem>
-                                        <SelectItem value="8000000">80 Lacs</SelectItem>
-                                        <SelectItem value="10000000">1 crore +</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Business Address */}
-                    <FormField
-                        control={form.control}
-                        name="businessAddress"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Business Address</FormLabel>
+                                <FormLabel>Company Address</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input  {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
 
-                    {/* Business Address Taken From */}
+
+
                     <FormField
                         control={form.control}
-                        name="businessAddressTakenFrom"
+                        name="designation"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Business Address Taken From</FormLabel>
+                                <FormLabel>Designation</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input  {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
 
-                    {/* Business Age */}
-                    <FormField
-                        control={form.control}
-                        name="businessAge"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Business Age</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="6 months">6 months</SelectItem>
-                                        <SelectItem value="1 Year">1 Year</SelectItem>
-                                        <SelectItem value="2 Year">2 Year</SelectItem>
-                                        <SelectItem value="3 Year +">3 Year +</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
 
-                    {/* Business Type */}
-                    <FormField
-                        control={form.control}
-                        name="businessType"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Business Type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="propritership">Propritership</SelectItem>
-                                        <SelectItem value="partnership">Partnership</SelectItem>
-                                        <SelectItem value="private limited">Private Limited</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
 
-                    {/* Nature of Business */}
                     <FormField
                         control={form.control}
-                        name="natureOfBusiness"
+                        name="netSalary"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Nature of Business</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                                        <SelectItem value="trading">Trading</SelectItem>
-                                        <SelectItem value="service">Service</SelectItem>
-                                        <SelectItem value="retailer">Retailer</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Business Registration Proof */}
-                    <FormField
-                        control={form.control}
-                        name="businessRegistration"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Business Registration Proof</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="GST">GST</SelectItem>
-                                        <SelectItem value="VAT">VAT</SelectItem>
-                                        <SelectItem value="TIN">TIN</SelectItem>
-                                        <SelectItem value="TAN">TAN</SelectItem>
-                                        <SelectItem value="MSME">MSME</SelectItem>
-                                        <SelectItem value="Labour license">Labour License</SelectItem>
-                                        <SelectItem value="MSME certificate">MSME Certificate</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* No of Employees */}
-                    <FormField
-                        control={form.control}
-                        name="noOfEmployees"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>No of Employees</FormLabel>
+                                <FormLabel>Net Salary</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input  {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
 
-                    {/* Business Premises */}
+
+
                     <FormField
                         control={form.control}
-                        name="businessPremises"
+                        name="salaryTransferMode"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Business Premises</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <FormLabel>Salary Transfer Mode</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="owned">Owned</SelectItem>
-                                        <SelectItem value="rented">Rented</SelectItem>
+                                        <SelectItem value="account">Account Transfer</SelectItem>
+                                        <SelectItem value="cash">Cash</SelectItem>
+                                        <SelectItem value="cheque">Cheque</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -968,23 +711,23 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                         )}
                     />
 
-                    {/* How Many Year ITR Available */}
                     <FormField
                         control={form.control}
-                        name="itrAvailable"
+                        name="jobPeriod"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>How Many Year ITR Available</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <FormLabel>Job Period (Current Company)</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="1 year">1 Year</SelectItem>
-                                        <SelectItem value="2 year">2 Year</SelectItem>
-                                        <SelectItem value="3 year +">3 Year +</SelectItem>
+                                        <SelectItem value="6Months">6 Months</SelectItem>
+                                        <SelectItem value="1Year">1 Year</SelectItem>
+                                        <SelectItem value="2Years">2 Year</SelectItem>
+                                        <SelectItem value="3Years+">3 Year +</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -992,22 +735,108 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                         )}
                     />
 
-                    {/* No of Dependent */}
+
+
                     <FormField
                         control={form.control}
-                        name="noOfDependent"
+                        name="totalExperience"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>No of Dependent</FormLabel>
+                                <FormLabel>Total Job Experience</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="6Months">6 Months</SelectItem>
+                                        <SelectItem value="1Year">1 Year</SelectItem>
+                                        <SelectItem value="2Years">2 Year</SelectItem>
+                                        <SelectItem value="3Years+">3 Year +</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+
+                    <FormField
+                        control={form.control}
+                        name="officialEmail"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Official Email ID</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input  {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
 
-                    {/* Credit Card Outstanding Amount */}
+                    <FormField
+                        control={form.control}
+                        name="officialNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Official Number</FormLabel>
+                                <FormControl>
+                                    <Input  {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+
+                    {/* === Car Name === */}
+                    <FormField
+                        control={form.control}
+                        name="carName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Car Name</FormLabel>
+                                <FormControl>
+                                    <Input  {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* === Car Exshowroom Price === */}
+                    <FormField
+                        control={form.control}
+                        name="carExShowroomPrice"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Car ExShowroom Price</FormLabel>
+                                <FormControl>
+                                    <Input  {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+
+
+                    <FormField
+                        control={form.control}
+                        name="dependents"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>No. of Dependents</FormLabel>
+                                <FormControl>
+                                    <Input  {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
                     <FormField
                         control={form.control}
                         name="creditCardOutstanding"
@@ -1015,24 +844,31 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                             <FormItem>
                                 <FormLabel>Credit Card Outstanding Amount</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input  {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
+
+
+
+
+
                 </div>
+
 
                 <CommonLoanSections
                     form={form}
                 />
 
 
-                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                <Button type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+
 
             </form>
         </Form>
     )
 }
 
-export default BusinessLoanForm;
+export default EditOthersForm

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import money from "@/assets/images/money.png"
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
@@ -11,6 +11,15 @@ import {
     TableHead,
     TableCell,
 } from "@/components/ui/table";
+import AdvisorInvoicesFilter from './AdvisorInvoicesFilter';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useQuery } from '@tanstack/react-query';
+import { apiListAdvisorPayouts } from '@/services/advisorPayout.api';
+import { Alert } from '../ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { useAdvisorPayout } from '@/lib/hooks/useAdvisorPayout';
 
 
 const payoutData = [
@@ -40,89 +49,99 @@ const payoutData = [
     },
 ];
 
-const leads = [
-    {
-        leadNo: 634, loanType: "Loan Against Property", advisor: "Himanshu Sachdeva", customer: "Ishwar Singh",
-        disbursalAmt: "30,00,000", disbursalDate: "17/05/2025", payoutPct: "1.35", payoutAmt: "40500",
-        tdsPct: "0", tdsAmt: "0", gst: "Applicable", invoiceDate: "12/06/2025", invoiceNo: "6/2025-26",
-        gstPct: "18", gstAmt: "7290", payableAmt: "47790"
-    },
-    {
-        leadNo: 633, loanType: "Loan Against Property", advisor: "Himanshu Sachdeva", customer: "Mukesh Kumar",
-        disbursalAmt: "20,85,000", disbursalDate: "31/05/2025", payoutPct: "1.35", payoutAmt: "28148",
-        tdsPct: "0", tdsAmt: "0", gst: "Applicable", invoiceDate: "12/06/2025", invoiceNo: "7/2025-26",
-        gstPct: "18", gstAmt: "5067", payableAmt: "33215"
-    },
-    {
-        leadNo: 632, loanType: "Home Loan", advisor: "Ravinder", customer: "Amar Tools Company",
-        disbursalAmt: "53,33,900", disbursalDate: "28/02/2025", payoutPct: "1.08", payoutAmt: "57608",
-        tdsPct: "2", tdsAmt: "1152", gst: "Not Applicable", invoiceDate: "", invoiceNo: "", gstPct: "0", gstAmt: "0", payableAmt: "56454"
-    },
-    {
-        leadNo: 631, loanType: "Car Loan", advisor: "Manoj Kumar", customer: "Tarun Kataria",
-        disbursalAmt: "18,40,000", disbursalDate: "13/05/2025", payoutPct: "0.882", payoutAmt: "16229",
-        tdsPct: "2", tdsAmt: "325", gst: "Not Applicable", invoiceDate: "", invoiceNo: "", gstPct: "0", gstAmt: "0", payableAmt: "15904"
-    },
-    {
-        leadNo: 630, loanType: "Car Loan", advisor: "Hitesh Grover", customer: "Sumit Rana",
-        disbursalAmt: "17,50,000", disbursalDate: "14/05/2025", payoutPct: "0.7938", payoutAmt: "13892",
-        tdsPct: "0", tdsAmt: "0", gst: "Not Applicable", invoiceDate: "", invoiceNo: "", gstPct: "0", gstAmt: "0", payableAmt: "13892"
-    },
-    {
-        leadNo: 629, loanType: "Home Loan", advisor: "Sunder Singh", customer: "Gulshan",
-        disbursalAmt: "9,30,000", disbursalDate: "31/01/2025", payoutPct: "0.8", payoutAmt: "7440",
-        tdsPct: "2", tdsAmt: "149", gst: "Not Applicable", invoiceDate: "", invoiceNo: "", gstPct: "0", gstAmt: "0", payableAmt: "7291"
-    },
-    {
-        leadNo: 628, loanType: "Home Loan", advisor: "Sunder Singh", customer: "Anurag G",
-        disbursalAmt: "11,50,000", disbursalDate: "30/11/2024", payoutPct: "0.8", payoutAmt: "9200",
-        tdsPct: "2", tdsAmt: "184", gst: "Not Applicable", invoiceDate: "", invoiceNo: "", gstPct: "0", gstAmt: "0", payableAmt: "9016"
-    },
-    {
-        leadNo: 627, loanType: "Home Loan", advisor: "Sunder Singh", customer: "Aaditya V V",
-        disbursalAmt: "12,90,000", disbursalDate: "28/02/2025", payoutPct: "0.8", payoutAmt: "10320",
-        tdsPct: "2", tdsAmt: "206", gst: "Not Applicable", invoiceDate: "", invoiceNo: "", gstPct: "0", gstAmt: "0", payableAmt: "10114"
-    },
-    {
-        leadNo: 626, loanType: "Home Loan", advisor: "Himanshu Sachdeva", customer: "Dhiraj Chopra",
-        disbursalAmt: "50,00,000", disbursalDate: "31/03/2025", payoutPct: "0.9", payoutAmt: "45000",
-        tdsPct: "0", tdsAmt: "0", gst: "Applicable", invoiceDate: "30/05/2025", invoiceNo: "5/2025-26",
-        gstPct: "18", gstAmt: "8100", payableAmt: "53100"
-    },
-    {
-        leadNo: 625, loanType: "Home Loan", advisor: "Himanshu Sachdeva", customer: "Amit S/O Ved Parkash",
-        disbursalAmt: "6,50,000", disbursalDate: "28/02/2025", payoutPct: "0.9", payoutAmt: "5850",
-        tdsPct: "0", tdsAmt: "0", gst: "Applicable", invoiceDate: "20/03/2025", invoiceNo: "2/2024-25",
-        gstPct: "18", gstAmt: "1053", payableAmt: "6903"
-    },
-
-    // Generating 20 more entries
-    ...Array.from({ length: 20 }, (_, i) => {
-        const baseLead = 624 - i;
-        return {
-            leadNo: baseLead,
-            loanType: i % 3 === 0 ? "Car Loan" : i % 3 === 1 ? "Home Loan" : "Loan Against Property",
-            advisor: ["Parul Gandhi", "Himanshu Sachdeva", "Sunder Singh", "Ravinder"][i % 4],
-            customer: ["Ravi", "Anjali", "Dinesh", "Shalini", "Harsh", "Meena"][i % 6],
-            disbursalAmt: `${(Math.floor(Math.random() * 30) + 10) * 100000}`,
-            disbursalDate: `${String(Math.floor(Math.random() * 28) + 1).padStart(2, "0")}/0${(i % 6) + 1}/2025`,
-            payoutPct: "1.2",
-            payoutAmt: `${(Math.floor(Math.random() * 10) + 5) * 1000}`,
-            tdsPct: "2",
-            tdsAmt: `${(Math.floor(Math.random() * 500))}`,
-            gst: i % 2 === 0 ? "Applicable" : "Not Applicable",
-            invoiceDate: i % 2 === 0 ? `0${(i % 6) + 1}/06/2025` : "",
-            invoiceNo: i % 2 === 0 ? `${i + 1}/2025-26` : "",
-            gstPct: i % 2 === 0 ? "18" : "0",
-            gstAmt: i % 2 === 0 ? `${(Math.floor(Math.random() * 1000))}` : "0",
-            payableAmt: `${(Math.floor(Math.random() * 10) + 5) * 1000}`,
-        };
-    }),
-];
-
-
+const filterSchema = z.object({
+    productType: z.string().optional(),
+    advisorName: z.string().optional(),
+    clientName: z.string().optional(),
+    fromDate: z.string().optional(),
+    toDate: z.string().optional(),
+})
 
 const AdvisorPayout = () => {
+
+    const [showFilter, setShowFilter] = useState(false);
+    const [filterParams, setFilterParams] = useState({});
+    const [leads, setLeads] = useState([]);
+
+    // fetching new leads on component mount and on filtering
+    const {
+        isError: isNewLeadsError,
+        error: newLeadsError,
+        data: queryData,
+        refetch
+    } = useQuery({
+        queryKey: ['advisor-payouts', filterParams], // Changed queryKey name for clarity
+        queryFn: async () => {
+            const res = await apiListAdvisorPayouts(filterParams);
+            console.log("📦 queryFn response of list advisor payouts:", res);
+            return res;
+        },
+        enabled: true,
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching my list advisor payouts:", err);
+        }
+    });
+
+
+
+    // Update leads when query data changes
+    useEffect(() => {
+        if (queryData?.data?.data?.advisorPayouts?.length > 0) {
+            setLeads(queryData.data.data.advisorPayouts);
+        } else if (queryData?.data?.data) {
+            // Handle case where advisorPayouts might be empty or structured differently
+            setLeads([]);
+        }
+    }, [queryData]);
+
+
+
+
+    const form = useForm({
+        resolver: zodResolver(filterSchema),
+        defaultValues: {
+            productType: '', // Fixed: was 'productType', should match schema
+            advisorName: '',
+            clientName: '',
+            fromDate: '',
+            toDate: '',
+        },
+    })
+
+    const handleFilter = async (values) => {
+        console.log("submitting values for filter>>", values);
+
+        const cleanParams = Object.fromEntries(
+            Object.entries(values).filter(([, val]) => val !== '' && val !== undefined)
+        );
+
+        // Only update filterParams - this will trigger the query automatically
+        setFilterParams(cleanParams);
+        setShowFilter(false);
+        // Remove refetch() call - it's causing duplicate API calls
+    }
+
+
+    const { deleteAdvisorPayout } = useAdvisorPayout();
+    const { mutateAsync, isLoading, isError, error } = deleteAdvisorPayout;
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Are you sure you want to delete this record?")) {
+
+            const res = await mutateAsync(id);
+
+            console.log("res>>", res);
+            if (res?.data?.success) {
+                refetch();
+            }
+        }
+    };
+
+
     return (
         <div className=' p-3 bg-white rounded shadow'>
 
@@ -136,11 +155,17 @@ const AdvisorPayout = () => {
                     <h1 className=' text-2xl text-bold'>Advisor Payout</h1>
                 </div>
                 <div className=' flex items-center gap-2'>
-                    <Button className=" bg-purple-950 px-10">Show Filter</Button>
+                    <Button className=" bg-purple-950 px-10" onClick={() => setShowFilter(!showFilter)}>{showFilter ? "Hide Filter" : "Show Filter"}</Button>
                     <Button className=" bg-purple-950 px-10">Add +</Button>
                 </div>
             </div>
 
+            {isNewLeadsError && (
+                <Alert variant="destructive">{getErrorMessage(newLeadsError)}</Alert>
+            )}
+            {isError && (
+                <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-4">
                 {payoutData.map((item, index) => (
                     <div
@@ -158,11 +183,13 @@ const AdvisorPayout = () => {
                 ))}
             </div>
 
+            {showFilter && <AdvisorInvoicesFilter form={form} handleFilter={handleFilter} showFilter={showFilter}></AdvisorInvoicesFilter>}
+
             {/* Table */}
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-green-900 text-white">
+                        <TableRow className="bg-green-900 text-white hover:bg-green-900 cursor-pointer">
                             <TableHead className="text-white">Lead No</TableHead>
                             <TableHead className="text-white">Loan Type</TableHead>
                             <TableHead className="text-white">Advisor Name</TableHead>
@@ -185,28 +212,31 @@ const AdvisorPayout = () => {
                     </TableHeader>
                     <TableBody>
                         {leads.map((lead, index) => (
-                            <TableRow key={lead.leadNo} className={index % 2 === 0 ? "bg-gray-100" : ""}>
-                                <TableCell>{lead.leadNo}</TableCell>
-                                <TableCell>{lead.loanType}</TableCell>
-                                <TableCell>{lead.advisor}</TableCell>
-                                <TableCell>{lead.customer}</TableCell>
-                                <TableCell>{lead.disbursalAmt}</TableCell>
-                                <TableCell>{lead.disbursalDate}</TableCell>
-                                <TableCell>{lead.payoutPct}</TableCell>
-                                <TableCell>{lead.payoutAmt}</TableCell>
-                                <TableCell>{lead.tdsPct}</TableCell>
-                                <TableCell>{lead.tdsAmt}</TableCell>
-                                <TableCell>{lead.gst}</TableCell>
-                                <TableCell>{lead.invoiceDate}</TableCell>
+                            <TableRow key={lead?._id} className={index % 2 === 0 ? "bg-gray-100" : ""}>
+                                <TableCell>{lead?.leadId?.leadNo}</TableCell>
+                                <TableCell>{lead?.loanServiceType}</TableCell>
+                                <TableCell>{lead?.advisorId?.name}</TableCell>
+                                <TableCell>{lead?.customerName}</TableCell>
+                                <TableCell>{lead?.disbursalAmount}</TableCell>
+                                <TableCell>{lead?.disbursalDate?.split('T')[0]}</TableCell>
+                                <TableCell>{lead.payoutPercent}</TableCell>
+                                <TableCell>{lead.payoutAmount}</TableCell>
+                                <TableCell>{lead.tdsPercent}</TableCell>
+                                <TableCell>{lead.tdsAmount}</TableCell>
+                                <TableCell>{lead.gstApplicable ? "Applicable" : "Not Applicable"}</TableCell>
+                                <TableCell>{lead.invoiceDate?.split('T')[0]}</TableCell>
                                 <TableCell>{lead.invoiceNo}</TableCell>
-                                <TableCell>{lead.gstPct}</TableCell>
-                                <TableCell>{lead.gstAmt}</TableCell>
-                                <TableCell>{lead.payableAmt}</TableCell>
+                                <TableCell>{lead.gstPercent}</TableCell>
+                                <TableCell>{lead.gstAmount}</TableCell>
+                                <TableCell>{lead.netPayableAmount}</TableCell>
                                 <TableCell>
                                     <Button className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs">Edit</Button>
                                 </TableCell>
                                 <TableCell>
-                                    <Button className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs">Delete</Button>
+                                    <Button
+                                        loading={isLoading}
+                                        onClick={() => handleDelete(lead?._id)}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs">Delete</Button>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -218,4 +248,4 @@ const AdvisorPayout = () => {
     )
 }
 
-export default AdvisorPayout
+export default AdvisorPayout;

@@ -19,15 +19,8 @@ import FilterSection from './FilterSection';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
-
-// const leadStatusData = [
-//     // { label: "Total Leads", count: 613, percent: 100, colorKey: "total" },
-//     { label: "Disbursed", count: 261, percent: 43, colorKey: "disbursed" },
-//     { label: "Policy Issued", count: 86, percent: 14, colorKey: "policy" },
-//     { label: "Invoice Raised", count: 8, percent: 1, colorKey: "invoice" },
-//     { label: "Rejected", count: 256, percent: 42, colorKey: "rejected" },
-// ];
+import EditLeadAdvisor from './EditLeadAdvisor';
+import { useNavigate } from 'react-router-dom';
 
 const statusKeyMap = {
     "Loan Disbursed": "disbursed",
@@ -65,6 +58,20 @@ const filterSchema = z.object({
     toDate: z.string().optional(),
 })
 
+
+// mapping of product type -> edit path 
+const editProductPathMap = {
+    "Personal Loan": "/admin/edit_personal_loan",
+    "Business Loan": "/admin/edit_business_loan",
+    "Home Loan": "/admin/edit_home_loan",
+    "Loan Against Property": "/admin/edit_loan_against_property",
+    "Car Loan": "/admin/edit_car_loan",
+    "Used Car Loan": "/admin/edit_used_car_loan",      // remaining
+    "Insurance": "/admin/edit_insurance",
+    "Services": "/admin/edit_services",
+    "Others": "/admin/edit_others"
+}
+
 const MyLead = () => {
 
     const [showFilter, setShowFilter] = useState(false);
@@ -73,7 +80,10 @@ const MyLead = () => {
     const [leads, setLeads] = useState([]);
     const [stats, setStats] = useState(null);
     const [total, setTotal] = useState(null);
+    const [showEditAdvisor, setShowEditAdvisor] = useState(false);
+    const [selectedLead, setSelectedLead] = useState(null);
 
+    const navigate = useNavigate();
 
     // fetching my leads on component mount and on filtering
     const {
@@ -169,125 +179,142 @@ const MyLead = () => {
             )}
 
 
-
-            {!showFilter && <div className="w-full grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-4 shadow mt-4 border border-gray-100 rounded-md ">
-
-
-                {total && <div className="p-4 flex flex-col gap-2 bg-white ">
-                    <h2 className="font-semibold text-gray-700">Total Leads</h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-800 font-medium text-lg">{total}</span>
-                    </div>
-                    {total !== undefined && (
-                        <Slider
-                            defaultValue={[parseFloat(total)]}
-                            max={100}
-                            step={1}
-                            disabled
-                            className="mt-2"
-                            style={{
-                                background: `linear-gradient(to right, #3b82f6 ${total}%, #e5e7eb ${total}%)`,
-                                height: "6px",
-                                borderRadius: "9999px",
-                            }}
-                            thumbClassName={`border-2 text-[#3b82f6] bg-white`}
-                        />
-                    )}
-                </div>}
+            {!showEditAdvisor && (
+                <>
+                    {/* slider */}
+                    {!showFilter && <div className="w-full grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-4 shadow mt-4 border border-gray-100 rounded-md ">
 
 
-                {stats && Object.entries(stats)?.map(([key, value]) => (
-                    <div key={key} className="p-4 flex flex-col gap-2 bg-white ">
-                        <h2 className="font-semibold text-gray-700">{key}</h2>
-                        <div className="flex items-center gap-2">
-                            <span className="text-gray-800 font-medium text-lg">{value?.count}</span>
-                            <span className={`text-xl font-semibold ${statusColors[statusKeyMap[key]]}`}>
-                                {value?.percentage}
-                            </span>
-                        </div>
-                        {value?.percentage !== undefined && (
-                            <Slider
-                                defaultValue={[parseFloat(value?.percentage)]}
-                                max={100}
-                                step={1}
-                                disabled
-                                className="mt-2"
-                                style={{
-                                    background: `linear-gradient(to right, ${sliderColors[statusKeyMap[key]]} ${value.percentage}%, #e5e7eb ${value.percentage}%)`,
-                                    height: "6px",
-                                    borderRadius: "9999px",
-                                }}
-                                thumbClassName={`border-2 ${statusColors[statusKeyMap[key]]} bg-white`}
-                            />
-                        )}
-                    </div>
-                ))}
-            </div>
-            }
+                        {total && <div className="p-4 flex flex-col gap-2 bg-white ">
+                            <h2 className="font-semibold text-gray-700">Total Leads</h2>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-800 font-medium text-lg">{total}</span>
+                            </div>
+                            {total !== undefined && (
+                                <Slider
+                                    defaultValue={[parseFloat(total)]}
+                                    max={100}
+                                    step={1}
+                                    disabled
+                                    className="mt-2"
+                                    style={{
+                                        background: `linear-gradient(to right, #3b82f6 ${total}%, #e5e7eb ${total}%)`,
+                                        height: "6px",
+                                        borderRadius: "9999px",
+                                    }}
+                                    thumbClassName={`border-2 text-[#3b82f6] bg-white`}
+                                />
+                            )}
+                        </div>}
 
-            {showFilter && <FilterSection handleFilter={handleFilter} form={form} showFilter={showFilter}></FilterSection>}
 
-            {/* table */}
-            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] pverflow-y-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-green-900 text-white hover:bg-green-900">
-                            <TableHead className="text-white">Lead No</TableHead>
-                            <TableHead className="text-white">Product Type</TableHead>
-                            <TableHead className="text-white">Amount</TableHead>
-                            <TableHead className="text-white">Customer Name</TableHead>
-                            <TableHead className="text-white">Mobile No</TableHead>
-                            <TableHead className="text-white">Lead Date</TableHead>
-                            <TableHead className="text-white">Advisor Name</TableHead>
-                            <TableHead className="text-white">Allocated To</TableHead>
-                            <TableHead className="text-white">Feedback</TableHead>
-                            <TableHead className="text-white">View</TableHead>
-                            <TableHead className="text-white">DSA</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody className=" ">
-                        {leads.map((lead, index) => (
-                            <TableRow
-                                key={lead.leadNo}
-                                className={index % 2 === 0 ? "bg-gray-100" : ""}
-                            >
-                                <TableCell>{lead.leadNo}</TableCell>
-                                <TableCell>{lead.productType}</TableCell>
-                                <TableCell>{lead?.amount || "100"}</TableCell>
-                                <TableCell>{lead.clientName}</TableCell>
-                                <TableCell>{lead.mobileNo}</TableCell>
-                                <TableCell>{lead.createdAt.split('T')[0]}</TableCell>
-                                <TableCell>{lead?.advisorId?.name}</TableCell>
-                                <TableCell>{lead?.allocatedTo?.name}</TableCell>
-                                <TableCell>{lead?.history[lead?.history?.length - 1].feedback}</TableCell>
-                                <TableCell>
-                                    <Button
-                                        variant="default"
-                                        size="sm"
-                                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                                    >
-                                        View
-                                    </Button>
-                                </TableCell>
-                                <TableCell>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        className="bg-[#3f3849] hover:bg-[#2e2a35] text-white"
-                                    >
-                                        Change
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
+                        {stats && Object.entries(stats)?.map(([key, value]) => (
+                            <div key={key} className="p-4 flex flex-col gap-2 bg-white ">
+                                <h2 className="font-semibold text-gray-700">{key}</h2>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-gray-800 font-medium text-lg">{value?.count}</span>
+                                    <span className={`text-xl font-semibold ${statusColors[statusKeyMap[key]]}`}>
+                                        {value?.percentage}
+                                    </span>
+                                </div>
+                                {value?.percentage !== undefined && (
+                                    <Slider
+                                        defaultValue={[parseFloat(value?.percentage)]}
+                                        max={100}
+                                        step={1}
+                                        disabled
+                                        className="mt-2"
+                                        style={{
+                                            background: `linear-gradient(to right, ${sliderColors[statusKeyMap[key]]} ${value.percentage}%, #e5e7eb ${value.percentage}%)`,
+                                            height: "6px",
+                                            borderRadius: "9999px",
+                                        }}
+                                        thumbClassName={`border-2 ${statusColors[statusKeyMap[key]]} bg-white`}
+                                    />
+                                )}
+                            </div>
                         ))}
-                    </TableBody>
-                </Table>
-            </div>
+                    </div>
+                    }
 
-            {/* Add Button */}
-            <div className="mt-4">
-                <Button className=" bg-blue-500 hover:bg-blue-500">Export</Button>
-            </div>
+                    {showFilter && <FilterSection handleFilter={handleFilter} form={form} showFilter={showFilter}></FilterSection>}
+
+                    {/* table */}
+                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] pverflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-green-900 text-white hover:bg-green-900">
+                                    <TableHead className="text-white">Lead No</TableHead>
+                                    <TableHead className="text-white">Product Type</TableHead>
+                                    <TableHead className="text-white">Amount</TableHead>
+                                    <TableHead className="text-white">Customer Name</TableHead>
+                                    <TableHead className="text-white">Mobile No</TableHead>
+                                    <TableHead className="text-white">Lead Date</TableHead>
+                                    <TableHead className="text-white">Advisor Name</TableHead>
+                                    <TableHead className="text-white">Allocated To</TableHead>
+                                    <TableHead className="text-white">Feedback</TableHead>
+                                    <TableHead className="text-white">View</TableHead>
+                                    <TableHead className="text-white">DSA</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody className=" ">
+                                {leads.map((lead, index) => (
+                                    <TableRow
+                                        key={lead.leadNo}
+                                        className={index % 2 === 0 ? "bg-gray-100" : ""}
+                                    >
+                                        <TableCell>{lead.leadNo}</TableCell>
+                                        <TableCell>{lead.productType}</TableCell>
+                                        <TableCell>{lead?.amount || "100"}</TableCell>
+                                        <TableCell>{lead.clientName}</TableCell>
+                                        <TableCell>{lead.mobileNo}</TableCell>
+                                        <TableCell>{lead.createdAt.split('T')[0]}</TableCell>
+                                        <TableCell>{lead?.advisorId?.name}</TableCell>
+                                        <TableCell>{lead?.allocatedTo?.name}</TableCell>
+                                        <TableCell>{lead?.history[lead?.history?.length - 1].feedback}</TableCell>
+                                        <TableCell>
+                                            <Button
+                                                onClick={() => navigate(`${editProductPathMap[lead.productType]}/${lead?._id}`)}
+                                                variant="default"
+                                                size="sm"
+                                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                            >
+                                                View
+                                            </Button>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                onClick={() => {
+                                                    setSelectedLead(lead);
+                                                    setShowEditAdvisor(true);
+                                                }}
+                                                variant="secondary"
+                                                size="sm"
+                                                className="bg-[#3f3849] hover:bg-[#2e2a35] text-white"
+                                            >
+                                                Change
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Add Button */}
+                    <div className="mt-4">
+                        <Button className=" bg-blue-500 hover:bg-blue-500">Export</Button>
+                    </div>
+                </>
+            )}
+
+            {showEditAdvisor && (
+                <EditLeadAdvisor
+                    lead={selectedLead}
+                    onClose={() => setShowEditAdvisor(false)}
+                    refetch={refetch}
+                />
+            )}
 
         </div>
     )

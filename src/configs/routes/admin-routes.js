@@ -167,6 +167,11 @@ export const adminRoutes = [
         component: lazy(() => import('@/components/shared/Invoices'))
     },
     {
+        path: "edit_invoices/:id",
+        name: "Edit Invoices",
+        component: lazy(() => import('@/components/shared/EditInvoiceForm'))
+    },
+    {
         path: "receivables_payout",
         name: "Receivables Payout",
         component: lazy(() => import('@/components/shared/Receivables'))
@@ -197,9 +202,19 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/AddLead/PersonalLoan/PersonalLoan'))
     },
     {
+        path: "edit_personal_loan/:id",
+        name: "Edit Personal Loan",
+        component: lazy(() => import('@/pages/AddLead/PersonalLoan/EditPersonalLoanForm'))
+    },
+    {
         path: "business_loan",
         name: "Business Loan",
         component: lazy(() => import('@/pages/AddLead/BusinessLoan/BusinessLoan'))
+    },
+    {
+        path: "edit_business_loan/:id",
+        name: "Edit Business Loan",
+        component: lazy(() => import('@/pages/AddLead/BusinessLoan/EditBusinessLoanForm'))
     },
     {
         path: "home_loan",
@@ -207,9 +222,19 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/AddLead/HomeLoan/HomeLoan'))
     },
     {
+        path: "edit_home_loan/:id",
+        name: "Edit Home Loan",
+        component: lazy(() => import('@/pages/AddLead/HomeLoan/EditHomeLoanForm'))
+    },
+    {
         path: "loan_against_property",
         name: "Loan Against Property",
         component: lazy(() => import('@/pages/AddLead/LoanAgainstProperty/LoanAgainstProperty'))
+    },
+    {
+        path: "edit_loan_against_property/:id",
+        name: "Edit Loan Against Property",
+        component: lazy(() => import('@/pages/AddLead/LoanAgainstProperty/EditLoanAgainstProperty'))
     },
     {
         path: "car_loan",
@@ -217,9 +242,19 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/AddLead/CarLoan/CarLoan'))
     },
     {
+        path: "edit_car_loan/:id",
+        name: "Edit Car Loan",
+        component: lazy(() => import('@/pages/AddLead/CarLoan/EditCarLoanForm'))
+    },
+    {
         path: "used_car_loan",
         name: "Used Car Loan",
         component: lazy(() => import('@/pages/AddLead/UsedCarLoan/UsedCarLoan'))
+    },
+    {
+        path: "edit_used_car_loan/:id",
+        name: "Edit Used Car Loan",
+        component: lazy(() => import('@/pages/AddLead/UsedCarLoan/EditUsedCarLoanForm'))
     },
     {
         path: "insurance",
@@ -227,9 +262,19 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/AddLead/Insurance/Insurance'))
     },
     {
+        path: "edit_insurance/:id",
+        name: "Edit Insurance",
+        component: lazy(() => import('@/pages/AddLead/Insurance/EditInsuranceForm'))
+    },
+    {
         path: "services",
         name: "Services",
         component: lazy(() => import('@/pages/AddLead/Services/Services'))
+    },
+    {
+        path: "edit_services/:id",
+        name: "Edit Services",
+        component: lazy(() => import('@/pages/AddLead/Services/EditServicesForm'))
     },
     {
         path: "credit_card",
@@ -240,5 +285,10 @@ export const adminRoutes = [
         path: "others",
         name: "Others",
         component: lazy(() => import('@/pages/AddLead/Others/Others'))
+    },
+    {
+        path: "edit_others/:id",
+        name: "Edit Others",
+        component: lazy(() => import('@/pages/AddLead/Others/EditOthersForm'))
     }
 ]

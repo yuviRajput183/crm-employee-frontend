@@ -20,11 +20,11 @@ import { useQuery } from '@tanstack/react-query'
 import { apiListAdvisor } from '@/services/advisor.api'
 import { getErrorMessage } from '@/lib/helpers/get-message'
 import { Alert } from '../ui/alert'
-import { apiCustomerByAdvisorId, apiListAllocatedTo } from '@/services/lead.api'
+import { apiCustomerByAdvisorId } from '@/services/lead.api'
 
 
 
-export default function FilterSection({ form, showFilter, handleFilter }) {
+export default function AdvisorInvoicesFilter({ form, showFilter, handleFilter }) {
 
 
 
@@ -32,31 +32,9 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
     const [advisors, setAdvisors] = useState([]);
     const [selectedAdvisor, setSelectedAdvisor] = useState(null);
     const [customers, setCustomers] = useState([]);
-    const [allocatedToUsers, setAllocatedToUsers] = useState([]);
 
     console.log("selected advisor details in filter >>", selectedAdvisor);
 
-
-    // query to  fetch all the alocatedTo users on component mount
-    const {
-        isError: isListAllocatedToError,
-        error: listAllocatedToError,
-    } = useQuery({
-        queryKey: [''],
-        queryFn: async () => {
-            const res = await apiListAllocatedTo();
-            console.log("📦 queryFn response of list allocated To users:", res);
-            setAllocatedToUsers(res?.data?.data || []);
-            return res;
-        },
-        refetchOnWindowFocus: false,
-        onSuccess: (res) => {
-            console.log("data >>", res);
-        },
-        onError: (err) => {
-            console.error("Error fetching list allocated To Users:", err);
-        }
-    });
 
 
 
@@ -106,19 +84,15 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
 
     if (!showFilter) return null
 
-
     return (
         <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(handleFilter)}
-                className="grid grid-cols-2 md:grid-cols-4 gap-2 p-2 mt-3 bg-white rounded shadow"
+                className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 mt-3 bg-white rounded shadow"
             >
 
                 {isListAdvisorError && (
                     <Alert variant="destructive">{getErrorMessage(listAdvisorError)}</Alert>
-                )}
-                {isListAllocatedToError && (
-                    <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
                 )}
                 {isCustomerError && (
                     <Alert variant="destructive">{getErrorMessage(customerError)}</Alert>
@@ -128,7 +102,7 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
                 {/* Loan Type */}
                 <FormField
                     control={form.control}
-                    name="productType"
+                    name="loanServiceType"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Loan Type</FormLabel>
@@ -146,7 +120,7 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
                                     <SelectItem value="Used Car Loan">Used Car Loan</SelectItem>
                                     <SelectItem value="Credit Card">Credit Card</SelectItem>
                                     <SelectItem value="Insurance">Insurance</SelectItem>
-                                    <SelectItem value="Services">Services</SelectItem>
+                                    {/* <SelectItem value="Services">Services</SelectItem> */}
                                     <SelectItem value="Private Funding">Private Funding</SelectItem>
                                     <SelectItem value="Professional Loan">Professional Loan</SelectItem>
                                     <SelectItem value="Others">Others</SelectItem>
@@ -195,7 +169,7 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
                 {/* Customer Name */}
                 <FormField
                     control={form.control}
-                    name="clientName"
+                    name="customerName"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Customer Name</FormLabel>
@@ -219,52 +193,6 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
                 />
 
 
-                {/* Loan Feedback */}
-                <FormField
-                    control={form.control}
-                    name="feedback"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Loan Feedback</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Loan Disbursed">Loan Disbursed</SelectItem>
-                                    <SelectItem value="Loan Rejected">Loan Rejected</SelectItem>
-                                    <SelectItem value="Rejected">Rejected</SelectItem>
-                                    <SelectItem value="Policy Issued">Policy Issued</SelectItem>
-                                    <SelectItem value="Invoice Raised">Invoice Raised</SelectItem>
-                                    <SelectItem value="Fees Received">Fees Received</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-
-                {/* Allocated To */}
-                <FormField
-                    control={form.control}
-                    name="allocatedTo"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Allocated To</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {allocatedToUsers?.map((allocate) => (
-                                        <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormItem>
-                    )}
-                />
 
                 {/* From Date */}
                 <FormField

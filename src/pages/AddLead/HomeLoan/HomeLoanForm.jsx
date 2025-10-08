@@ -748,7 +748,7 @@ const HomeLoanForm = ({ selectedAdvisor }) => {
                                     </FormControl>
                                     <SelectContent>
                                         {cities.map((city) => (
-                                            <SelectItem key={city?._id} value={city?._id}>
+                                            <SelectItem key={city?._id} value={city?.cityName}>
                                                 {city?.cityName}
                                             </SelectItem>
                                         ))}

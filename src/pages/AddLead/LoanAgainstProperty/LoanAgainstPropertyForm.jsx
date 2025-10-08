@@ -688,9 +688,9 @@ const LoanAgainstPropertyForm = ({ selectedAdvisor }) => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="lessThan1Year">Less than 1 year</SelectItem>
-                                        <SelectItem value="1to3Years">1 to 3 years</SelectItem>
-                                        <SelectItem value="moreThan3Years">More than 3 years</SelectItem>
+                                        <SelectItem value="1Year">1 Year</SelectItem>
+                                        <SelectItem value="2Years">2 Year</SelectItem>
+                                        <SelectItem value="3Years">3 Year +</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -888,10 +888,10 @@ const LoanAgainstPropertyForm = ({ selectedAdvisor }) => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="lessThan1Year">6 Months</SelectItem>
-                                        <SelectItem value="1to2Years">1 Year</SelectItem>
-                                        <SelectItem value="moreThan2Years">2 Year</SelectItem>
-                                        <SelectItem value="moreThan3Years">3 Year +</SelectItem>
+                                        <SelectItem value="6Months">6 Months</SelectItem>
+                                        <SelectItem value="1Year">1 Year</SelectItem>
+                                        <SelectItem value="2Years">2 Year</SelectItem>
+                                        <SelectItem value="3Years+">3 Year +</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -912,10 +912,10 @@ const LoanAgainstPropertyForm = ({ selectedAdvisor }) => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="lessThan1Year">6 Months</SelectItem>
-                                        <SelectItem value="1to2Years">1 Year</SelectItem>
-                                        <SelectItem value="moreThan2Years">2 Year</SelectItem>
-                                        <SelectItem value="moreThan3Years">3 Year +</SelectItem>
+                                        <SelectItem value="6Months">6 Months</SelectItem>
+                                        <SelectItem value="1Year">1 Year</SelectItem>
+                                        <SelectItem value="2Years">2 Year</SelectItem>
+                                        <SelectItem value="3Years+">3 Year +</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />

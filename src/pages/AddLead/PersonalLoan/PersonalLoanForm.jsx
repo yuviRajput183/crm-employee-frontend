@@ -338,7 +338,7 @@ const PersonalLoanForm = ({ selectedAdvisor }) => {
 
             form.reset(); // clear form
             if (res?.data?.success) {
-                navigate("/admin/my_leads");
+                navigate("/admin/new_leads");
             }
 
 

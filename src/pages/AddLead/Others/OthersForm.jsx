@@ -68,7 +68,7 @@ const othersSchema = z.object({
     residentialAddress: z.string().optional(),
     residentialAddressTakenFrom: z.string().optional(),
 
-    residenceStability: z.enum(["lessThan1Year", "1to3Years", "moreThan3Years"]).optional(),
+    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional(),
 
     stateName: z.string().optional(),
     cityName: z.string().optional(),
@@ -89,8 +89,8 @@ const othersSchema = z.object({
 
     salaryTransferMode: z.enum(["account", "cash", "cheque"]).optional(),
 
-    jobPeriod: z.enum(["lessThan1Year", "1to2Years", "moreThan2Years"]).optional(),
-    totalExperience: z.enum(["lessThan1Year", "1to2Years", "moreThan2Years"]).optional(),
+    jobPeriod: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
+    totalExperience: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
 
     officialEmail: z.string().email("Invalid official email").optional(),
     officialNumber: z
@@ -524,9 +524,9 @@ const OthersForm = () => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="lessThan1Year">Less than 1 year</SelectItem>
-                                        <SelectItem value="1to3Years">1 to 3 years</SelectItem>
-                                        <SelectItem value="moreThan3Years">More than 3 years</SelectItem>
+                                        <SelectItem value="1Year">1 Year</SelectItem>
+                                        <SelectItem value="2Years">2 Year</SelectItem>
+                                        <SelectItem value="3Years">3 Year +</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -724,10 +724,10 @@ const OthersForm = () => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="lessThan1Year">6 Months</SelectItem>
-                                        <SelectItem value="1to2Years">1 Year</SelectItem>
-                                        <SelectItem value="moreThan2Years">2 Year</SelectItem>
-                                        <SelectItem value="moreThan3Years">3 Year +</SelectItem>
+                                        <SelectItem value="6Months">6 Months</SelectItem>
+                                        <SelectItem value="1Year">1 Year</SelectItem>
+                                        <SelectItem value="2Years">2 Year</SelectItem>
+                                        <SelectItem value="3Years+">3 Year +</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -750,10 +750,10 @@ const OthersForm = () => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="lessThan1Year">6 Months</SelectItem>
-                                        <SelectItem value="1to2Years">1 Year</SelectItem>
-                                        <SelectItem value="moreThan2Years">2 Year</SelectItem>
-                                        <SelectItem value="moreThan3Years">3 Year +</SelectItem>
+                                        <SelectItem value="6Months">6 Months</SelectItem>
+                                        <SelectItem value="1Year">1 Year</SelectItem>
+                                        <SelectItem value="2Years">2 Year</SelectItem>
+                                        <SelectItem value="3Years+">3 Year +</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
