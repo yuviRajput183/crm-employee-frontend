@@ -36,7 +36,7 @@ const UserLayout = () => {
         }
     }, []);
 
-    console.log("profile>>", profile);
+    console.log("profile of logged in person>>", profile);
 
     const renderSidebar = () => {
         if (!profile) return null;

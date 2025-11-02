@@ -29,6 +29,8 @@ import { useLead } from '@/lib/hooks/useLead';
 import { apiFetchLeadDetails } from '@/services/lead.api';
 import businessLoan from '@/assets/images/businessLoan.jpg';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import HistoryTable from '@/components/shared/HistoryTable';
+import LeadAllocationFeedback from '@/components/shared/LeadAllocationFeedback';
 
 
 const indianStates = [
@@ -152,7 +154,10 @@ const businessLoanSchema = z.object({
     attachmentType: z.string().optional(),
     uploadFile: z.any().optional(), // For file uploads, we use z.any() since File objects are complex
     filePassword: z.string().optional(),
-    allocateTo: z.string().optional()
+    allocateTo: z.string().optional(),
+    loanFeedback: z.string().optional(),
+    remarks: z.string().optional(),
+    bankerId: z.string().optional(),
 });
 
 
@@ -167,7 +172,7 @@ const EditBusinessLoanForm = () => {
 
     const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
-
+    const [history, setHistory] = useState([]);
 
     // query to  fetch the lead detail on component mount
     const {
@@ -247,7 +252,9 @@ const EditBusinessLoanForm = () => {
             attachmentType: '',
             uploadFile: null,
             filePassword: '',
-            allocateTo: ""
+            allocateTo: "",
+            loanFeedback: null,
+            remarks: '',
         },
     });
 
@@ -371,6 +378,18 @@ const EditBusinessLoanForm = () => {
                 fd.append('allocatedTo', data.allocateTo);
             }
 
+            if (data.loanFeedback) {
+                fd.append('feedback', data.loanFeedback);
+            }
+
+            if (data.remarks) {
+                fd.append('remarks', data.remarks);
+            }
+
+            if (data.bankerId) {
+                fd.append('bankerId', data.bankerId);
+            }
+
             const res = await mutateAsync({
                 leadId,
                 payload: fd
@@ -425,6 +444,10 @@ const EditBusinessLoanForm = () => {
                 setSelectedState(lead?.stateName);
             }
 
+            if (lead?.history) {
+                setHistory(lead.history);
+            }
+
             form.reset({
                 loanRequirementAmount: lead?.loanRequirementAmount?.toString() || '',
                 clientName: lead?.clientName || '',
@@ -476,7 +499,9 @@ const EditBusinessLoanForm = () => {
                 attachmentType: '',
                 uploadFile: null,
                 filePassword: '',
-                allocateTo: lead?.allocatedTo?._id || ""
+                allocateTo: lead?.allocatedTo?._id || "",
+                loanFeedback: lead?.loanFeedback ?? null,
+                remarks: lead?.remarks ?? null,
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -1149,8 +1174,17 @@ const EditBusinessLoanForm = () => {
 
                     <CommonLoanSections
                         form={form}
+                        isEdit={!!leadId}
                     />
 
+                    <HistoryTable
+                        data={history}
+                    />
+
+                    <LeadAllocationFeedback
+                        form={form}
+                        leadId={leadId}
+                    />
 
                     <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPDATE</Button>
 

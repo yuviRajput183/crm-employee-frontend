@@ -29,6 +29,8 @@ import { useLead } from '@/lib/hooks/useLead';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import usedCarLoan from '@/assets/images/usedCarLoan.jpg';
 import { apiFetchLeadDetails } from '@/services/lead.api';
+import HistoryTable from '@/components/shared/HistoryTable';
+import LeadAllocationFeedback from '@/components/shared/LeadAllocationFeedback';
 
 
 
@@ -155,7 +157,10 @@ const usedCarLoanSchema = z.object({
     attachmentType: z.string().optional(),
     uploadFile: z.any().optional(), // For file uploads, we use z.any() since File objects are complex
     filePassword: z.string().optional(),
-    allocateTo: z.string().optional()
+    allocateTo: z.string().optional(),
+    loanFeedback: z.string().optional(),
+    remarks: z.string().optional(),
+    bankerId: z.string().optional(),
 });
 
 
@@ -171,6 +176,7 @@ const EditUsedCarLoanForm = () => {
 
     const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
+    const [history, setHistory] = useState([]);
 
     // query to  fetch the lead detail on component mount
     const {
@@ -252,7 +258,9 @@ const EditUsedCarLoanForm = () => {
             attachmentType: '',
             uploadFile: null,
             filePassword: '',
-            allocateTo: ""
+            allocateTo: "",
+            loanFeedback: null,
+            remarks: '',
         },
     });
 
@@ -381,6 +389,18 @@ const EditUsedCarLoanForm = () => {
                 fd.append('allocatedTo', data.allocateTo);
             }
 
+            if (data.loanFeedback) {
+                fd.append('feedback', data.loanFeedback);
+            }
+
+            if (data.remarks) {
+                fd.append('remarks', data.remarks);
+            }
+
+            if (data.bankerId) {
+                fd.append('bankerId', data.bankerId);
+            }
+
             const res = await mutateAsync({
                 leadId,
                 payload: fd
@@ -434,6 +454,10 @@ const EditUsedCarLoanForm = () => {
             // Set selected state for cities dropdown
             if (lead?.stateName) {
                 setSelectedState(lead?.stateName);
+            }
+
+            if (lead?.history) {
+                setHistory(lead.history);
             }
 
             form.reset({
@@ -490,7 +514,9 @@ const EditUsedCarLoanForm = () => {
                 attachmentType: '',
                 uploadFile: null,
                 filePassword: '',
-                allocateTo: lead?.allocatedTo?._id || ""
+                allocateTo: lead?.allocatedTo?._id || "",
+                loanFeedback: lead?.loanFeedback ?? null,
+                remarks: lead?.remarks ?? null,
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -1158,8 +1184,17 @@ const EditUsedCarLoanForm = () => {
 
                     <CommonLoanSections
                         form={form}
+                        isEdit={!!leadId}
                     />
 
+                    <HistoryTable
+                        data={history}
+                    />
+
+                    <LeadAllocationFeedback
+                        form={form}
+                        leadId={leadId}
+                    />
 
                     <Button loading={isLoading} onClick={() => console.log("clicked")} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
 

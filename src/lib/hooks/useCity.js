@@ -1,4 +1,4 @@
-import { apiAddCity, apiUpdateCityName } from "@/services/city.api";
+import { apiAddCitiesFromExcel, apiAddCity, apiUpdateCityName } from "@/services/city.api";
 import { useMutation } from "@tanstack/react-query";
 
 export const useCity = () => {
@@ -13,6 +13,16 @@ export const useCity = () => {
         }
     });
 
+    const addCitiesFromExcel = useMutation({
+        mutationFn: apiAddCitiesFromExcel,
+        onSuccess: (res) => {
+            console.log("response of add city from excel api call>>", res);
+        },
+        onError: (err) => {
+            console.log("Error in add city from excel api call >>", err);
+        }
+    })
+
     const updateCityName = useMutation({
         mutationFn: apiUpdateCityName,
         onSuccess: (res) => {
@@ -24,5 +34,5 @@ export const useCity = () => {
     });
 
 
-    return { addCity, updateCityName }
+    return { addCity, updateCityName, addCitiesFromExcel }
 }

@@ -40,6 +40,8 @@ const attachmentTypeOptions = [
 
 const CommonLoanSections = ({ form, isEdit = false }) => {
 
+    console.log("isEdit>>>", isEdit);
+
     const [allocatedToUsers, setAllocatedToUsers] = useState([]);
 
     // query to  fetch all the allocated To users on component mount
@@ -74,9 +76,11 @@ const CommonLoanSections = ({ form, isEdit = false }) => {
             <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
                 <h1 className=' font-semibold'>Any Running Loan?</h1>
             </div>
-            {isListAllocatedToError && (
-                <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
-            )}
+            {
+                isListAllocatedToError && (
+                    <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
+                )
+            }
 
             <div className="w-full overflow-x-auto p-2 border border-gray-200 shadow rounded">
                 {/* === Running Loans Section (up to 4 loans) === */}
@@ -327,32 +331,34 @@ const CommonLoanSections = ({ form, isEdit = false }) => {
                 <Button type="submit" className="bg-blue-800 text-white h-10 mt-5 shadow">UPLOAD</Button>
             </div>
 
-            <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
-                <h1 className=' font-semibold'>Allocate To</h1>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 border border-gray-200 shadow mt-3 rounded">
-                <FormField
-                    control={form.control}
-                    name="allocateTo"
-                    render={({ field }) => (
-                        <FormItem className="col-span-1 mt-2">
-                            <FormControl>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {allocatedToUsers?.map((allocate) => (
-                                            <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormControl>
-                        </FormItem>
-                    )}
-                />
-            </div>
+            {!isEdit && <>
+                <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
+                    <h1 className=' font-semibold'>Allocate To</h1>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 border border-gray-200 shadow mt-3 rounded">
+                    <FormField
+                        control={form.control}
+                        name="allocateTo"
+                        render={({ field }) => (
+                            <FormItem className="col-span-1 mt-2">
+                                <FormControl>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {allocatedToUsers?.map((allocate) => (
+                                                <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                </div>
+            </>
+            }
         </>
     )
 }

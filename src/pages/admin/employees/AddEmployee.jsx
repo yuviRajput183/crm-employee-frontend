@@ -271,10 +271,6 @@ const AddEmployee = () => {
     });
 
 
-
-
-
-
     return (
         <div className='  px-6 py-3 bg-white rounded shadow'>
 
@@ -505,7 +501,7 @@ const AddEmployee = () => {
                         control={form.control}
                         name="photograph"
                         render={({ field }) => (
-                            <FormItem>
+                            <FormItem className=" flex flex-col">
                                 <FormLabel>Photograph</FormLabel>
                                 <FormControl>
                                     <div>
@@ -538,7 +534,7 @@ const AddEmployee = () => {
                             control={form.control}
                             name="resignDate"
                             render={({ field }) => (
-                                <FormItem className="flex flex-col  ">
+                                <FormItem className="flex flex-col">
                                     <FormLabel>Date of Resign</FormLabel>
                                     <FormControl><Input type="date" {...field} /></FormControl>
                                     <FormMessage />

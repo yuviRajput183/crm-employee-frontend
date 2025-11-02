@@ -22,6 +22,20 @@ export const apiAddCity = async (payload) => {
 }
 
 
+export const apiAddCitiesFromExcel = async (payload) => {
+    return await axios.post(
+        `${baseURL}/cities/add-cities-from-excel`,
+        payload,
+        {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
 export const apiListCity = async () => {
 
     return await axios.get(

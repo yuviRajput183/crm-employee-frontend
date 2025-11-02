@@ -84,7 +84,6 @@ const products = [
 const Dashboard = () => {
     return (
         <div className=' flex-1 p-2 '>
-
             <div className=' w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 shadow-md rounded-md'>
                 {leadStatusData.map((item, index) => (
                     <div key={index} className="p-3 flex flex-col gap-2">

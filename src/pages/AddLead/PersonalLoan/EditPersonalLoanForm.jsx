@@ -29,6 +29,8 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useLead } from '@/lib/hooks/useLead';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiFetchLeadDetails } from '@/services/lead.api';
+import HistoryTable from '@/components/shared/HistoryTable';
+import LeadAllocationFeedback from '@/components/shared/LeadAllocationFeedback';
 
 
 
@@ -146,7 +148,10 @@ const personalLoanSchema = z.object({
     attachmentType: z.string().optional(),
     uploadFile: z.any().optional(), // For file uploads, we use z.any() since File objects are complex
     filePassword: z.string().optional(),
-    allocateTo: z.string().optional()
+    allocateTo: z.string().optional(),
+    loanFeedback: z.string().optional(),
+    remarks: z.string().optional(),
+    bankerId: z.string().optional(),
 });
 
 
@@ -163,7 +168,7 @@ const EditPersonalLoanForm = () => {
 
     const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
-
+    const [history, setHistory] = useState([]);
 
 
     // query to  fetch the lead detail on component mount
@@ -243,7 +248,9 @@ const EditPersonalLoanForm = () => {
             attachmentType: '',
             uploadFile: null,
             filePassword: '',
-            allocateTo: ""
+            allocateTo: "",
+            loanFeedback: null,
+            remarks: '',
         },
     });
 
@@ -364,6 +371,18 @@ const EditPersonalLoanForm = () => {
                 fd.append('allocatedTo', data.allocateTo);
             }
 
+            if (data.loanFeedback) {
+                fd.append('feedback', data.loanFeedback);
+            }
+
+            if (data.remarks) {
+                fd.append('remarks', data.remarks);
+            }
+
+            if (data.bankerId) {
+                fd.append('bankerId', data.bankerId);
+            }
+
             const res = await mutateAsync({
                 leadId,
                 payload: fd
@@ -418,6 +437,10 @@ const EditPersonalLoanForm = () => {
                 setSelectedState(lead?.stateName);
             }
 
+            if (lead?.history) {
+                setHistory(lead.history);
+            }
+
             form.reset({
                 loanRequirementAmount: lead?.loanRequirementAmount?.toString() || '',
                 clientName: lead?.clientName || '',
@@ -449,7 +472,14 @@ const EditPersonalLoanForm = () => {
                 officialNumber: lead?.officialNumber || '',
                 dependents: lead?.noOfDependent?.toString() || '',
                 creditCardOutstanding: lead?.creditCardOutstandingAmount?.toString() || '',
-                runningLoans: lead?.runningLoans,
+                runningLoans: lead?.runningLoans?.length === 4
+                    ? lead.runningLoans
+                    : [
+                        { loanType: '', loanAmount: 0, bankName: '', emiAmount: 0, paidEmi: 0 },
+                        { loanType: '', loanAmount: 0, bankName: '', emiAmount: 0, paidEmi: 0 },
+                        { loanType: '', loanAmount: 0, bankName: '', emiAmount: 0, paidEmi: 0 },
+                        { loanType: '', loanAmount: 0, bankName: '', emiAmount: 0, paidEmi: 0 },
+                    ],
                 reference1: {
                     name: lead?.references[0]?.name || '',
                     mobile: lead?.references[0]?.mobileNo || '',
@@ -465,7 +495,9 @@ const EditPersonalLoanForm = () => {
                 attachmentType: '',
                 uploadFile: null,
                 filePassword: '',
-                allocateTo: lead?.allocatedTo?._id || ""
+                allocateTo: lead?.allocatedTo?._id || "",
+                loanFeedback: lead?.loanFeedback ?? null,
+                remarks: lead?.remarks ?? null,
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -493,6 +525,7 @@ const EditPersonalLoanForm = () => {
                 <h1 className=' text-2xl text-bold'>Personal Loan</h1>
             </div>
 
+
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(handlePersonalLoan)}
@@ -505,8 +538,6 @@ const EditPersonalLoanForm = () => {
                     {isError && (
                         <Alert variant="destructive">{getErrorMessage(error)}</Alert>
                     )}
-
-
 
                     <div className=' p-2 bg-[#FED8B1] rounded-md shadow'>
                         <h1 className=' font-semibold'>Client Details</h1>
@@ -1059,6 +1090,15 @@ const EditPersonalLoanForm = () => {
                     <CommonLoanSections
                         form={form}
                         isEdit={!!leadId}
+                    />
+
+                    <HistoryTable
+                        data={history}
+                    />
+
+                    <LeadAllocationFeedback
+                        form={form}
+                        leadId={leadId}
                     />
 
 

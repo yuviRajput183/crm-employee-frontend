@@ -28,6 +28,8 @@ import { useLead } from '@/lib/hooks/useLead';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import insurance from '@/assets/images/insurance.jpg';
+import HistoryTable from '@/components/shared/HistoryTable';
+import LeadAllocationFeedback from '@/components/shared/LeadAllocationFeedback';
 
 
 
@@ -87,7 +89,10 @@ const insuranceFormSchema = z.object({
         .refine(val => !val || /^[0-9]+$/.test(val), {
             message: "Income must be a number",
         }),
-    allocateTo: z.string().optional()
+    allocateTo: z.string().optional(),
+    loanFeedback: z.string().optional(),
+    remarks: z.string().optional(),
+    bankerId: z.string().optional(),
 });
 
 
@@ -98,6 +103,7 @@ const EditInsuranceForm = () => {
 
     const { id: leadId } = useParams();
     console.log("leadId>>", leadId);
+    const [history, setHistory] = useState([]);
 
     // query to  fetch the lead detail on component mount
     const {
@@ -147,7 +153,9 @@ const EditInsuranceForm = () => {
             nomineeName: "",
             relationWithNominee: "",
             monthlyIncome: "",
-            allocateTo: ""
+            allocateTo: "",
+            loanFeedback: null,
+            remarks: '',
         },
     });
 
@@ -194,6 +202,18 @@ const EditInsuranceForm = () => {
             // Allocated To
             if (data.allocateTo) {
                 fd.append('allocatedTo', data.allocateTo);
+            }
+
+            if (data.loanFeedback) {
+                fd.append('feedback', data.loanFeedback);
+            }
+
+            if (data.remarks) {
+                fd.append('remarks', data.remarks);
+            }
+
+            if (data.bankerId) {
+                fd.append('bankerId', data.bankerId);
             }
 
             const res = await mutateAsync({
@@ -273,6 +293,10 @@ const EditInsuranceForm = () => {
                 setSelectedState(lead?.stateName);
             }
 
+            if (lead?.history) {
+                setHistory(lead.history);
+            }
+
             form.reset({
                 insuranceType: lead?.insuranceType || '',
                 insuranceAmount: lead?.insuranceAmount?.toString() || '',
@@ -297,7 +321,9 @@ const EditInsuranceForm = () => {
                 relationWithNominee: lead?.relationWithNominee || '',
                 monthlyIncome: lead?.monthlyIncome?.toString() || '',
 
-                allocateTo: lead?.allocatedTo?._id || ""
+                allocateTo: lead?.allocatedTo?._id || "",
+                loanFeedback: lead?.loanFeedback ?? null,
+                remarks: lead?.remarks ?? null,
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -641,7 +667,7 @@ const EditInsuranceForm = () => {
                     </div>
 
 
-                    <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
+                    {/* <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
                         <h1 className=' font-semibold'>Allocate To</h1>
                     </div>
 
@@ -666,7 +692,16 @@ const EditInsuranceForm = () => {
                                 </FormItem>
                             )}
                         />
-                    </div>
+                    </div> */}
+
+                    <HistoryTable
+                        data={history}
+                    />
+
+                    <LeadAllocationFeedback
+                        form={form}
+                        leadId={leadId}
+                    />
 
                     <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPDATE</Button>
 

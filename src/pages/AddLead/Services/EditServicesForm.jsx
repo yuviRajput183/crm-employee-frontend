@@ -28,6 +28,8 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useLead } from '@/lib/hooks/useLead';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import services from '@/assets/images/services.png';
+import HistoryTable from '@/components/shared/HistoryTable';
+import LeadAllocationFeedback from '@/components/shared/LeadAllocationFeedback';
 
 
 
@@ -83,7 +85,10 @@ const servicesSchema = z.object({
         .refine(val => !val || /^[0-9]+$/.test(val), {
             message: "Income must be a number",
         }),
-    allocateTo: z.string().optional()
+    allocateTo: z.string().optional(),
+    loanFeedback: z.string().optional(),
+    remarks: z.string().optional(),
+    bankerId: z.string().optional(),
 });
 
 const EditServicesForm = () => {
@@ -116,6 +121,8 @@ const EditServicesForm = () => {
     const [selectedState, setSelectedState] = useState(null);
     const [allocatedToUsers, setAllocatedToUsers] = useState([]);
     const [cities, setCities] = useState([]);
+    const [history, setHistory] = useState([]);
+
 
     const navigate = useNavigate();
 
@@ -143,7 +150,9 @@ const EditServicesForm = () => {
             nomineeName: "",
             relationWithNominee: "",
             monthlyIncome: "",
-            allocateTo: ""
+            allocateTo: "",
+            loanFeedback: null,
+            remarks: '',
         },
     });
 
@@ -193,6 +202,18 @@ const EditServicesForm = () => {
             // Allocated To
             if (data.allocateTo) {
                 fd.append('allocatedTo', data.allocateTo);
+            }
+
+            if (data.loanFeedback) {
+                fd.append('feedback', data.loanFeedback);
+            }
+
+            if (data.remarks) {
+                fd.append('remarks', data.remarks);
+            }
+
+            if (data.bankerId) {
+                fd.append('bankerId', data.bankerId);
             }
 
             const res = await mutateAsync({
@@ -270,6 +291,11 @@ const EditServicesForm = () => {
                 setSelectedState(lead?.stateName);
             }
 
+            if (lead?.history) {
+                setHistory(lead.history);
+            }
+
+
             form.reset({
                 servicesType: lead?.servicesType || '',
                 description: lead?.description || '',
@@ -294,7 +320,9 @@ const EditServicesForm = () => {
                 relationWithNominee: lead?.relationWithNominee || '',
                 monthlyIncome: lead?.monthlyIncome?.toString() || '',
 
-                allocateTo: lead?.allocatedTo?._id || ""
+                allocateTo: lead?.allocatedTo?._id || "",
+                loanFeedback: lead?.loanFeedback ?? null,
+                remarks: lead?.remarks ?? null,
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -605,7 +633,7 @@ const EditServicesForm = () => {
 
                     </div>
 
-                    <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
+                    {/* <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
                         <h1 className=' font-semibold'>Allocate To</h1>
                     </div>
 
@@ -630,7 +658,16 @@ const EditServicesForm = () => {
                                 </FormItem>
                             )}
                         />
-                    </div>
+                    </div> */}
+
+                    <HistoryTable
+                        data={history}
+                    />
+
+                    <LeadAllocationFeedback
+                        form={form}
+                        leadId={leadId}
+                    />
 
                     <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
 

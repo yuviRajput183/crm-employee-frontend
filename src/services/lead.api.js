@@ -139,3 +139,70 @@ export const apiFetchLeadDetails = async (leadId) => {
         }
     );
 }
+
+
+export const apiBankerCitiesByStateName = async (payload) => {
+
+
+    return await axios.get(
+        `${baseURL}/leads/bankercities-by-state-name`,
+        {
+            params: payload,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+
+export const apiBanksByCity = async (payload) => {
+
+    console.log("payload >>>", payload);
+
+    return await axios.get(
+        `${baseURL}/leads/banks-by-cityId`,
+        {
+            params: payload,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+
+export const apiBankersByBank = async (payload) => {
+
+    return await axios.get(
+        `${baseURL}/leads/bankers-by-bankId`,
+        {
+            params: payload,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+
+export const apiBankerByBankerId = async (payload) => {
+
+    return await axios.get(
+        `${baseURL}/leads/banker-by-bankerId`,
+        {
+            params: payload,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
