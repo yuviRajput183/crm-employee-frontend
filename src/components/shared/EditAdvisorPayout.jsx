@@ -25,10 +25,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
-import { apiFetchInvoiceBankerDetails, apiFetchInvoiceDetails } from '@/services/invoices.api';
+import { apiFetchInvoiceBankerDetails } from '@/services/invoices.api';
 import { apiListProcessed } from '@/services/processed.api';
 import { useInvoice } from '@/lib/hooks/useInvoice';
 import { useNavigate, useParams } from 'react-router-dom';
+import { apiFetchPayoutDetails } from '@/services/payout.api';
 
 
 
@@ -70,8 +71,8 @@ const editInvoiceFormSchema = z.object({
 
 const EditInvoiceForm = () => {
 
-    const { id: invoiceId } = useParams();
-    console.log("invoiceId>>", invoiceId);
+    const { id: payoutId } = useParams();
+    console.log("payoutId>>", payoutId);
     const [leadId, setLeadId] = useState(null);
 
 
@@ -79,22 +80,21 @@ const EditInvoiceForm = () => {
 
     const navigate = useNavigate();
 
-    // query to  fetch the invoice detail on component mount
+    // query to  fetch the advisor payout detail on component mount
     const {
-        data: invoiceData,
-        // isLoading,
-        isError: isInvoiceDetailError,
-        error: invoiceDetailError,
+        data: payoutData,
+        isError: isAdvisorPayoutError,
+        error: advisorPayoutError,
     } = useQuery({
-        queryKey: [invoiceId],
-        queryFn: () => apiFetchInvoiceDetails(invoiceId),
-        enabled: !!invoiceId, // Only run if employeeId exists,
+        queryKey: [payoutId],
+        queryFn: () => apiFetchPayoutDetails(payoutId),
+        enabled: !!payoutId, // Only run if employeeId exists,
         refetchOnWindowFocus: false,
         onSuccess: (res) => {
-            console.log("fetched data of the invoice >>", res);
+            console.log("fetched data of the advisor payout >>", res);
         },
         onError: (err) => {
-            console.error("Error fetching invoice detail:", err);
+            console.error("Error fetching advisor payout:", err);
         }
     });
 
@@ -225,7 +225,7 @@ const EditInvoiceForm = () => {
                 }
             });
 
-            const res = await mutateAsync({ invoiceId, payload: formData });
+            const res = await mutateAsync({ payoutId, payload: formData });
             console.log("Invoice updated successfully ....");
 
             if (res?.data?.success) {
@@ -240,8 +240,8 @@ const EditInvoiceForm = () => {
 
     useEffect(() => {
 
-        if (invoiceData?.data) {
-            const invoice = invoiceData?.data?.data || {};
+        if (payoutData?.data) {
+            const invoice = payoutData?.data?.data || {};
             console.log("invoice>>", invoice);
 
             form.reset({
@@ -254,7 +254,7 @@ const EditInvoiceForm = () => {
                 processedById: processedByUsers.find(user => user?.processedBy === 'Hardik')?._id || '',
                 loanServiceType: invoice?.leadId?.productType || '',
                 customerName: invoice?.leadId?.clientName || '',
-                advisorName: invoice?.leadId?.advisorId?.name || '',
+                advisorName: invoice?.advisorId?.name || '',
                 payoutAmount: invoice?.payoutAmount?.toString() || '',
                 finalInvoice: invoice?.finalInvoice || false,
                 tdsPercentage: invoice?.tdsPercent?.toString() || '',
@@ -274,7 +274,7 @@ const EditInvoiceForm = () => {
 
             setLeadId(invoice.leadId?._id);
         }
-    }, [invoiceData, form]);
+    }, [payoutData, form]);
 
 
     useEffect(() => {
@@ -296,8 +296,8 @@ const EditInvoiceForm = () => {
     return (
         <div className=' p-3 bg-white rounded shadow'>
 
-            {isInvoiceDetailError && (
-                <Alert variant="destructive">{getErrorMessage(invoiceDetailError)}</Alert>
+            {isAdvisorPayoutError && (
+                <Alert variant="destructive">{getErrorMessage(advisorPayoutError)}</Alert>
             )}
             {isBankerDetailError && (
                 <Alert variant="destructive">{getErrorMessage(bankerDetailError)}</Alert>
@@ -309,7 +309,7 @@ const EditInvoiceForm = () => {
                         <AvatarImage src={money} />
                         <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
-                    <h1 className=' text-2xl text-bold'>Invoices</h1>
+                    <h1 className=' text-2xl text-bold'>Advisor Payout</h1>
                 </div>
             </div>
 
@@ -378,27 +378,14 @@ const EditInvoiceForm = () => {
                             )}
                         />
 
-                        {/* Invoice No */}
+                        {/* Disbursal Amount - Now comes from lead details */}
                         <FormField
                             control={form.control}
-                            name="invoiceNo"
+                            name="disbursalAmount"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Invoice No <span className="text-red-500">*</span></FormLabel>
-                                    <Input {...field} />
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* Invoice Date */}
-                        <FormField
-                            control={form.control}
-                            name="invoiceDate"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Invoice Date <span className="text-red-500">*</span></FormLabel>
-                                    <Input type="date" {...field} />
+                                    <FormLabel>Disbursal Amount <span className="text-red-500">*</span></FormLabel>
+                                    <Input {...field} readOnly className="bg-gray-50" />
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -412,38 +399,6 @@ const EditInvoiceForm = () => {
                                 <FormItem>
                                     <FormLabel>Disbursal Date <span className="text-red-500">*</span></FormLabel>
                                     <Input type="date" {...field} />
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* Is this final Invoice */}
-                        <FormField
-                            control={form.control}
-                            name="finalInvoice"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center space-x-2 space-y-0 mt-8">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <FormLabel className="text-sm font-normal">
-                                        Is this final Invoice
-                                    </FormLabel>
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* Disbursal Amount - Now comes from lead details */}
-                        <FormField
-                            control={form.control}
-                            name="disbursalAmount"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Disbursal Amount <span className="text-red-500">*</span></FormLabel>
-                                    <Input {...field} readOnly className="bg-gray-50" />
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -497,6 +452,56 @@ const EditInvoiceForm = () => {
                                 </FormItem>
                             )}
                         />
+
+
+                        {/* Invoice No */}
+                        <FormField
+                            control={form.control}
+                            name="invoiceNo"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Invoice No <span className="text-red-500">*</span></FormLabel>
+                                    <Input {...field} />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Invoice Date */}
+                        <FormField
+                            control={form.control}
+                            name="invoiceDate"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Invoice Date <span className="text-red-500">*</span></FormLabel>
+                                    <Input type="date" {...field} />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+
+
+                        {/* Is this final Invoice */}
+                        <FormField
+                            control={form.control}
+                            name="finalInvoice"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2 space-y-0 mt-8">
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal">
+                                        Is this final Invoice
+                                    </FormLabel>
+                                </FormItem>
+                            )}
+                        />
+
+
 
                         {/* GST % */}
                         <FormField

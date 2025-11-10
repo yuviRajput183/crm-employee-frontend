@@ -55,8 +55,9 @@ export const apiAddInvoice = async (payload) => {
 
 export const apiDeleteInvoice = async (id) => {
     return await axios.delete(
-        `${baseURL}/invoices/${id}`,
+        `${baseURL}/invoices/delete-invoice`,
         {
+            params: { id },
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
@@ -71,6 +72,19 @@ export const apiFetchInvoiceDetails = async (invoiceId) => {
 
     return await axios.get(
         `${baseURL}/invoices/${invoiceId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+export const apiFetchInvoiceBankerDetails = async (leadId) => {
+    return await axios.get(
+        `${baseURL}/leads/single-lead/${leadId}`,
         {
             headers: {
                 'Content-Type': 'application/json',

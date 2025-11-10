@@ -24,34 +24,6 @@ import { useInvoice } from '@/lib/hooks/useInvoice';
 import { useNavigate } from 'react-router-dom';
 
 
-const payoutData = [
-    {
-        label: "Gross Amount",
-        value: "39,13,093",
-        color: "bg-red-500",
-        iconColor: "text-red-500"
-    },
-    {
-        label: "Total Payout",
-        value: "38,40,072",
-        color: "bg-blue-500",
-        iconColor: "text-blue-500",
-    },
-    {
-        label: "TDS Amount",
-        value: "38,186",
-        color: "bg-teal-400",
-        iconColor: "text-teal-400"
-    },
-    {
-        label: "GST Amount",
-        value: "73,021",
-        color: "bg-amber-400",
-        iconColor: "text-amber-400"
-    },
-];
-
-
 const filterSchema = z.object({
     loanServiceType: z.string().optional(),
     advisorName: z.string().optional(),
@@ -67,6 +39,8 @@ const Invoices = () => {
     const [showAddInvoice, setShowAddInvoice] = useState(false);
     const [filterParams, setFilterParams] = useState({});
     const [leads, setLeads] = useState([]);
+    const [payoutData, setPayoutData] = useState([]);
+
 
     const navigate = useNavigate();
 
@@ -97,8 +71,38 @@ const Invoices = () => {
 
     // Update leads when query data changes
     useEffect(() => {
-        if (queryData?.data?.data?.length > 0) {
-            setLeads(queryData.data.data);
+        console.log("query data >>>", queryData);
+
+        if (queryData?.data?.data?.invoices?.length > 0) {
+            setLeads(queryData.data.data?.invoices);
+
+            const totals = queryData.data.data.totals || {};
+            setPayoutData([
+                {
+                    label: "Gross Amount",
+                    value: totals.grossAmount?.toLocaleString("en-IN") ?? "0",
+                    color: "bg-red-500",
+                    iconColor: "text-red-500"
+                },
+                {
+                    label: "Total Payout",
+                    value: totals.totalPayoutAmount?.toLocaleString("en-IN") ?? "0",
+                    color: "bg-blue-500",
+                    iconColor: "text-blue-500"
+                },
+                {
+                    label: "TDS Amount",
+                    value: totals.totalTdsAmount?.toLocaleString("en-IN") ?? "0",
+                    color: "bg-teal-400",
+                    iconColor: "text-teal-400"
+                },
+                {
+                    label: "GST Amount",
+                    value: totals.totalGstAmount?.toLocaleString("en-IN") ?? "0",
+                    color: "bg-amber-400",
+                    iconColor: "text-amber-400"
+                }
+            ]);
         } else if (queryData?.data?.data) {
             // Handle case where advisorPayouts might be empty or structured differently
             setLeads([]);
@@ -145,7 +149,6 @@ const Invoices = () => {
             }
         }
     };
-
 
 
     return (
@@ -252,7 +255,8 @@ const Invoices = () => {
                         </TableBody>
                     </Table>
                 </div>
-            </>}
+            </>
+            }
         </div>
     )
 }

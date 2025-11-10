@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import deletee from "@/assets/images/image.png"
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from "@/components/ui/button";
@@ -11,52 +11,68 @@ import {
     TableCell,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-
-
-
-const leadsData = [
-    {
-        srNo: 1,
-        leadNo: 647,
-        productType: "Loan Against Property",
-        advisor: "Sachin Soni",
-        amount: 698984,
-        leadDate: "02/07/2025",
-        customer: "Naman/Akil",
-        mobile: "9467222014",
-        allocatedTo: "Juhi",
-        feedback: "Allocated",
-    },
-    {
-        srNo: 2,
-        leadNo: 646,
-        productType: "Loan Against Property",
-        advisor: "Parul Gandhi",
-        amount: 3000000,
-        leadDate: "02/07/2025",
-        customer: "Naveen (Lucky)",
-        mobile: "9215200475",
-        allocatedTo: "Pankaj",
-        feedback: "Allocated",
-    },
-    {
-        srNo: 3,
-        leadNo: 645,
-        productType: "Insurance",
-        advisor: "Parul Gandhi",
-        amount: 60000,
-        leadDate: "01/07/2025",
-        customer: "Gourav",
-        mobile: "9999999999",
-        allocatedTo: "Juhi",
-        feedback: "Policy Issued",
-    },
-    // Add more rows as needed
-];
+import { useQuery } from '@tanstack/react-query';
+import { apiListAllLeads } from '@/services/attachments.api';
+import { Alert } from '../ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
 
 
 
 const DeleteAttachments = () => {
+
+    const [filterParams, setFilterParams] = useState({});
+    const [leads, setLeads] = useState([]);
+
+    // fetching all leads on component mount and on filtering
+    const {
+        isError: isLeadsError,
+        error: leadsError,
+        data: queryData,
+        // refetch
+    } = useQuery({
+        queryKey: ['advisor-payouts', filterParams], // Changed queryKey name for clarity
+        queryFn: async () => {
+            const res = await apiListAllLeads(filterParams);
+            console.log("📦 queryFn response of list invoices:", res);
+            return res;
+        },
+        enabled: true,
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching all leads :", err);
+        }
+    });
+
+    const handleFilter = async (values) => {
+        console.log("submitting values for filter in handle Filter>>", values);
+
+        const cleanParams = Object.fromEntries(
+            Object.entries(values).filter(([, val]) => val !== '' && val !== undefined)
+        );
+
+        // Only update filterParams - this will trigger the query automatically
+        setFilterParams(cleanParams);
+    }
+
+
+
+    // Update leads when query data changes
+    useEffect(() => {
+        console.log("query data >>>", queryData);
+
+        if (queryData?.data?.data?.leads?.length > 0) {
+            setLeads(queryData.data.data?.leads);
+        } else if (queryData?.data?.data) {
+            setLeads([]);
+        }
+    }, [queryData]);
+
+
+    console.log("all leads >>>", queryData);
+
     return (
         <div className=' p-3 bg-white rounded shadow'>
 
@@ -136,10 +152,15 @@ const DeleteAttachments = () => {
                 </div>
             </div>
 
+            {isLeadsError && (
+                <Alert variant="destructive">{getErrorMessage(leadsError)}</Alert>
+            )}
+
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
+
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-green-900 text-white">
+                        <TableRow className="bg-green-900 text-white hover:bg-green-900">
                             <TableHead className="text-white">Sr. No</TableHead>
                             <TableHead className="text-white">Lead No</TableHead>
                             <TableHead className="text-white">Product Type</TableHead>
@@ -154,21 +175,21 @@ const DeleteAttachments = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {leadsData.map((lead, index) => (
+                        {leads.map((lead, index) => (
                             <TableRow
                                 key={lead.leadNo}
                                 className={index % 2 === 0 ? "bg-gray-100" : ""}
                             >
-                                <TableCell>{lead.srNo}</TableCell>
-                                <TableCell>{lead.leadNo}</TableCell>
-                                <TableCell>{lead.productType}</TableCell>
-                                <TableCell>{lead.advisor}</TableCell>
-                                <TableCell>{lead.amount.toLocaleString()}</TableCell>
-                                <TableCell>{lead.leadDate}</TableCell>
-                                <TableCell>{lead.customer}</TableCell>
-                                <TableCell>{lead.mobile}</TableCell>
-                                <TableCell>{lead.allocatedTo}</TableCell>
-                                <TableCell>{lead.feedback}</TableCell>
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>{lead?.leadNo}</TableCell>
+                                <TableCell>{lead?.productType}</TableCell>
+                                <TableCell>{lead?.advisorId?.name}</TableCell>
+                                <TableCell>{lead?.amount?.toLocaleString()}</TableCell>
+                                <TableCell>{lead?.createdAt?.split('T')[0]}</TableCell>
+                                <TableCell>{lead?.clientName}</TableCell>
+                                <TableCell>{lead?.mobileNo}</TableCell>
+                                <TableCell>{lead?.allocatedTo?.name}</TableCell>
+                                <TableCell>{lead?.feedback}</TableCell>
                                 <TableCell>
                                     <Checkbox />
                                 </TableCell>
@@ -176,6 +197,10 @@ const DeleteAttachments = () => {
                         ))}
                     </TableBody>
                 </Table>
+            </div>
+
+            <div className="mt-4">
+                <Button className=" bg-blue-500 hover:bg-blue-500">Delete Attachments</Button>
             </div>
 
         </div>

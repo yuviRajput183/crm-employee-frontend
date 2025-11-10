@@ -162,6 +162,11 @@ export const adminRoutes = [
         component: lazy(() => import('@/components/shared/AdvisorPayout'))
     },
     {
+        path: "edit_advisor_payout/:id",
+        name: "Edit Advisor Payout",
+        component: lazy(() => import('@/components/shared/EditAdvisorPayout'))
+    },
+    {
         path: "invoices",
         name: "Invoices",
         component: lazy(() => import('@/components/shared/Invoices'))

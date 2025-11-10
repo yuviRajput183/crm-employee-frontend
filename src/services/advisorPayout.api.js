@@ -28,8 +28,9 @@ export const apiDeleteAdvisorPayout = async (id) => {
 
 
     return await axios.delete(
-        `${baseURL}/advisorPayouts/delete-advisor-payout/${id}`,
+        `${baseURL}/advisorPayouts/delete-advisor-payout`,
         {
+            data: { id },
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`

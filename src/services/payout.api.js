@@ -32,3 +32,18 @@ export const apiAddSliderImages = async (payload) => {
         }
     );
 }
+
+
+export const apiFetchPayoutDetails = async (payoutId) => {
+
+    return await axios.get(
+        `${baseURL}/advisorPayouts/single-advisor-payout/${payoutId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
