@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import money from "@/assets/images/money.png"
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
@@ -10,6 +10,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Alert } from '../ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { apiListPayables } from '@/services/payables.api';
 
 const receivables = [
     {
@@ -127,6 +132,39 @@ const receivables = [
 
 
 const Payables = () => {
+
+    const [showFilter, setShowFilter] = useState(false);
+    const [filterParams, setFilterParams] = useState({});
+    const [leads, setLeads] = useState([]);
+    // const [showAddAdvisorPayout, setShowAddAdvisorPayout] = useState(false);
+
+    const navigate = useNavigate();
+
+    // fetching new leads on component mount and on filtering
+    const {
+        isError: isNewLeadsError,
+        error: newLeadsError,
+        data: queryData,
+        refetch
+    } = useQuery({
+        queryKey: ['payables', filterParams], // Changed queryKey name for clarity
+        queryFn: async () => {
+            const res = await apiListPayables(filterParams);
+            console.log("📦 queryFn response of payables:", res);
+            return res;
+        },
+        enabled: true,
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching my list payables:", err);
+        }
+    });
+
+    console.log("payables data >>>", queryData);
+
     return (
         <div className=' p-3 bg-white rounded shadow'>
 
@@ -144,6 +182,12 @@ const Payables = () => {
                     <Button className=" bg-purple-950 px-10">Add +</Button>
                 </div>
             </div>
+
+
+            {isNewLeadsError && (
+                <Alert variant="destructive">{getErrorMessage(newLeadsError)}</Alert>
+            )}
+
 
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[80vh] overflow-y-auto">
                 <Table>

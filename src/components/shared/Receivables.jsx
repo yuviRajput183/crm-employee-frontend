@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import money from "@/assets/images/money.png"
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
@@ -10,124 +10,124 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { useQuery } from '@tanstack/react-query';
+import { apiListReceivables } from '@/services/receivables.api';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import AdvisorInvoicesFilter from './AdvisorInvoicesFilter';
+import { useReceivables } from '@/lib/hooks/useReceivables';
+import { Alert } from '../ui/alert';
 
-const receivables = [
-    {
-        leadNo: 622,
-        loanType: "Car Loan",
-        customer: "Tarun Kataria",
-        advisor: "Manoj Kumar",
-        paymentAgainst: "Receivable Amount",
-        receivedDate: "11/06/2025",
-        receivedAmt: 16229,
-        refNo: "",
-        remarks: "",
-    },
-    {
-        leadNo: 622,
-        loanType: "Car Loan",
-        customer: "Tarun Kataria",
-        advisor: "Manoj Kumar",
-        paymentAgainst: "GST Amount",
-        receivedDate: "11/06/2025",
-        receivedAmt: 2981,
-        refNo: "",
-        remarks: "",
-    },
-    {
-        leadNo: 618,
-        loanType: "Car Loan",
-        customer: "Sumit Rana",
-        advisor: "Hitesh Grover",
-        paymentAgainst: "Receivable Amount",
-        receivedDate: "11/06/2025",
-        receivedAmt: 15435,
-        refNo: "",
-        remarks: "",
-    },
-    {
-        leadNo: 618,
-        loanType: "Car Loan",
-        customer: "Sumit Rana",
-        advisor: "Hitesh Grover",
-        paymentAgainst: "GST Amount",
-        receivedDate: "11/06/2025",
-        receivedAmt: 2835,
-        refNo: "",
-        remarks: "",
-    },
-    {
-        leadNo: 607,
-        loanType: "Home Loan",
-        customer: "Gulshan",
-        advisor: "Sunder Singh",
-        paymentAgainst: "GST Amount",
-        receivedDate: "18/06/2025",
-        receivedAmt: 1507,
-        refNo: "",
-        remarks: "",
-    },
-    {
-        leadNo: 607,
-        loanType: "Home Loan",
-        customer: "Gulshan",
-        advisor: "Sunder Singh",
-        paymentAgainst: "Receivable Amount",
-        receivedDate: "07/06/2025",
-        receivedAmt: 8203,
-        refNo: "",
-        remarks: "",
-    },
-    {
-        leadNo: 606,
-        loanType: "Home Loan",
-        customer: "Anurag G",
-        advisor: "Sunder Singh",
-        paymentAgainst: "Receivable Amount",
-        receivedDate: "12/06/2025",
-        receivedAmt: 10143,
-        refNo: "ICIN216318395640",
-        remarks: "NEFT",
-    },
-    {
-        leadNo: 606,
-        loanType: "Home Loan",
-        customer: "Anurag G",
-        advisor: "Sunder Singh",
-        paymentAgainst: "GST Amount",
-        receivedDate: "18/06/2025",
-        receivedAmt: 1863,
-        refNo: "",
-        remarks: "",
-    },
-    {
-        leadNo: 605,
-        loanType: "Home Loan",
-        customer: "Aaditya V V",
-        advisor: "Sunder Singh",
-        paymentAgainst: "Receivable Amount",
-        receivedDate: "20/06/2025",
-        receivedAmt: 11378,
-        refNo: "",
-        remarks: "",
-    },
-    {
-        leadNo: 602,
-        loanType: "Home Loan",
-        customer: "Amit S/O Ved Parkash",
-        advisor: "Himanshu Sachdeva",
-        paymentAgainst: "Receivable Amount",
-        receivedDate: "26/03/2025",
-        receivedAmt: 58500,
-        refNo: "",
-        remarks: "",
-    },
-];
+
+
+const filterSchema = z.object({
+    loanServiceType: z.string().optional(),
+    advisorName: z.string().optional(),
+    clientName: z.string().optional(),
+    fromDate: z.string().optional(),
+    toDate: z.string().optional(),
+})
+
 
 
 const Receivables = () => {
+
+    const [showFilter, setShowFilter] = useState(false);
+    const [filterParams, setFilterParams] = useState({});
+    const [leads, setLeads] = useState([]);
+    const [showAddAdvisorPayout, setShowAddAdvisorPayout] = useState(false);
+
+    const navigate = useNavigate();
+
+    // fetching new leads on component mount and on filtering
+    const {
+        isError: isNewLeadsError,
+        error: newLeadsError,
+        data: queryData,
+        refetch
+    } = useQuery({
+        queryKey: ['advisor-payouts', filterParams], // Changed queryKey name for clarity
+        queryFn: async () => {
+            const res = await apiListReceivables(filterParams);
+            console.log("📦 queryFn response of list advisor payouts:", res);
+            return res;
+        },
+        enabled: true,
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching my list advisor payouts:", err);
+        }
+    });
+
+    console.log("receivbles data >>>", queryData);
+
+    useEffect(() => {
+        if (queryData?.data?.data?.receivables?.length > 0) {
+            setLeads(queryData.data.data.receivables);
+        } else if (queryData?.data?.data) {
+            setLeads([]);
+        }
+    }, [queryData]);
+
+    const form = useForm({
+        resolver: zodResolver(filterSchema),
+        defaultValues: {
+            loanServiceType: '', // Fixed: was 'productType', should match schema
+            advisorName: '',
+            clientName: '',
+            fromDate: '',
+            toDate: '',
+        },
+    })
+
+
+    const handleFilter = async (values) => {
+        console.log("submitting values for filter>>", values);
+
+        const cleanParams = Object.fromEntries(
+            Object.entries(values).filter(([, val]) => val !== '' && val !== undefined)
+        );
+
+
+        //  Convert loanServiceType to productType
+        const mappedParams = {
+            ...cleanParams,
+            ...(cleanParams.loanServiceType && { productType: cleanParams.loanServiceType })
+        };
+
+        // Remove loanServiceType so API only receives productType
+        delete mappedParams.loanServiceType;
+
+        setFilterParams(mappedParams);
+        setShowFilter(false);
+    };
+
+
+    const { deleteReceivables } = useReceivables();
+    const { mutateAsync, isLoading, isError, error } = deleteReceivables;
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Are you sure you want to delete this record?")) {
+
+            const res = await mutateAsync(id);
+
+            console.log("res>>", res);
+            if (res?.data?.success) {
+                refetch();
+            }
+        }
+    };
+
+
     return (
         <div className=' p-3 bg-white rounded shadow'>
+
 
             {/* Heading */}
             <div className=' flex justify-between items-center pb-2 border-b-2 '>
@@ -138,16 +138,28 @@ const Receivables = () => {
                     </Avatar>
                     <h1 className=' text-2xl text-bold'>Receivable Payout</h1>
                 </div>
-                <div className=' flex items-center gap-2'>
-                    <Button className=" bg-purple-950 px-10">Show Filter</Button>
-                    <Button className=" bg-purple-950 px-10">Add +</Button>
+                {!showAddAdvisorPayout && <div className=' flex items-center gap-2'>
+                    <Button className=" bg-purple-950 px-10" onClick={() => setShowFilter(!showFilter)}>{showFilter ? "Hide Filter" : "Show Filter"}</Button>
+                    <Button className=" bg-purple-950 px-10" onClick={() => setShowAddAdvisorPayout(!showAddAdvisorPayout)}>Add +</Button>
                 </div>
+                }
             </div>
+
+
+            {isNewLeadsError && (
+                <Alert variant="destructive">{getErrorMessage(newLeadsError)}</Alert>
+            )}
+            {isError && (
+                <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+            )}
+
+            {showFilter && <AdvisorInvoicesFilter form={form} handleFilter={handleFilter} showFilter={showFilter}></AdvisorInvoicesFilter>}
+
 
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-green-900 text-white">
+                        <TableRow className="bg-green-900 text-white hover:bg-green-900 cursor-pointer">
                             <TableHead className="text-white">Lead No</TableHead>
                             <TableHead className="text-white">Loan Type</TableHead>
                             <TableHead className="text-white">Customer Name</TableHead>
@@ -162,22 +174,38 @@ const Receivables = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {receivables.map((item, index) => (
-                            <TableRow key={`${item.leadNo}-${index}`} className={index % 2 === 0 ? "bg-gray-100" : ""}>
-                                <TableCell>{item.leadNo}</TableCell>
-                                <TableCell>{item.loanType}</TableCell>
-                                <TableCell>{item.customer}</TableCell>
-                                <TableCell>{item.advisor}</TableCell>
-                                <TableCell>{item.paymentAgainst}</TableCell>
-                                <TableCell>{item.receivedDate}</TableCell>
-                                <TableCell>{item.receivedAmt}</TableCell>
-                                <TableCell>{item.refNo || "-"}</TableCell>
-                                <TableCell>{item.remarks || "-"}</TableCell>
+                        {leads.map((item, index) => (
+                            <TableRow
+                                key={item?._id}
+                                className={index % 2 === 0 ? "bg-gray-100" : ""}
+                            >
+                                <TableCell>{item?.leadId?.leadNo}</TableCell>
+                                <TableCell>{item?.leadId?.productType}</TableCell>
+                                <TableCell>{item?.leadId?.clientName}</TableCell>
+                                <TableCell>{item?.leadId?.advisorId?.name}</TableCell>
+                                <TableCell>{item?.paymentAgainst}</TableCell>
+                                <TableCell>{item?.receivedDate?.split("T")[0]}</TableCell>
+                                <TableCell>{item?.receivedAmount}</TableCell>
+                                <TableCell>{item?.refNo || "-"}</TableCell>
+                                <TableCell>{item?.remarks || "-"}</TableCell>
+
                                 <TableCell>
-                                    <Button className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs">Edit</Button>
+                                    <Button
+                                        onClick={() => navigate(`/admin/edit_receivable/${item?._id}`)}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs"
+                                    >
+                                        Edit
+                                    </Button>
                                 </TableCell>
+
                                 <TableCell>
-                                    <Button className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs">Delete</Button>
+                                    <Button
+                                        isLoading={isLoading}
+                                        onClick={() => handleDelete(item?._id)}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
+                                    >
+                                        Delete
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}

@@ -25,7 +25,7 @@ import AddAdvisorPayout from './AddAdvisorPayout';
 
 
 const filterSchema = z.object({
-    productType: z.string().optional(),
+    loanServiceType: z.string().optional(),
     advisorName: z.string().optional(),
     clientName: z.string().optional(),
     fromDate: z.string().optional(),
@@ -69,6 +69,7 @@ const AdvisorPayout = () => {
 
     // Update leads when query data changes
     useEffect(() => {
+        console.log("inside use effect .....");
         if (queryData?.data?.data?.advisorPayouts?.length > 0) {
             setLeads(queryData.data.data.advisorPayouts);
 
@@ -112,7 +113,7 @@ const AdvisorPayout = () => {
     const form = useForm({
         resolver: zodResolver(filterSchema),
         defaultValues: {
-            productType: '', // Fixed: was 'productType', should match schema
+            loanServiceType: '', // Fixed: was 'productType', should match schema
             advisorName: '',
             clientName: '',
             fromDate: '',
@@ -227,9 +228,9 @@ const AdvisorPayout = () => {
                                 {leads.map((lead, index) => (
                                     <TableRow key={lead?._id} className={index % 2 === 0 ? "bg-gray-100" : ""}>
                                         <TableCell>{lead?.leadId?.leadNo}</TableCell>
-                                        <TableCell>{lead?.loanServiceType}</TableCell>
+                                        <TableCell>{lead?.leadId?.productType}</TableCell>
                                         <TableCell>{lead?.advisorId?.name}</TableCell>
-                                        <TableCell>{lead?.customerName}</TableCell>
+                                        <TableCell>{lead?.leadId?.clientName}</TableCell>
                                         <TableCell>{lead?.disbursalAmount}</TableCell>
                                         <TableCell>{lead?.disbursalDate?.split('T')[0]}</TableCell>
                                         <TableCell>{lead.payoutPercent}</TableCell>
