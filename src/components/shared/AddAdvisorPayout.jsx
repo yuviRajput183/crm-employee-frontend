@@ -26,30 +26,33 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 import { apiListLeadNo } from '@/services/invoices.api';
 import { apiListProcessed } from '@/services/processed.api';
 import { apiFetchLeadDetails } from '@/services/lead.api';
-import { useInvoice } from '@/lib/hooks/useInvoice';
+import { apiListAdvisor } from '@/services/advisor.api';
+import { useAdvisorPayout } from '@/lib/hooks/useAdvisorPayout';
 
 // Zod schema for disbursement form
 const addInvoiceFormSchema = z.object({
     // Required Fields
     leadId: z.string().min(1, "Lead No is required"),
-    invoiceNo: z.string().min(1, "Invoice No is required"),
     disbursalAmount: z.string().min(1, "Disbursal Amount is required"),
     payoutPercent: z.string().min(1, "Payout % is required"),
     disbursalDate: z.string().min(1, "Disbursal Date is required"),
-    invoiceDate: z.string().min(1, "Invoice Date is required"),
     processedById: z.string().min(1, "Processed By is required"),
 
-    // Optional Fields
+    // Optional Fields (invoiceNo and invoiceDate become optional based on GST)
+    invoiceNo: z.string().optional(),
+    invoiceDate: z.string().optional(),
     loanServiceType: z.string().optional(),
     customerName: z.string().optional(),
     advisorName: z.string().optional(),
+    advisorId: z.string().optional(),
     payoutAmount: z.string().optional(),
-    finalInvoice: z.boolean().optional(),
+    finalPayout: z.boolean().optional(),
+    gstApplicable: z.string().optional(),
     tdsPercentage: z.string().optional(),
     tdsAmount: z.string().optional(),
     gstPercentage: z.string().optional(),
     gstAmount: z.string().optional(),
-    netReceivableAmount: z.string().optional(),
+    netPayableAmount: z.string().optional(),
     remarks: z.string().optional(),
 
     // Banker Details
@@ -66,6 +69,7 @@ const AddAdvisorPayout = ({ onClose }) => {
     const [leads, setLeads] = useState([]);
     const [selectedLead, setSelectedLead] = useState(null);
     const [processedByUsers, setProcessedByUsers] = useState([]);
+    const [advisors, setAdvisors] = useState([]);
 
     const form = useForm({
         resolver: zodResolver(addInvoiceFormSchema),
@@ -80,13 +84,15 @@ const AddAdvisorPayout = ({ onClose }) => {
             loanServiceType: "",
             customerName: "",
             advisorName: "",
+            advisorId: "",
             payoutAmount: "",
-            finalInvoice: false,
+            finalPayout: false,
+            gstApplicable: "Applicable",
             tdsPercentage: "",
             tdsAmount: "",
             gstPercentage: "",
             gstAmount: "",
-            netReceivableAmount: "",
+            netPayableAmount: "",
             remarks: "",
             bankName: "",
             bankerName: "",
@@ -114,14 +120,14 @@ const AddAdvisorPayout = ({ onClose }) => {
         // Calculate GST Amount (on payout amount)
         const gstAmount = (payoutAmount * gstPercent) / 100;
 
-        // Calculate Net Receivable Amount = Payout Amount - TDS Amount + GST Amount
-        const netReceivableAmount = payoutAmount - tdsAmount + gstAmount;
+        // Calculate Net Payable Amount = Payout Amount - TDS Amount + GST Amount
+        const netPayableAmount = payoutAmount - tdsAmount + gstAmount;
 
         // Update form values
         form.setValue('payoutAmount', payoutAmount.toFixed(2));
         form.setValue('tdsAmount', tdsAmount.toFixed(2));
         form.setValue('gstAmount', gstAmount.toFixed(2));
-        form.setValue('netReceivableAmount', netReceivableAmount.toFixed(2));
+        form.setValue('netPayableAmount', netPayableAmount.toFixed(2));
     };
 
     // Watch for changes in calculation fields
@@ -129,6 +135,10 @@ const AddAdvisorPayout = ({ onClose }) => {
     const payout = form.watch('payoutPercent');
     const tdsPercentage = form.watch('tdsPercentage');
     const gstPercentage = form.watch('gstPercentage');
+    const gstApplicable = form.watch('gstApplicable');
+
+    // Check if GST is not applicable to disable fields
+    const isGstNotApplicable = gstApplicable === 'Not Applicable';
 
     useEffect(() => {
         calculateFields();
@@ -187,10 +197,23 @@ const AddAdvisorPayout = ({ onClose }) => {
         refetchOnWindowFocus: false,
     });
 
+    // Query to fetch advisors on component mount
+    const {
+        isError: isListAdvisorError,
+        error: listAdvisorError,
+    } = useQuery({
+        queryKey: ['advisors'],
+        queryFn: async () => {
+            const res = await apiListAdvisor();
+            console.log("📦 queryFn response of list advisor:", res);
+            setAdvisors(res?.data?.data?.advisors || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+    });
 
-
-    const { addInvoice } = useInvoice();
-    const { mutateAsync, isLoading, isError, error } = addInvoice;
+    const { addAdvisorPayout } = useAdvisorPayout();
+    const { mutateAsync, isLoading, isError, error } = addAdvisorPayout;
 
     const handleSubmit = async (data) => {
         console.log("Submitted values:", data);
@@ -201,7 +224,7 @@ const AddAdvisorPayout = ({ onClose }) => {
             // Append all form fields
             Object.keys(data).forEach(key => {
                 if (data[key] !== undefined && data[key] !== '') {
-                    if (key === 'finalInvoice') {
+                    if (key === 'finalPayout') {
                         formData.append(key, data[key] ? 'true' : 'false');
                     } else {
                         formData.append(key, data[key]);
@@ -210,7 +233,7 @@ const AddAdvisorPayout = ({ onClose }) => {
             });
 
             const res = await mutateAsync(formData);
-            console.log("New Invoice added successfully ....");
+            console.log("New Advisor Payout added successfully ....");
 
             if (res?.data?.success) {
                 onClose();
@@ -230,19 +253,18 @@ const AddAdvisorPayout = ({ onClose }) => {
             // Auto-fill form fields with lead data
             form.setValue('loanServiceType', lead?.productType || '');
             form.setValue('customerName', lead?.clientName || '');
-            form.setValue('advisorName', lead?.advisorId?.name || '');
-            form.setValue('finalInvoice', lead?.finalInvoice);
+            // form.setValue('advisorName', lead?.advisorId?.name || '');
+            form.setValue('finalPayout', lead?.finalPayout || false);
             form.setValue('disbursalAmount', lead?.disbursalAmount?.toString() || '');
 
             // Fill banker details (non-editable)
-            form.setValue('bankName', lead?.bankName || '');
-            form.setValue('bankerName', lead?.bankerName || '');
-            form.setValue('bankerDesignation', lead?.bankerDesignation || '');
-            form.setValue('bankerMobileNo', lead?.bankerMobileNo || '');
-            form.setValue('bankerEmailId', lead?.bankerEmailId || '');
-            form.setValue('stateName', lead?.stateName || '');
-            form.setValue('cityName', lead?.cityName || '');
-
+            form.setValue('bankName', lead?.bankerId?.bank?.name || '');
+            form.setValue('bankerName', lead?.bankerId?.bankerName || '');
+            form.setValue('bankerDesignation', lead?.bankerId?.designation || '');
+            form.setValue('bankerMobileNo', lead?.bankerId?.mobile || '');
+            form.setValue('bankerEmailId', lead?.bankerId?.email || '');
+            form.setValue('stateName', lead?.bankerId?.city?.stateName || '');
+            form.setValue('cityName', lead?.bankerId?.city?.cityName || '');
         }
     }, [leadData, form]);
 
@@ -262,6 +284,9 @@ const AddAdvisorPayout = ({ onClose }) => {
                 )}
                 {isProcessedByError && (
                     <Alert variant="destructive">{getErrorMessage(processedByError)}</Alert>
+                )}
+                {isListAdvisorError && (
+                    <Alert variant="destructive">{getErrorMessage(listAdvisorError)}</Alert>
                 )}
                 {isError && (
                     <Alert variant="destructive">{getErrorMessage(error)}</Alert>
@@ -333,7 +358,49 @@ const AddAdvisorPayout = ({ onClose }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Advisor Name</FormLabel>
-                                <Input {...field} readOnly className="bg-gray-50" />
+                                <Select
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        // Store the advisorId when an advisor is selected
+                                        form.setValue('advisorId', value);
+                                    }}
+                                    value={field.value}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Advisor" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {advisors.map((advisor) => (
+                                            <SelectItem key={advisor._id} value={advisor._id}>
+                                                {advisor?.name} - {advisor?.advisorCode}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Is GST Applicable */}
+                    <FormField
+                        control={form.control}
+                        name="gstApplicable"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Is GST Applicable?</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Applicable">Applicable</SelectItem>
+                                        <SelectItem value="Not Applicable">Not Applicable</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </FormItem>
                         )}
                     />
@@ -344,8 +411,12 @@ const AddAdvisorPayout = ({ onClose }) => {
                         name="invoiceNo"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Invoice No <span className="text-red-500">*</span></FormLabel>
-                                <Input {...field} />
+                                <FormLabel>Invoice No {!isGstNotApplicable && <span className="text-red-500">*</span>}</FormLabel>
+                                <Input
+                                    {...field}
+                                    readOnly={isGstNotApplicable}
+                                    className={isGstNotApplicable ? "bg-gray-50" : ""}
+                                />
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -357,8 +428,13 @@ const AddAdvisorPayout = ({ onClose }) => {
                         name="invoiceDate"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Invoice Date <span className="text-red-500">*</span></FormLabel>
-                                <Input type="date" {...field} />
+                                <FormLabel>Invoice Date {!isGstNotApplicable && <span className="text-red-500">*</span>}</FormLabel>
+                                <Input
+                                    type="date"
+                                    {...field}
+                                    readOnly={isGstNotApplicable}
+                                    className={isGstNotApplicable ? "bg-gray-50" : ""}
+                                />
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -377,10 +453,10 @@ const AddAdvisorPayout = ({ onClose }) => {
                         )}
                     />
 
-                    {/* Is this final Invoice */}
+                    {/* Is this final payout */}
                     <FormField
                         control={form.control}
-                        name="finalInvoice"
+                        name="finalPayout"
                         render={({ field }) => (
                             <FormItem className="flex items-center space-x-2 space-y-0 mt-8">
                                 <FormControl>
@@ -390,20 +466,20 @@ const AddAdvisorPayout = ({ onClose }) => {
                                     />
                                 </FormControl>
                                 <FormLabel className="text-sm font-normal">
-                                    Is this final Invoice
+                                    Is this final payout
                                 </FormLabel>
                             </FormItem>
                         )}
                     />
 
-                    {/* Disbursal Amount - Now comes from lead details */}
+                    {/* Disbursal Amount - Editable field for calculations */}
                     <FormField
                         control={form.control}
                         name="disbursalAmount"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Disbursal Amount <span className="text-red-500">*</span></FormLabel>
-                                <Input {...field} readOnly className="bg-gray-50" />
+                                <Input {...field} type="number" />
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -465,7 +541,11 @@ const AddAdvisorPayout = ({ onClose }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>GST %</FormLabel>
-                                <Input {...field} />
+                                <Input
+                                    {...field}
+                                    readOnly={isGstNotApplicable}
+                                    className={isGstNotApplicable ? "bg-gray-50" : ""}
+                                />
                             </FormItem>
                         )}
                     />
@@ -482,13 +562,13 @@ const AddAdvisorPayout = ({ onClose }) => {
                         )}
                     />
 
-                    {/* Net Receivable Amount - Non-editable, calculated */}
+                    {/* Net Payable Amount - Non-editable, calculated */}
                     <FormField
                         control={form.control}
-                        name="netReceivableAmount"
+                        name="netPayableAmount"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Net Receivable Amount</FormLabel>
+                                <FormLabel>Net Payable Amount</FormLabel>
                                 <Input {...field} readOnly className="bg-gray-50" />
                             </FormItem>
                         )}

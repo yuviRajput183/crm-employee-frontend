@@ -179,7 +179,7 @@ const AdvisorPayout = () => {
             )}
 
             {showAddAdvisorPayout ?
-                <AddAdvisorPayout /> :
+                <AddAdvisorPayout onClose={() => setShowAddAdvisorPayout(false)} /> :
                 <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-4">
                         {payoutData.map((item, index) => (

@@ -23,11 +23,26 @@ export const apiListPayables = async (params = {}) => {
 }
 
 
-export const apiDeleteReceivables = async (id) => {
+export const apiAddPayable = async (formData) => {
+    return await axios.post(
+        `${baseURL}/payables/add-payable`,
+        formData,
+        {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+export const apiDeletePayable = async (id) => {
 
 
     return await axios.delete(
-        `${baseURL}/receivables/delete-receivable`,
+        `${baseURL}/payables/delete-payable`,
         {
             data: { id },
             headers: {
@@ -39,3 +54,31 @@ export const apiDeleteReceivables = async (id) => {
     );
 }
 
+
+export const apiFetchPayableDetails = async (payableId) => {
+    return await axios.get(
+        `${baseURL}/payables/single-payable/${payableId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+export const apiUpdatePayable = async (payableId, payload) => {
+    return await axios.put(
+        `${baseURL}/payables/edit-payable/${payableId}`,
+        payload,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}

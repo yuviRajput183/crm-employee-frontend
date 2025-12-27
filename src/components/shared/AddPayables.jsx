@@ -19,37 +19,29 @@ import {
     SelectItem,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { apiListLeadNo } from '@/services/invoices.api';
-import { apiListProcessed } from '@/services/processed.api';
 import { apiFetchLeadDetails } from '@/services/lead.api';
-import { useInvoice } from '@/lib/hooks/useInvoice';
+import { apiListAdvisor } from '@/services/advisor.api';
+import { usePayables } from '@/lib/hooks/usePayables';
 
-// Zod schema for disbursement form
-const addInvoiceFormSchema = z.object({
+// Zod schema for payables form
+const addPayablesFormSchema = z.object({
     // Required Fields
     leadId: z.string().min(1, "Lead No is required"),
-    invoiceNo: z.string().min(1, "Invoice No is required"),
-    disbursalAmount: z.string().min(1, "Disbursal Amount is required"),
-    payoutPercent: z.string().min(1, "Payout % is required"),
-    disbursalDate: z.string().min(1, "Disbursal Date is required"),
-    invoiceDate: z.string().min(1, "Invoice Date is required"),
-    processedById: z.string().min(1, "Processed By is required"),
+    advisorId: z.string().min(1, "Advisor Name is required"),
+    paymentAgainst: z.string().min(1, "Payment Against is required"),
+    paidAmount: z.string().min(1, "Paid Amount is required"),
+    paidDate: z.string().min(1, "Paid Date is required"),
 
     // Optional Fields
     loanServiceType: z.string().optional(),
     customerName: z.string().optional(),
-    advisorName: z.string().optional(),
-    payoutAmount: z.string().optional(),
-    finalInvoice: z.boolean().optional(),
-    tdsPercentage: z.string().optional(),
-    tdsAmount: z.string().optional(),
-    gstPercentage: z.string().optional(),
-    gstAmount: z.string().optional(),
-    netReceivableAmount: z.string().optional(),
+    payableGstAmount: z.string().optional(),
+    balancePayableAmount: z.string().optional(),
+    refNo: z.string().optional(),
     remarks: z.string().optional(),
 
     // Banker Details
@@ -62,31 +54,32 @@ const addInvoiceFormSchema = z.object({
     cityName: z.string().optional(),
 });
 
-const AddInvoiceForm = ({ onClose }) => {
+const paymentAgainstOptions = [
+    { value: "payable_amount", label: "Payable Amount" },
+    { value: "gst_amount", label: "GST Amount" },
+    { value: "advance", label: "Advance" },
+    { value: "partial", label: "Partial Payment" },
+    { value: "full", label: "Full Payment" },
+];
+
+const AddPayables = ({ onClose }) => {
     const [leads, setLeads] = useState([]);
     const [selectedLead, setSelectedLead] = useState(null);
-    const [processedByUsers, setProcessedByUsers] = useState([]);
+    const [advisors, setAdvisors] = useState([]);
 
     const form = useForm({
-        resolver: zodResolver(addInvoiceFormSchema),
+        resolver: zodResolver(addPayablesFormSchema),
         defaultValues: {
             leadId: "",
-            invoiceNo: "",
-            disbursalAmount: "100",
-            payoutPercent: "",
-            disbursalDate: "",
-            invoiceDate: "",
-            processedById: "",
+            advisorId: "",
+            paymentAgainst: "",
+            paidAmount: "",
+            paidDate: "",
             loanServiceType: "",
             customerName: "",
-            advisorName: "",
-            payoutAmount: "",
-            finalInvoice: false,
-            tdsPercentage: "",
-            tdsAmount: "",
-            gstPercentage: "",
-            gstAmount: "",
-            netReceivableAmount: "",
+            payableGstAmount: "",
+            balancePayableAmount: "",
+            refNo: "",
             remarks: "",
             bankName: "",
             bankerName: "",
@@ -98,48 +91,12 @@ const AddInvoiceForm = ({ onClose }) => {
         },
     });
 
-    // Function to calculate all dependent fields
-    const calculateFields = () => {
-        const disbursalAmount = parseFloat(form.getValues('disbursalAmount')) || 0;
-        const payoutPercent = parseFloat(form.getValues('payoutPercent')) || 0;
-        const tdsPercent = parseFloat(form.getValues('tdsPercentage')) || 0;
-        const gstPercent = parseFloat(form.getValues('gstPercentage')) || 0;
-
-        // Calculate Payout Amount
-        const payoutAmount = (disbursalAmount * payoutPercent) / 100;
-
-        // Calculate TDS Amount (on payout amount)
-        const tdsAmount = (payoutAmount * tdsPercent) / 100;
-
-        // Calculate GST Amount (on payout amount)
-        const gstAmount = (payoutAmount * gstPercent) / 100;
-
-        // Calculate Net Receivable Amount = Payout Amount - TDS Amount + GST Amount
-        const netReceivableAmount = payoutAmount - tdsAmount + gstAmount;
-
-        // Update form values
-        form.setValue('payoutAmount', payoutAmount.toFixed(2));
-        form.setValue('tdsAmount', tdsAmount.toFixed(2));
-        form.setValue('gstAmount', gstAmount.toFixed(2));
-        form.setValue('netReceivableAmount', netReceivableAmount.toFixed(2));
-    };
-
-    // Watch for changes in calculation fields
-    const disbursalAmount = form.watch('disbursalAmount');
-    const payout = form.watch('payoutPercent');
-    const tdsPercentage = form.watch('tdsPercentage');
-    const gstPercentage = form.watch('gstPercentage');
-
-    useEffect(() => {
-        calculateFields();
-    }, [disbursalAmount, payout, tdsPercentage, gstPercentage]);
-
     // query to fetch all the lead no on component mount
     const {
         isError: isListLeadNoError,
         error: listLeadNoError,
     } = useQuery({
-        queryKey: [''],
+        queryKey: ['payables-lead-list'],
         queryFn: async () => {
             const res = await apiListLeadNo();
             console.log("📦 queryFn response of list lead no :", res);
@@ -155,6 +112,24 @@ const AddInvoiceForm = ({ onClose }) => {
         }
     });
 
+    // Query to fetch advisors list on component mount
+    const {
+        isError: isAdvisorsError,
+        error: advisorsError,
+    } = useQuery({
+        queryKey: ['payables-advisors-list'],
+        queryFn: async () => {
+            const res = await apiListAdvisor();
+            console.log("📦 queryFn response of list advisors:", res);
+            setAdvisors(res?.data?.data?.advisors || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onError: (err) => {
+            console.error("Error fetching advisors list:", err);
+        }
+    });
+
     // Query to fetch lead details when a lead is selected
     const {
         isLoading: isLeadDetailsLoading,
@@ -162,7 +137,7 @@ const AddInvoiceForm = ({ onClose }) => {
         error: leadDetailsError,
         data: leadData
     } = useQuery({
-        queryKey: ['leadDetails', selectedLead],
+        queryKey: ['payables-leadDetails', selectedLead],
         enabled: !!selectedLead,
         queryFn: async () => {
             const res = await apiFetchLeadDetails(selectedLead);
@@ -172,25 +147,8 @@ const AddInvoiceForm = ({ onClose }) => {
         refetchOnWindowFocus: false,
     });
 
-    // Query to fetch processed by users on component mount
-    const {
-        isError: isProcessedByError,
-        error: processedByError,
-    } = useQuery({
-        queryKey: ['processedByUsers'],
-        queryFn: async () => {
-            const res = await apiListProcessed();
-            console.log("📦 Processed by users response:", res);
-            setProcessedByUsers(res?.data?.data || []);
-            return res;
-        },
-        refetchOnWindowFocus: false,
-    });
-
-
-
-    const { addInvoice } = useInvoice();
-    const { mutateAsync, isLoading, isError, error } = addInvoice;
+    const { addPayable } = usePayables();
+    const { mutateAsync, isLoading, isError, error } = addPayable;
 
     const handleSubmit = async (data) => {
         console.log("Submitted values:", data);
@@ -201,16 +159,12 @@ const AddInvoiceForm = ({ onClose }) => {
             // Append all form fields
             Object.keys(data).forEach(key => {
                 if (data[key] !== undefined && data[key] !== '') {
-                    if (key === 'finalInvoice') {
-                        formData.append(key, data[key] ? 'true' : 'false');
-                    } else {
-                        formData.append(key, data[key]);
-                    }
+                    formData.append(key, data[key]);
                 }
             });
 
             const res = await mutateAsync(formData);
-            console.log("New Invoice added successfully ....");
+            console.log("New Payable added successfully ....");
 
             if (res?.data?.success) {
                 onClose();
@@ -220,9 +174,7 @@ const AddInvoiceForm = ({ onClose }) => {
         }
     };
 
-
     useEffect(() => {
-
         if (leadData?.data) {
             const lead = leadData?.data?.data || {};
             console.log("lead>>", lead);
@@ -230,9 +182,6 @@ const AddInvoiceForm = ({ onClose }) => {
             // Auto-fill form fields with lead data
             form.setValue('loanServiceType', lead?.productType || '');
             form.setValue('customerName', lead?.clientName || '');
-            form.setValue('advisorName', lead?.advisorId?.name || '');
-            form.setValue('finalInvoice', lead?.finalInvoice);
-            form.setValue('disbursalAmount', lead?.disbursalAmount?.toString() || '');
 
             // Fill banker details (non-editable)
             form.setValue('bankName', lead?.bankerId?.bank?.name || '');
@@ -242,7 +191,6 @@ const AddInvoiceForm = ({ onClose }) => {
             form.setValue('bankerEmailId', lead?.bankerId?.email || '');
             form.setValue('stateName', lead?.bankerId?.city?.stateName || '');
             form.setValue('cityName', lead?.bankerId?.city?.cityName || '');
-
         }
     }, [leadData, form]);
 
@@ -260,8 +208,8 @@ const AddInvoiceForm = ({ onClose }) => {
                 {isLeadDetailsError && (
                     <Alert variant="destructive">{getErrorMessage(leadDetailsError)}</Alert>
                 )}
-                {isProcessedByError && (
-                    <Alert variant="destructive">{getErrorMessage(processedByError)}</Alert>
+                {isAdvisorsError && (
+                    <Alert variant="destructive">{getErrorMessage(advisorsError)}</Alert>
                 )}
                 {isError && (
                     <Alert variant="destructive">{getErrorMessage(error)}</Alert>
@@ -329,178 +277,10 @@ const AddInvoiceForm = ({ onClose }) => {
                     {/* Advisor Name */}
                     <FormField
                         control={form.control}
-                        name="advisorName"
+                        name="advisorId"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Advisor Name</FormLabel>
-                                <Input {...field} readOnly className="bg-gray-50" />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Invoice No */}
-                    <FormField
-                        control={form.control}
-                        name="invoiceNo"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Invoice No <span className="text-red-500">*</span></FormLabel>
-                                <Input {...field} />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Invoice Date */}
-                    <FormField
-                        control={form.control}
-                        name="invoiceDate"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Invoice Date <span className="text-red-500">*</span></FormLabel>
-                                <Input type="date" {...field} />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Disbursal Date */}
-                    <FormField
-                        control={form.control}
-                        name="disbursalDate"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Disbursal Date <span className="text-red-500">*</span></FormLabel>
-                                <Input type="date" {...field} />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Is this final Invoice */}
-                    <FormField
-                        control={form.control}
-                        name="finalInvoice"
-                        render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2 space-y-0 mt-8">
-                                <FormControl>
-                                    <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                </FormControl>
-                                <FormLabel className="text-sm font-normal">
-                                    Is this final Invoice
-                                </FormLabel>
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Disbursal Amount - Now comes from lead details */}
-                    <FormField
-                        control={form.control}
-                        name="disbursalAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Disbursal Amount <span className="text-red-500">*</span></FormLabel>
-                                <Input {...field} className="" />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Payout % */}
-                    <FormField
-                        control={form.control}
-                        name="payoutPercent"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Payout % <span className="text-red-500">*</span></FormLabel>
-                                <Input {...field} />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Payout Amount - Non-editable, calculated */}
-                    <FormField
-                        control={form.control}
-                        name="payoutAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Payout Amount</FormLabel>
-                                <Input {...field} readOnly className="bg-gray-50" />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* TDS % */}
-                    <FormField
-                        control={form.control}
-                        name="tdsPercentage"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>TDS %</FormLabel>
-                                <Input {...field} />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* TDS Amount - Non-editable, calculated */}
-                    <FormField
-                        control={form.control}
-                        name="tdsAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>TDS Amount</FormLabel>
-                                <Input {...field} readOnly className="bg-gray-50" />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* GST % */}
-                    <FormField
-                        control={form.control}
-                        name="gstPercentage"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>GST %</FormLabel>
-                                <Input {...field} />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* GST Amount - Non-editable, calculated */}
-                    <FormField
-                        control={form.control}
-                        name="gstAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>GST Amount</FormLabel>
-                                <Input {...field} readOnly className="bg-gray-50" />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Net Receivable Amount - Non-editable, calculated */}
-                    <FormField
-                        control={form.control}
-                        name="netReceivableAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Net Receivable Amount</FormLabel>
-                                <Input {...field} readOnly className="bg-gray-50" />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Processed By */}
-                    <FormField
-                        control={form.control}
-                        name="processedById"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Processed By <span className="text-red-500">*</span></FormLabel>
+                                <FormLabel>Advisor Name <span className="text-red-500">*</span></FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
@@ -508,9 +288,9 @@ const AddInvoiceForm = ({ onClose }) => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {processedByUsers.map((user) => (
-                                            <SelectItem key={user._id} value={user?._id}>
-                                                {user?.processedBy}
+                                        {advisors.map((advisor) => (
+                                            <SelectItem key={advisor?._id} value={advisor?._id}>
+                                                {advisor?.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -520,12 +300,100 @@ const AddInvoiceForm = ({ onClose }) => {
                         )}
                     />
 
+                    {/* Payment Against */}
+                    <FormField
+                        control={form.control}
+                        name="paymentAgainst"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Payment Against <span className="text-red-500">*</span></FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {paymentAgainstOptions.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Payable/GST Amount */}
+                    <FormField
+                        control={form.control}
+                        name="payableGstAmount"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Payable/GST Amount</FormLabel>
+                                <Input {...field} className="bg-gray-50" readOnly />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Paid Amount */}
+                    <FormField
+                        control={form.control}
+                        name="paidAmount"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Paid Amount <span className="text-red-500">*</span></FormLabel>
+                                <Input {...field} />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Balance Payable Amount */}
+                    <FormField
+                        control={form.control}
+                        name="balancePayableAmount"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Balance Payable Amount</FormLabel>
+                                <Input {...field} className="bg-gray-50" readOnly />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Paid Date */}
+                    <FormField
+                        control={form.control}
+                        name="paidDate"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Paid Date <span className="text-red-500">*</span></FormLabel>
+                                <Input type="date" {...field} />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Ref. No (If Any) */}
+                    <FormField
+                        control={form.control}
+                        name="refNo"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Ref. No (If Any)</FormLabel>
+                                <Input {...field} />
+                            </FormItem>
+                        )}
+                    />
+
                     {/* Remarks */}
                     <FormField
                         control={form.control}
                         name="remarks"
                         render={({ field }) => (
-                            <FormItem className="">
+                            <FormItem className="sm:col-span-2">
                                 <FormLabel>Remarks</FormLabel>
                                 <FormControl>
                                     <textarea
@@ -654,4 +522,4 @@ const AddInvoiceForm = ({ onClose }) => {
     );
 };
 
-export default AddInvoiceForm;
+export default AddPayables;

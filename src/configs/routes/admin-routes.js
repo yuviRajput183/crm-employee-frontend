@@ -182,9 +182,19 @@ export const adminRoutes = [
         component: lazy(() => import('@/components/shared/Receivables'))
     },
     {
+        path: "edit_receivable/:id",
+        name: "Edit Receivable",
+        component: lazy(() => import('@/components/shared/EditReceivablesForm'))
+    },
+    {
         path: "payable_payout",
         name: "Payable Payout",
         component: lazy(() => import('@/components/shared/Payables'))
+    },
+    {
+        path: "edit_payable/:id",
+        name: "Edit Payable",
+        component: lazy(() => import('@/components/shared/EditPayablesForm'))
     },
     {
         path: "delete_attachments",

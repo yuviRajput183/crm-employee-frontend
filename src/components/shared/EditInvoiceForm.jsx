@@ -100,25 +100,25 @@ const EditInvoiceForm = () => {
 
 
     // query to fetch the banker details of the lead
-    const {
-        data: bankerData,
-        // isLoading,
-        isError: isBankerDetailError,
-        error: bankerDetailError,
-    } = useQuery({
-        queryKey: [leadId],
-        queryFn: () => apiFetchInvoiceBankerDetails(leadId),
-        enabled: !!leadId, // Only run if leadId exists,
-        refetchOnWindowFocus: false,
-        onSuccess: (res) => {
-            console.log("fetched banker data of the invoice >>", res);
-        },
-        onError: (err) => {
-            console.error("Error fetching banker data of the invoice detail:", err);
-        }
-    });
+    // const {
+    //     data: bankerData,
+    //     // isLoading,
+    //     isError: isBankerDetailError,
+    //     error: bankerDetailError,
+    // } = useQuery({
+    //     queryKey: [leadId],
+    //     queryFn: () => apiFetchInvoiceBankerDetails(leadId),
+    //     enabled: !!leadId, // Only run if leadId exists,
+    //     refetchOnWindowFocus: false,
+    //     onSuccess: (res) => {
+    //         console.log("fetched banker data of the invoice >>", res);
+    //     },
+    //     onError: (err) => {
+    //         console.error("Error fetching banker data of the invoice detail:", err);
+    //     }
+    // });
 
-    console.log("banker details data >>>", bankerData);
+    // console.log("banker details data >>>", bankerData);
 
     const form = useForm({
         resolver: zodResolver(editInvoiceFormSchema),
@@ -263,35 +263,37 @@ const EditInvoiceForm = () => {
                 gstAmount: invoice?.gstAmount?.toString() || '',
                 netReceivableAmount: invoice?.netReceivableAmount?.toString() || '',
                 remarks: invoice?.remarks || '',
-                bankName: invoice?.bankName || '',
-                bankerName: invoice?.bankerName || '',
-                bankerDesignation: invoice?.bankerDesignation || '',
-                bankerMobileNo: invoice?.bankerMobileNo || '',
-                bankerEmailId: invoice?.bankerEmailId || '',
-                stateName: invoice?.stateName || '',
-                cityName: invoice?.cityName || '',
-            })
+                bankName: invoice?.bankerDetails?.bank?.name || '',
+                bankerName: invoice?.bankerDetails?.bankerName || '',
+                bankerDesignation: invoice?.bankerDetails?.designation || '',
+                bankerMobileNo: invoice?.bankerDetails?.mobile || '',
+                bankerEmailId: invoice?.bankerDetails?.email || '',
+                stateName: invoice?.bankerDetails?.city?.stateName || '',
+                cityName: invoice?.bankerDetails?.city?.cityName || '',
+            });
+
 
             setLeadId(invoice.leadId?._id);
         }
     }, [invoiceData, form]);
 
 
-    useEffect(() => {
-        if (bankerData?.data) {
-            const b = bankerData.data.data.bankerId;
-            form.setValue('bankName', b?.bank?.name || '');
-            form.setValue('bankerName', b?.bankerName || '');
-            form.setValue('bankerDesignation', b?.designation || '');
-            form.setValue('bankerMobileNo', b?.mobile || '');
-            form.setValue('bankerEmailId', b?.email || '');
-            form.setValue('stateName', b?.city?.stateName || '');
-            form.setValue('cityName', b?.city?.cityName || '');
-        }
-    }, [bankerData, form]);
+    // useEffect(() => {
+    //     if (bankerData?.data?.data) {
+    //         const b = bankerData.data.data;
+
+    //         form.setValue('bankName', b?.bankerId?.bank?.name || '');
+    //         form.setValue('bankerName', b?.bankerId?.bankerName || '');
+    //         form.setValue('bankerDesignation', b?.bankerId?.designation || '');
+    //         form.setValue('bankerMobileNo', b?.bankerId?.mobile || '');
+    //         form.setValue('bankerEmailId', b?.bankerId?.email || '');
+    //         form.setValue('stateName', b?.bankerId?.city?.stateName || '');
+    //         form.setValue('cityName', b?.bankerId?.city?.cityName || '');
+    //     }
+    // }, [bankerData, form]);
 
 
-    console.log("form>>", form);
+
 
     return (
         <div className=' p-3 bg-white rounded shadow'>
@@ -299,9 +301,9 @@ const EditInvoiceForm = () => {
             {isInvoiceDetailError && (
                 <Alert variant="destructive">{getErrorMessage(invoiceDetailError)}</Alert>
             )}
-            {isBankerDetailError && (
+            {/* {isBankerDetailError && (
                 <Alert variant="destructive">{getErrorMessage(bankerDetailError)}</Alert>
-            )}
+            )} */}
             {/* Heading */}
             <div className=' flex justify-between items-center pb-2 border-b-2 '>
                 <div className=' flex items-center gap-2'>
@@ -443,7 +445,7 @@ const EditInvoiceForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Disbursal Amount <span className="text-red-500">*</span></FormLabel>
-                                    <Input {...field} readOnly className="bg-gray-50" />
+                                    <Input {...field} />
                                     <FormMessage />
                                 </FormItem>
                             )}

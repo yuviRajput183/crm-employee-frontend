@@ -20,6 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import AdvisorInvoicesFilter from './AdvisorInvoicesFilter';
 import { useReceivables } from '@/lib/hooks/useReceivables';
 import { Alert } from '../ui/alert';
+import AddReceivables from './AddReceivables';
 
 
 
@@ -153,66 +154,68 @@ const Receivables = () => {
                 <Alert variant="destructive">{getErrorMessage(error)}</Alert>
             )}
 
-            {showFilter && <AdvisorInvoicesFilter form={form} handleFilter={handleFilter} showFilter={showFilter}></AdvisorInvoicesFilter>}
+            {showAddAdvisorPayout ? <AddReceivables onClose={() => setShowAddAdvisorPayout(false)} /> : <>
+                {showFilter && <AdvisorInvoicesFilter form={form} handleFilter={handleFilter} showFilter={showFilter}></AdvisorInvoicesFilter>}
 
 
-            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-green-900 text-white hover:bg-green-900 cursor-pointer">
-                            <TableHead className="text-white">Lead No</TableHead>
-                            <TableHead className="text-white">Loan Type</TableHead>
-                            <TableHead className="text-white">Customer Name</TableHead>
-                            <TableHead className="text-white">Advisor Name</TableHead>
-                            <TableHead className="text-white">Payment Against</TableHead>
-                            <TableHead className="text-white">Received Date</TableHead>
-                            <TableHead className="text-white">Received Amt.</TableHead>
-                            <TableHead className="text-white">Ref. No</TableHead>
-                            <TableHead className="text-white">Remarks</TableHead>
-                            <TableHead className="text-white">Edit</TableHead>
-                            <TableHead className="text-white">Delete</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {leads.map((item, index) => (
-                            <TableRow
-                                key={item?._id}
-                                className={index % 2 === 0 ? "bg-gray-100" : ""}
-                            >
-                                <TableCell>{item?.leadId?.leadNo}</TableCell>
-                                <TableCell>{item?.leadId?.productType}</TableCell>
-                                <TableCell>{item?.leadId?.clientName}</TableCell>
-                                <TableCell>{item?.leadId?.advisorId?.name}</TableCell>
-                                <TableCell>{item?.paymentAgainst}</TableCell>
-                                <TableCell>{item?.receivedDate?.split("T")[0]}</TableCell>
-                                <TableCell>{item?.receivedAmount}</TableCell>
-                                <TableCell>{item?.refNo || "-"}</TableCell>
-                                <TableCell>{item?.remarks || "-"}</TableCell>
-
-                                <TableCell>
-                                    <Button
-                                        onClick={() => navigate(`/admin/edit_receivable/${item?._id}`)}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs"
-                                    >
-                                        Edit
-                                    </Button>
-                                </TableCell>
-
-                                <TableCell>
-                                    <Button
-                                        isLoading={isLoading}
-                                        onClick={() => handleDelete(item?._id)}
-                                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
-                                    >
-                                        Delete
-                                    </Button>
-                                </TableCell>
+                <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-green-900 text-white hover:bg-green-900 cursor-pointer">
+                                <TableHead className="text-white">Lead No</TableHead>
+                                <TableHead className="text-white">Loan Type</TableHead>
+                                <TableHead className="text-white">Customer Name</TableHead>
+                                <TableHead className="text-white">Advisor Name</TableHead>
+                                <TableHead className="text-white">Payment Against</TableHead>
+                                <TableHead className="text-white">Received Date</TableHead>
+                                <TableHead className="text-white">Received Amt.</TableHead>
+                                <TableHead className="text-white">Ref. No</TableHead>
+                                <TableHead className="text-white">Remarks</TableHead>
+                                <TableHead className="text-white">Edit</TableHead>
+                                <TableHead className="text-white">Delete</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+                        </TableHeader>
+                        <TableBody>
+                            {leads.map((item, index) => (
+                                <TableRow
+                                    key={item?._id}
+                                    className={index % 2 === 0 ? "bg-gray-100" : ""}
+                                >
+                                    <TableCell>{item?.leadId?.leadNo}</TableCell>
+                                    <TableCell>{item?.leadId?.productType}</TableCell>
+                                    <TableCell>{item?.leadId?.clientName}</TableCell>
+                                    <TableCell>{item?.leadId?.advisorId?.name}</TableCell>
+                                    <TableCell>{item?.paymentAgainst}</TableCell>
+                                    <TableCell>{item?.receivedDate?.split("T")[0]}</TableCell>
+                                    <TableCell>{item?.receivedAmount}</TableCell>
+                                    <TableCell>{item?.refNo || "-"}</TableCell>
+                                    <TableCell>{item?.remarks || "-"}</TableCell>
 
+                                    <TableCell>
+                                        <Button
+                                            onClick={() => navigate(`/admin/edit_receivable/${item?._id}`)}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs"
+                                        >
+                                            Edit
+                                        </Button>
+                                    </TableCell>
+
+                                    <TableCell>
+                                        <Button
+                                            isLoading={isLoading}
+                                            onClick={() => handleDelete(item?._id)}
+                                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
+                                        >
+                                            Delete
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </>
+            }
 
         </div>
     )

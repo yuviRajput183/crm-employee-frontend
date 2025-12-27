@@ -24,6 +24,35 @@ export const apiListAdvisorPayouts = async (params = {}) => {
 }
 
 
+export const apiAddAdvisorPayout = async (payload) => {
+    return await axios.post(
+        `${baseURL}/advisorPayouts/add`,
+        payload,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+export const apiUpdateAdvisorPayout = async ({ payoutId, payload }) => {
+
+    return await axios.put(
+        `${baseURL}/advisorPayouts/edit-advisor-payout/${payoutId}`,
+        payload,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
 export const apiDeleteAdvisorPayout = async (id) => {
 
 

@@ -23,6 +23,21 @@ export const apiListReceivables = async (params = {}) => {
 }
 
 
+export const apiAddReceivable = async (formData) => {
+    return await axios.post(
+        `${baseURL}/receivables/add-receivable`,
+        formData,
+        {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
 export const apiDeleteReceivables = async (id) => {
 
 
@@ -39,3 +54,45 @@ export const apiDeleteReceivables = async (id) => {
     );
 }
 
+
+export const apiFetchReceivableDetails = async (receivableId) => {
+    return await axios.get(
+        `${baseURL}/receivables/single-receivable/${receivableId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+export const apiFetchReceivableBankerDetails = async (leadId) => {
+    return await axios.get(
+        `${baseURL}/receivables/banker-details/${leadId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+export const apiUpdateReceivable = async (receivableId, payload) => {
+    return await axios.put(
+        `${baseURL}/receivables/edit-receivable/${receivableId}`,
+        payload,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
