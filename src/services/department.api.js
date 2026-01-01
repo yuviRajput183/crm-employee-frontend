@@ -2,10 +2,9 @@ import axios from "axios";
 
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const token = localStorage.getItem('token');
 
 export const apiGetAllDepartments = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/departments/list-departments`,
         {
@@ -20,6 +19,7 @@ export const apiGetAllDepartments = async () => {
 
 
 export const apiGetAllDesignationOfDepartment = async (departmentId) => {
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/departments/designations?departmentId=${departmentId}`,
         {
@@ -34,6 +34,7 @@ export const apiGetAllDesignationOfDepartment = async (departmentId) => {
 }
 
 export const apiAddDepartment = async (payload) => {
+    const token = localStorage.getItem('token');
     console.log("payload>>>", payload);
 
     return await axios.post(
@@ -50,7 +51,7 @@ export const apiAddDepartment = async (payload) => {
 }
 
 export const apiListDepartment = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/departments/list-departments`,
         {
@@ -64,6 +65,7 @@ export const apiListDepartment = async () => {
 }
 
 export const apiAddDesignation = async (payload) => {
+    const token = localStorage.getItem('token');
     console.log("payload>>>", payload);
 
     return await axios.post(
@@ -81,7 +83,7 @@ export const apiAddDesignation = async (payload) => {
 
 
 export const apiUpdateDepartment = async (payload) => {
-
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/departments/edit-department`,
         payload,
@@ -97,7 +99,7 @@ export const apiUpdateDepartment = async (payload) => {
 
 
 export const apiUpdateDesignation = async (payload) => {
-
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/departments/edit-designation`,
         payload,

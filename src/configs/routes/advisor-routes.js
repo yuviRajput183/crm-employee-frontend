@@ -19,7 +19,7 @@ export const advisorRoutes = [
     {
         path: "my_leads",
         name: "My Leads",
-        component: lazy(() => import('@/components/shared/MyLead'))
+        component: lazy(() => import('@/components/shared/AdvisorMyLead'))
     },
     {
         path: "my_payout",

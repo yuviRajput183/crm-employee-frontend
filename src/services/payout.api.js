@@ -1,10 +1,10 @@
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const token = localStorage.getItem('token');
 
 
 export const apiAddPayout = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/payouts/upload-payout`,
         payload,
@@ -20,6 +20,7 @@ export const apiAddPayout = async (payload) => {
 
 
 export const apiAddSliderImages = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/sliders/add-update-sliders`,
         payload,
@@ -35,7 +36,7 @@ export const apiAddSliderImages = async (payload) => {
 
 
 export const apiFetchPayoutDetails = async (payoutId) => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/advisorPayouts/single-advisor-payout/${payoutId}`,
         {

@@ -1,11 +1,11 @@
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const token = localStorage.getItem('token');
 
 
 
 export const apiListInvoices = async (params = {}) => {
+    const token = localStorage.getItem('token');
     console.log("api function with params:", params);
 
 
@@ -25,6 +25,7 @@ export const apiListInvoices = async (params = {}) => {
 
 
 export const apiListLeadNo = async () => {
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/invoices/disbursed-unpaid-leads`,
         {
@@ -39,6 +40,7 @@ export const apiListLeadNo = async () => {
 
 
 export const apiAddInvoice = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/invoices/add-invoice`,
         payload,
@@ -54,6 +56,7 @@ export const apiAddInvoice = async (payload) => {
 
 
 export const apiDeleteInvoice = async (id) => {
+    const token = localStorage.getItem('token');
     return await axios.delete(
         `${baseURL}/invoices/delete-invoice`,
         {
@@ -69,7 +72,7 @@ export const apiDeleteInvoice = async (id) => {
 
 
 export const apiFetchInvoiceDetails = async (invoiceId) => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/invoices/${invoiceId}`,
         {
@@ -83,6 +86,7 @@ export const apiFetchInvoiceDetails = async (invoiceId) => {
 }
 
 export const apiFetchInvoiceBankerDetails = async (leadId) => {
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/leads/single-lead/${leadId}`,
         {
@@ -97,11 +101,27 @@ export const apiFetchInvoiceBankerDetails = async (leadId) => {
 
 
 export const apiUpdateInvoice = async ({ invoiceId, payload }) => {
-
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/invoices/${invoiceId}`,
         payload,
         {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+
+export const apiGetMyPerformance = async (params = {}) => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/invoices/advisor-performance`,
+        {
+            params,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`

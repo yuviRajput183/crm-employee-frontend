@@ -1,10 +1,10 @@
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const token = localStorage.getItem('token');
 
 
 export const apiAddLead = async (payload) => {
+    const token = localStorage.getItem('token');
     console.log("payload in frontend>>", payload);
 
     return await axios.post(
@@ -22,7 +22,7 @@ export const apiAddLead = async (payload) => {
 
 
 export const apiUpdateLead = async ({ leadId, payload }) => {
-
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/leads/edit-lead/${leadId}`,
         payload,
@@ -38,6 +38,7 @@ export const apiUpdateLead = async ({ leadId, payload }) => {
 
 
 export const apiListAllocatedTo = async () => {
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/employees/non-admin-department`,
         {
@@ -53,6 +54,7 @@ export const apiListAllocatedTo = async () => {
 
 
 export const apiListMyLead = async (params = {}) => {
+    const token = localStorage.getItem('token');
     console.log("api function with params:", params);
 
 
@@ -73,6 +75,7 @@ export const apiListMyLead = async (params = {}) => {
 
 
 export const apiListNewLead = async (params = {}) => {
+    const token = localStorage.getItem('token');
     console.log("api function with params:", params);
 
 
@@ -92,7 +95,7 @@ export const apiListNewLead = async (params = {}) => {
 
 
 export const apiCustomerByAdvisorId = async (params = {}) => {
-
+    const token = localStorage.getItem('token');
 
     return await axios.get(
         `${baseURL}/leads/customers-by-advisorId`,
@@ -110,7 +113,7 @@ export const apiCustomerByAdvisorId = async (params = {}) => {
 
 
 export const apiEditLeadAdvisor = async ({ leadId, payload }) => {
-
+    const token = localStorage.getItem('token');
 
     return await axios.put(
         `${baseURL}/leads/edit-lead-advisor/${leadId}`,
@@ -127,7 +130,7 @@ export const apiEditLeadAdvisor = async ({ leadId, payload }) => {
 
 
 export const apiFetchLeadDetails = async (leadId) => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/leads/single-lead/${leadId}`,
         {
@@ -142,7 +145,7 @@ export const apiFetchLeadDetails = async (leadId) => {
 
 
 export const apiBankerCitiesByStateName = async (payload) => {
-
+    const token = localStorage.getItem('token');
 
     return await axios.get(
         `${baseURL}/leads/bankercities-by-state-name`,
@@ -159,7 +162,7 @@ export const apiBankerCitiesByStateName = async (payload) => {
 
 
 export const apiBanksByCity = async (payload) => {
-
+    const token = localStorage.getItem('token');
     console.log("payload >>>", payload);
 
     return await axios.get(
@@ -177,7 +180,7 @@ export const apiBanksByCity = async (payload) => {
 
 
 export const apiBankersByBank = async (payload) => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/leads/bankers-by-bankId`,
         {
@@ -193,7 +196,7 @@ export const apiBankersByBank = async (payload) => {
 
 
 export const apiBankerByBankerId = async (payload) => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/leads/banker-by-bankerId`,
         {
@@ -204,5 +207,23 @@ export const apiBankerByBankerId = async (payload) => {
             },
             withCredentials: true
         }
+    );
+}
+
+
+export const apiListAdvisorMyLead = async (params = {}) => {
+    const token = localStorage.getItem('token');
+    console.log("api function with params:", params);
+
+    return await axios.get(
+        `${baseURL}/leads/advisor-my-leads`,
+        {
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
     );
 }

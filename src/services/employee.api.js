@@ -1,11 +1,10 @@
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const token = localStorage.getItem('token');
 
 
 export const apiGetAllReportingOfficer = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/employees/reporting-officer`,
         {
@@ -20,6 +19,7 @@ export const apiGetAllReportingOfficer = async () => {
 
 
 export const apiAddEmployee = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/employees/add-employee`,
         payload,
@@ -34,7 +34,7 @@ export const apiAddEmployee = async (payload) => {
 }
 
 export const apiListEmployee = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/employees/list-employees`,
         {
@@ -48,7 +48,7 @@ export const apiListEmployee = async () => {
 }
 
 export const apiFetchEmployeeDetails = async (employeeId) => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/employees/employee-detail/${employeeId}`,
         {
@@ -62,6 +62,7 @@ export const apiFetchEmployeeDetails = async (employeeId) => {
 }
 
 export const apiUpdateEmployee = async ({ employeeId, payload }) => {
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/employees/edit-employee/${employeeId}`,
         payload,
@@ -76,7 +77,7 @@ export const apiUpdateEmployee = async ({ employeeId, payload }) => {
 }
 
 export const apiEmployeeWithoutCred = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/employees/no-credentials`,
         {
@@ -90,6 +91,7 @@ export const apiEmployeeWithoutCred = async () => {
 }
 
 export const apiSetEmployeeCredentials = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/users/set-employee-credentials`,
         payload,
@@ -104,7 +106,7 @@ export const apiSetEmployeeCredentials = async (payload) => {
 }
 
 export const apiListEmployeeLogin = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/users/employee-credentials`,
         {
@@ -119,7 +121,7 @@ export const apiListEmployeeLogin = async () => {
 
 
 export const apiUpdateEmployeeCredentials = async (payload) => {
-
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/users/update-login-credentials`,
         payload,
@@ -132,5 +134,3 @@ export const apiUpdateEmployeeCredentials = async (payload) => {
         }
     );
 }
-
-

@@ -1,11 +1,11 @@
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const token = localStorage.getItem('token');
 
 
 
 export const apiListAdvisorPayouts = async (params = {}) => {
+    const token = localStorage.getItem('token');
     console.log("api function with params:", params);
 
 
@@ -25,6 +25,7 @@ export const apiListAdvisorPayouts = async (params = {}) => {
 
 
 export const apiAddAdvisorPayout = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/advisorPayouts/add`,
         payload,
@@ -39,7 +40,7 @@ export const apiAddAdvisorPayout = async (payload) => {
 }
 
 export const apiUpdateAdvisorPayout = async ({ payoutId, payload }) => {
-
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/advisorPayouts/edit-advisor-payout/${payoutId}`,
         payload,
@@ -54,7 +55,7 @@ export const apiUpdateAdvisorPayout = async ({ payoutId, payload }) => {
 }
 
 export const apiDeleteAdvisorPayout = async (id) => {
-
+    const token = localStorage.getItem('token');
 
     return await axios.delete(
         `${baseURL}/advisorPayouts/delete-advisor-payout`,

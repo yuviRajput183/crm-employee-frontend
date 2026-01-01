@@ -1,10 +1,10 @@
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const token = localStorage.getItem('token');
 
 
 export const apiAddAdvisor = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/advisors/add-advisor`,
         payload,
@@ -19,6 +19,7 @@ export const apiAddAdvisor = async (payload) => {
 }
 
 export const apiListAdvisor = async () => {
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/advisors/all-advisors`,
         {
@@ -32,7 +33,7 @@ export const apiListAdvisor = async () => {
 }
 
 export const apiAdvisorWithoutCred = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/advisors/without-credentials`,
         {
@@ -46,6 +47,7 @@ export const apiAdvisorWithoutCred = async () => {
 }
 
 export const apiSetAdvisorCredentials = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/users/set-advisor-credentials`,
         payload,
@@ -60,7 +62,7 @@ export const apiSetAdvisorCredentials = async (payload) => {
 }
 
 export const apiListAdvisorLogin = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/users/advisor-credentials`,
         {
@@ -75,7 +77,7 @@ export const apiListAdvisorLogin = async () => {
 
 
 export const apiFetchAdvisorDetails = async (advisorId) => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/advisors/advisor-detail/${advisorId}`,
         {
@@ -90,6 +92,7 @@ export const apiFetchAdvisorDetails = async (advisorId) => {
 
 
 export const apiUpdateAdvisorDetails = async ({ formData, advisorId }) => {
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/advisors/edit-advisor/${advisorId}`,
         formData,
@@ -105,7 +108,7 @@ export const apiUpdateAdvisorDetails = async ({ formData, advisorId }) => {
 
 
 export const apiUpdateAdvisorCredentials = async (payload) => {
-
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/users/update-login-credentials`,
         payload,

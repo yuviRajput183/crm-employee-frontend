@@ -2,10 +2,10 @@ import axios from "axios";
 
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-const token = localStorage.getItem('token');
 
 
 export const apiAddCity = async (payload) => {
+    const token = localStorage.getItem('token');
     console.log("payload>>>", payload);
 
     return await axios.post(
@@ -23,6 +23,7 @@ export const apiAddCity = async (payload) => {
 
 
 export const apiAddCitiesFromExcel = async (payload) => {
+    const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/cities/add-cities-from-excel`,
         payload,
@@ -37,7 +38,7 @@ export const apiAddCitiesFromExcel = async (payload) => {
 }
 
 export const apiListCity = async () => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/cities/list-cities`,
         {
@@ -51,7 +52,7 @@ export const apiListCity = async () => {
 }
 
 export const apiGetCitiesByStateName = async (stateName) => {
-
+    const token = localStorage.getItem('token');
     return await axios.get(
         `${baseURL}/cities/cities-by-state-name?stateName=${stateName}`,
         {
@@ -65,7 +66,7 @@ export const apiGetCitiesByStateName = async (stateName) => {
 }
 
 export const apiUpdateCityName = async (payload) => {
-
+    const token = localStorage.getItem('token');
     return await axios.put(
         `${baseURL}/cities/edit-city`,
         payload,
