@@ -59,17 +59,37 @@ const filterSchema = z.object({
 })
 
 
-// mapping of product type -> edit path 
+// Helper function to get role-based path prefix
+const getRoleBasedPrefix = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        const role = profile?.role?.toLowerCase();
+
+        if (role === "employee") {
+            return "/employee";
+        } else if (role === "advisor") {
+            return "/advisor";
+        } else {
+            // Default to admin for admin users or if role is not recognized
+            return "/admin";
+        }
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return "/admin"; // Default fallback
+    }
+};
+
+// mapping of product type -> edit path (relative, without prefix)
 const editProductPathMap = {
-    "Personal Loan": "/admin/edit_personal_loan",
-    "Business Loan": "/admin/edit_business_loan",
-    "Home Loan": "/admin/edit_home_loan",
-    "Loan Against Property": "/admin/edit_loan_against_property",
-    "Car Loan": "/admin/edit_car_loan",
-    "Used Car Loan": "/admin/edit_used_car_loan",      // remaining
-    "Insurance": "/admin/edit_insurance",
-    "Services": "/admin/edit_services",
-    "Others": "/admin/edit_others"
+    "Personal Loan": "edit_personal_loan",
+    "Business Loan": "edit_business_loan",
+    "Home Loan": "edit_home_loan",
+    "Loan Against Property": "edit_loan_against_property",
+    "Car Loan": "edit_car_loan",
+    "Used Car Loan": "edit_used_car_loan",
+    "Insurance": "edit_insurance",
+    "Services": "edit_services",
+    "Others": "edit_others"
 }
 
 const MyLead = () => {
@@ -274,7 +294,7 @@ const MyLead = () => {
                                         <TableCell>{lead?.history[lead?.history?.length - 1].feedback}</TableCell>
                                         <TableCell>
                                             <Button
-                                                onClick={() => navigate(`${editProductPathMap[lead.productType]}/${lead?._id}`)}
+                                                onClick={() => navigate(`${getRoleBasedPrefix()}/${editProductPathMap[lead.productType]}/${lead?._id}`)}
                                                 variant="default"
                                                 size="sm"
                                                 className="bg-blue-600 hover:bg-blue-700 text-white"

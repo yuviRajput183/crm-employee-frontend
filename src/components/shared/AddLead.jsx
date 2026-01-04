@@ -15,22 +15,43 @@ import { useNavigate } from 'react-router-dom';
 
 
 const products = [
-    { name: 'Instant Loan', img: instantLoan, path: "/admin/instant_loan" },
-    { name: 'Personal Loan', img: personalLoan, path: "/admin/personal_loan" },
-    { name: 'Business Loan', img: businessLoan, path: "/admin/business_loan" },
-    { name: 'Home Loan', img: homeLoan, path: "/admin/home_loan" },
-    { name: 'Loan Against Property', img: loanAgainstProperty, path: "/admin/loan_against_property" },
-    { name: 'Car Loan', img: carLoan, path: "/admin/car_loan" },
-    { name: 'Used Car Loan', img: usedCarLoan, path: "/admin/used_car_loan" },
-    { name: 'Insurance', img: insurance, path: "/admin/insurance" },
-    { name: 'Services', img: services, path: "/admin/services" },
-    { name: 'Credit Card', img: creditCard, path: "/admin/credit_card" },
-    { name: 'Others', img: privateFunding, path: "/admin/others" },
+    { name: 'Instant Loan', img: instantLoan, path: "instant_loan" },
+    { name: 'Personal Loan', img: personalLoan, path: "personal_loan" },
+    { name: 'Business Loan', img: businessLoan, path: "business_loan" },
+    { name: 'Home Loan', img: homeLoan, path: "home_loan" },
+    { name: 'Loan Against Property', img: loanAgainstProperty, path: "loan_against_property" },
+    { name: 'Car Loan', img: carLoan, path: "car_loan" },
+    { name: 'Used Car Loan', img: usedCarLoan, path: "used_car_loan" },
+    { name: 'Insurance', img: insurance, path: "insurance" },
+    { name: 'Services', img: services, path: "services" },
+    { name: 'Credit Card', img: creditCard, path: "credit_card" },
+    { name: 'Others', img: privateFunding, path: "others" },
 ];
+
+// Helper function to get role-based path prefix
+const getRoleBasedPrefix = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        const role = profile?.role?.toLowerCase();
+
+        if (role === "employee") {
+            return "/employee";
+        } else if (role === "advisor") {
+            return "/advisor";
+        } else {
+            // Default to admin for admin users or if role is not recognized
+            return "/admin";
+        }
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return "/admin"; // Default fallback
+    }
+};
 
 const AddLead = () => {
 
     const navigate = useNavigate();
+    const rolePrefix = getRoleBasedPrefix();
 
 
     return (
@@ -49,7 +70,7 @@ const AddLead = () => {
             <div className="flex flex-col md:flex-row md:flex-wrap gap-4 mt-4">
                 {products.map((product, index) => (
                     <div
-                        onClick={() => navigate(product?.path)}
+                        onClick={() => navigate(`${rolePrefix}/${product?.path}`)}
                         key={index}
                         className="flex items-center justify-between border-2 border-indigo-300 rounded-md p-4 bg-white shadow-sm w-full md:w-[calc(33.33%-1rem)] min-w-[250px] hover:shadow-md transition-shadow cursor-pointer"
                     >

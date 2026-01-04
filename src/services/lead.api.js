@@ -21,6 +21,24 @@ export const apiAddLead = async (payload) => {
 }
 
 
+export const apiAddDraft = async (payload) => {
+    const token = localStorage.getItem('token');
+    console.log("draft payload in frontend>>", payload);
+
+    return await axios.post(
+        `${baseURL}/leads/add-draft`,
+        payload,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+
 export const apiUpdateLead = async ({ leadId, payload }) => {
     const token = localStorage.getItem('token');
     return await axios.put(
@@ -225,5 +243,38 @@ export const apiListAdvisorMyLead = async (params = {}) => {
             },
             withCredentials: true
         },
+    );
+}
+
+
+export const apiListAllDrafts = async (params = {}) => {
+    const token = localStorage.getItem('token');
+    console.log("api function for fetching drafts with params:", params);
+
+    return await axios.get(
+        `${baseURL}/leads/all-drafts`,
+        {
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+export const apiFetchDraftDetails = async (draftId) => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/leads/single-draft/${draftId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
     );
 }

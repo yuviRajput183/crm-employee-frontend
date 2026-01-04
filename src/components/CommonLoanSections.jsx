@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     Form,
     FormControl,
@@ -38,18 +38,52 @@ const attachmentTypeOptions = [
 ];
 
 
+// Helper function to check if logged-in user is an advisor
+const isAdvisorUser = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?.role?.toLowerCase() === "advisor";
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return false;
+    }
+};
+
+// Helper function to get logged-in user's ID
+const getLoggedInUserId = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?._id || profile?.id || null;
+    } catch (error) {
+        console.error("Error getting user ID from localStorage:", error);
+        return null;
+    }
+};
+
 const CommonLoanSections = ({ form, isEdit = false }) => {
 
     console.log("isEdit>>>", isEdit);
 
+    const isAdvisor = isAdvisorUser();
     const [allocatedToUsers, setAllocatedToUsers] = useState([]);
+
+    // Auto-set allocateTo for advisor users to their own ID
+    useEffect(() => {
+        if (isAdvisor) {
+            const userId = getLoggedInUserId();
+            if (userId) {
+                form.setValue('allocateTo', userId);
+            }
+        }
+    }, [isAdvisor, form]);
 
     // query to  fetch all the allocated To users on component mount
     const {
         isError: isListAllocatedToError,
         error: listAllocatedToError,
     } = useQuery({
-        queryKey: [''],
+        queryKey: ['allocatedToUsers'],
+        enabled: !isAdvisor, // Only fetch when user is not an advisor
         queryFn: async () => {
             const res = await apiListAllocatedTo();
             console.log("📦 queryFn response of list allocated To users:", res);
@@ -331,7 +365,7 @@ const CommonLoanSections = ({ form, isEdit = false }) => {
                 <Button type="submit" className="bg-blue-800 text-white h-10 mt-5 shadow">UPLOAD</Button>
             </div>
 
-            {!isEdit && <>
+            {!isEdit && !isAdvisor && <>
                 <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
                     <h1 className=' font-semibold'>Allocate To</h1>
                 </div>

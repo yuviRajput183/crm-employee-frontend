@@ -1,13 +1,26 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import usedCarLoan from '@/assets/images/usedCarLoan.jpg';
 import SelectAdvisorName from '@/components/SelectAdvisorName';
 import UsedCarLoanForm from './UsedCarLoanForm';
 
-
+// Helper function to get user role and profile
+const getUserProfile = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile;
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return null;
+    }
+};
 
 const UsedCarLoan = () => {
-    const [selectedAdvisor, setSelectedAdvisor] = useState('');
+    const profile = getUserProfile();
+    const isAdvisor = profile?.role?.toLowerCase() === "advisor";
+
+    // If user is advisor, use their profile as selectedAdvisor, otherwise start with empty
+    const [selectedAdvisor, setSelectedAdvisor] = useState(isAdvisor ? profile : '');
 
     console.log("selectedAdvisor>>", selectedAdvisor);
 

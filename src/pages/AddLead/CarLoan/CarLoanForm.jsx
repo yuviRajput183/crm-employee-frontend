@@ -27,6 +27,17 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useLead } from '@/lib/hooks/useLead';
 import { useNavigate } from 'react-router-dom';
 
+// Helper function to check if logged-in user is an advisor
+const isAdvisorUser = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?.role?.toLowerCase() === "advisor";
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return false;
+    }
+};
+
 
 
 const indianStates = [
@@ -225,8 +236,10 @@ const CarLoanForm = ({ selectedAdvisor }) => {
         },
     });
 
-    const { addLead } = useLead();
+    const { addLead, addDraft } = useLead();
     const { mutateAsync, isLoading, isError, error } = addLead;
+    const { mutateAsync: mutateAsyncDraft, isLoading: isDraftLoading, isError: isDraftError, error: draftError } = addDraft;
+    const isAdvisor = isAdvisorUser();
 
     const handleCarLoan = async (data) => {
         console.log("Submitted values>>", data);
@@ -363,6 +376,88 @@ const CarLoanForm = ({ selectedAdvisor }) => {
         }
     }
 
+    // Handle Save As Draft for advisors
+    const handleSaveAsDraft = async () => {
+        const formValues = form.getValues();
+
+        // Validate required fields for draft
+        if (!formValues.clientName || !formValues.mobileNo) {
+            alert('Client Name and Mobile No are required to save as draft.');
+            return;
+        }
+
+        try {
+            // Build draft payload with all filled values
+            const draftPayload = {
+                ...formValues,
+                productType: 'Car Loan'
+            };
+
+            // Process running loans - filter out empty ones and format properly
+            if (formValues.runningLoans) {
+                const validRunningLoans = formValues.runningLoans
+                    .filter(loan => loan.loanType || loan.loanAmount || loan.bankName || loan.emiAmount || loan.paidEmi)
+                    .map(loan => ({
+                        loanType: loan.loanType || '',
+                        loanAmount: loan.loanAmount ? Number(loan.loanAmount) : 0,
+                        bankName: loan.bankName || '',
+                        emiAmount: loan.emiAmount ? Number(loan.emiAmount) : 0,
+                        paidEmi: loan.paidEmi ? Number(loan.paidEmi) : 0
+                    }));
+
+                if (validRunningLoans.length > 0) {
+                    draftPayload.runningLoans = validRunningLoans;
+                } else {
+                    delete draftPayload.runningLoans;
+                }
+            }
+
+            // Process references - filter out empty ones and format properly
+            const validReferences = [];
+            if (formValues.reference1?.name || formValues.reference1?.mobile || formValues.reference1?.address || formValues.reference1?.relation) {
+                validReferences.push({
+                    name: formValues.reference1.name || '',
+                    mobileNo: formValues.reference1.mobile || '',
+                    address: formValues.reference1.address || '',
+                    relation: formValues.reference1.relation || ''
+                });
+            }
+            if (formValues.reference2?.name || formValues.reference2?.mobile || formValues.reference2?.address || formValues.reference2?.relation) {
+                validReferences.push({
+                    name: formValues.reference2.name || '',
+                    mobileNo: formValues.reference2.mobile || '',
+                    address: formValues.reference2.address || '',
+                    relation: formValues.reference2.relation || ''
+                });
+            }
+
+            if (validReferences.length > 0) {
+                draftPayload.references = validReferences;
+            }
+            // Remove reference1 and reference2 as they are now in references array
+            delete draftPayload.reference1;
+            delete draftPayload.reference2;
+
+            // Remove empty/undefined values
+            Object.keys(draftPayload).forEach(key => {
+                if (draftPayload[key] === '' || draftPayload[key] === undefined || draftPayload[key] === null) {
+                    delete draftPayload[key];
+                }
+            });
+
+            const res = await mutateAsyncDraft(draftPayload);
+            console.log('✅ Car Loan draft saved successfully:', res);
+
+            form.reset();
+            if (res?.data?.success) {
+                alert('Draft saved successfully!');
+                navigate("/advisor/my_leads");
+            }
+        } catch (error) {
+            console.error('handleSaveAsDraft error:', error);
+        }
+    };
+
 
     // Query: Fetch cities when state changes
     const {
@@ -399,6 +494,9 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                 )}
                 {isError && (
                     <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                )}
+                {isDraftError && (
+                    <Alert variant="destructive">{getErrorMessage(draftError)}</Alert>
                 )}
 
 
@@ -1011,7 +1109,23 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                 />
 
 
-                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                {isAdvisor ? (
+                    <div className="flex gap-4 mt-4">
+                        <Button loading={isLoading} type="submit" className="bg-blue-800 text-white">
+                            SEND TO LOAN SHAYAK
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleSaveAsDraft}
+                            loading={isDraftLoading}
+                            className="bg-gray-600 text-white hover:bg-gray-700"
+                        >
+                            SAVE AS DRAFT
+                        </Button>
+                    </div>
+                ) : (
+                    <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4">SAVE</Button>
+                )}
 
             </form>
         </Form>

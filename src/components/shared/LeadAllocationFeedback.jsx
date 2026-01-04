@@ -29,11 +29,22 @@ import BankerDetails from './BankerDetails';
 
 const feedbackOptions = ['Under Process', 'Docs Query', 'Loan Approved', 'Loan Disbursed', 'Loan Rejected'];
 
+// Helper function to get user role from localStorage
+const getUserRole = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?.role?.toLowerCase() || "";
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return "";
+    }
+};
 
 const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
 
     const [allocatedToUsers, setAllocatedToUsers] = useState([]);
     const [feedback, setFeedback] = useState(form.getValues('loanFeedback') || "");
+    const isAdmin = getUserRole() === "admin";
 
     // Watch for changes in loanFeedback to keep state in sync
     useEffect(() => {
@@ -48,18 +59,19 @@ const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
 
     console.log("form >>>", form);
 
-    // query to  fetch all the allocated To users on component mount
+    // query to fetch all the allocated To users on component mount - only for admin
     const {
         isError: isListAllocatedToError,
         error: listAllocatedToError,
     } = useQuery({
-        queryKey: [],
+        queryKey: ['allocatedToUsers'],
         queryFn: async () => {
             const res = await apiListAllocatedTo();
             console.log("📦 queryFn response of list allocated To users:", res);
             setAllocatedToUsers(res?.data?.data || []);
             return res;
         },
+        enabled: isAdmin, // Only fetch when user is admin
         refetchOnWindowFocus: false,
         onSuccess: (res) => {
             console.log("data >>", res);
@@ -79,38 +91,39 @@ const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
                 Lead Allocation & Feedback
             </div>
 
-            {
-                isListAllocatedToError && (
-                    <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
-                )
-            }
+            {/* Error alert - only show for admin */}
+            {isAdmin && isListAllocatedToError && (
+                <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
+            )}
 
-            {/* Reallocate To */}
-            <FormField
-                control={form.control}
-                name="allocateTo"
-                render={({ field }) => (
-                    <FormItem className="max-w-xl flex items-center justify-between gap-2">
-                        <FormLabel>Reallocate To (Optional)</FormLabel>
-                        <FormControl>
-                            <Select
-                                value={field.value}
-                                onValueChange={field.onChange}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select advisor" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {allocatedToUsers?.map((allocate) => (
-                                        <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
+            {/* Reallocate To - only visible for admin users */}
+            {isAdmin && (
+                <FormField
+                    control={form.control}
+                    name="allocateTo"
+                    render={({ field }) => (
+                        <FormItem className="max-w-xl flex items-center justify-between gap-2">
+                            <FormLabel>Reallocate To (Optional)</FormLabel>
+                            <FormControl>
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select advisor" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {allocatedToUsers?.map((allocate) => (
+                                            <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            )}
 
             {/* Loan Feedback */}
             <div className="mt-4">

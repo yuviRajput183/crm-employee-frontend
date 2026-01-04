@@ -1,4 +1,4 @@
-import { apiAddLead, apiEditLeadAdvisor, apiUpdateLead } from "@/services/lead.api";
+import { apiAddLead, apiAddDraft, apiEditLeadAdvisor, apiUpdateLead } from "@/services/lead.api";
 import { useMutation } from "@tanstack/react-query";
 
 export const useLead = () => {
@@ -10,6 +10,16 @@ export const useLead = () => {
         },
         onError: (err) => {
             console.log("Error in add Lead api call >>", err);
+        }
+    });
+
+    const addDraft = useMutation({
+        mutationFn: apiAddDraft,
+        onSuccess: (res) => {
+            console.log("response of add Draft api call>>", res);
+        },
+        onError: (err) => {
+            console.log("Error in add Draft api call >>", err);
         }
     });
 
@@ -33,5 +43,5 @@ export const useLead = () => {
         }
     });
 
-    return { addLead, updateLead, editLeadAdvisor }
+    return { addLead, addDraft, updateLead, editLeadAdvisor }
 }

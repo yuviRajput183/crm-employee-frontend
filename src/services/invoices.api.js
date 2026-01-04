@@ -130,3 +130,18 @@ export const apiGetMyPerformance = async (params = {}) => {
         }
     );
 }
+
+export const apiGetEmployeePerformance = async (params = {}) => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/invoices/employee-performance`,
+        {
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}

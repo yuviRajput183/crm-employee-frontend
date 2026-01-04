@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
@@ -26,6 +26,28 @@ import { apiGetCitiesByStateName } from '@/services/city.api';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useLead } from '@/lib/hooks/useLead';
+
+// Helper function to check if logged-in user is an advisor
+const isAdvisorUser = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?.role?.toLowerCase() === "advisor";
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return false;
+    }
+};
+
+// Helper function to get logged-in user ID
+const getLoggedInUserId = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?._id || null;
+    } catch (error) {
+        console.error("Error getting user ID from localStorage:", error);
+        return null;
+    }
+};
 
 
 const indianStates = [
@@ -119,11 +141,20 @@ const ServicesForm = ({ selectedAdvisor }) => {
     });
 
 
-    const { addLead } = useLead();
+    const { addLead, addDraft } = useLead();
     const { mutateAsync, isLoading, isError, error } = addLead;
+    const { mutateAsync: mutateAsyncDraft, isLoading: isDraftLoading, isError: isDraftError, error: draftError } = addDraft;
+    const isAdvisor = isAdvisorUser();
 
-
-
+    // Auto-set allocateTo for advisor users to their own ID
+    useEffect(() => {
+        if (isAdvisor) {
+            const userId = getLoggedInUserId();
+            if (userId) {
+                form.setValue('allocateTo', userId);
+            }
+        }
+    }, [isAdvisor, form]);
     const handleServices = async (data) => {
         console.log("Submitted values>>", data);
 
@@ -181,12 +212,50 @@ const ServicesForm = ({ selectedAdvisor }) => {
         }
     }
 
+    // Handle Save As Draft for advisors
+    const handleSaveAsDraft = async () => {
+        const formValues = form.getValues();
+
+        // Validate required fields for draft
+        if (!formValues.clientName || !formValues.mobileNo) {
+            alert('Client Name and Mobile No are required to save as draft.');
+            return;
+        }
+
+        try {
+            // Build draft payload with all filled values
+            const draftPayload = {
+                ...formValues,
+                productType: 'Services'
+            };
+
+            // Remove empty/undefined values
+            Object.keys(draftPayload).forEach(key => {
+                if (draftPayload[key] === '' || draftPayload[key] === undefined || draftPayload[key] === null) {
+                    delete draftPayload[key];
+                }
+            });
+
+            const res = await mutateAsyncDraft(draftPayload);
+            console.log('✅ Services draft saved successfully:', res);
+
+            form.reset();
+            if (res?.data?.success) {
+                alert('Draft saved successfully!');
+                navigate("/advisor/my_leads");
+            }
+        } catch (error) {
+            console.error('handleSaveAsDraft error:', error);
+        }
+    };
+
     // query to  fetch all the allocated To users on component mount
     const {
         isError: isListAllocatedToError,
         error: listAllocatedToError,
     } = useQuery({
-        queryKey: [''],
+        queryKey: ['allocatedToUsers'],
+        enabled: !isAdvisor, // Only fetch when user is not an advisor
         queryFn: async () => {
             const res = await apiListAllocatedTo();
             console.log("📦 queryFn response of list allocated To users:", res);
@@ -240,6 +309,9 @@ const ServicesForm = ({ selectedAdvisor }) => {
                 )}
                 {isError && (
                     <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                )}
+                {isDraftError && (
+                    <Alert variant="destructive">{getErrorMessage(draftError)}</Alert>
                 )}
 
                 <div className=' p-2 bg-[#FED8B1] rounded-md shadow'>
@@ -509,34 +581,55 @@ const ServicesForm = ({ selectedAdvisor }) => {
 
                 </div>
 
-                <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
-                    <h1 className=' font-semibold'>Allocate To</h1>
-                </div>
+                {/* Only show Allocate To section for non-advisors */}
+                {!isAdvisor && (
+                    <>
+                        <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
+                            <h1 className=' font-semibold'>Allocate To</h1>
+                        </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 border border-gray-200 shadow mt-3 rounded">
-                    <FormField
-                        control={form.control}
-                        name="allocateTo"
-                        render={({ field }) => (
-                            <FormItem className="col-span-1 mt-2">
-                                <FormControl>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {allocatedToUsers?.map((allocate) => (
-                                                <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormControl>
-                            </FormItem>
-                        )}
-                    />
-                </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2 border border-gray-200 shadow mt-3 rounded">
+                            <FormField
+                                control={form.control}
+                                name="allocateTo"
+                                render={({ field }) => (
+                                    <FormItem className="col-span-1 mt-2">
+                                        <FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {allocatedToUsers?.map((allocate) => (
+                                                        <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </>
+                )}
 
-                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                {isAdvisor ? (
+                    <div className="flex gap-4 mt-4">
+                        <Button loading={isLoading} type="submit" className="bg-blue-800 text-white">
+                            SEND TO LOAN SHAYAK
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleSaveAsDraft}
+                            loading={isDraftLoading}
+                            className="bg-gray-600 text-white hover:bg-gray-700"
+                        >
+                            SAVE AS DRAFT
+                        </Button>
+                    </div>
+                ) : (
+                    <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4">SAVE</Button>
+                )}
 
 
             </form>

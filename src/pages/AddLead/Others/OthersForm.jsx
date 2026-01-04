@@ -20,6 +20,21 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import CommonLoanSections from '@/components/CommonLoanSections';
+import { useNavigate } from 'react-router-dom';
+import { Alert } from '@/components/ui/alert';
+import { getErrorMessage } from '@/lib/helpers/get-message';
+import { useLead } from '@/lib/hooks/useLead';
+
+// Helper function to check if logged-in user is an advisor
+const isAdvisorUser = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?.role?.toLowerCase() === "advisor";
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return false;
+    }
+};
 
 
 const indianStates = [
@@ -134,9 +149,10 @@ const othersSchema = z.object({
     }),
 })
 
-const OthersForm = () => {
+const OthersForm = ({ selectedAdvisor }) => {
 
     const [cities, setCities] = useState([]);
+    const navigate = useNavigate();
 
     const form = useForm({
         resolver: zodResolver(othersSchema),
@@ -197,10 +213,197 @@ const OthersForm = () => {
     });
 
 
-    const handleOthers = async (values) => {
-        console.log("Submitted values>>", values);
+    const { addLead, addDraft } = useLead();
+    const { mutateAsync, isLoading, isError, error } = addLead;
+    const { mutateAsync: mutateAsyncDraft, isLoading: isDraftLoading, isError: isDraftError, error: draftError } = addDraft;
+    const isAdvisor = isAdvisorUser();
 
+    const handleOthers = async (data) => {
+        console.log("Submitted values>>", data);
+
+        try {
+            const fd = new FormData();
+
+            // Required fixed fields
+            fd.append('productType', 'Others');
+            fd.append('advisorId', selectedAdvisor);
+            fd.append('servicesType', data.servicesType);
+            fd.append('loanRequirementAmount', data.loanRequirementAmount);
+            fd.append('clientName', data.clientName);
+            fd.append('mobileNo', data.mobileNo);
+
+            // Optional personal info
+            if (data.emailId) fd.append('emailId', data.emailId);
+            if (data.dateOfBirth) fd.append('dob', data.dateOfBirth);
+            if (data.panNo) fd.append('panNo', data.panNo);
+            if (data.aadharNo) fd.append('aadharNo', data.aadharNo);
+            if (data.maritalStatus) fd.append('maritalStatus', data.maritalStatus);
+            if (data.spouseName) fd.append('spouseName', data.spouseName);
+            if (data.motherName) fd.append('motherName', data.motherName);
+            if (data.otherContactNo) fd.append('otherContactNo', data.otherContactNo);
+            if (data.qualification) fd.append('qualification', data.qualification);
+            if (data.residenceType) fd.append('residenceType', data.residenceType);
+            if (data.residentialAddress) fd.append('residentialAddress', data.residentialAddress);
+            if (data.residentialAddressTakenFrom) fd.append('residentialAddressTakenFrom', data.residentialAddressTakenFrom);
+            if (data.residenceStability) fd.append('residentialStability', data.residenceStability);
+            if (data.stateName) fd.append('stateName', data.stateName);
+            if (data.cityName) fd.append('cityName', data.cityName);
+            if (data.pinCode) fd.append('pinCode', data.pinCode);
+
+            // Employment info
+            if (data.employment) fd.append('employment', data.employment);
+            if (data.companyName) fd.append('companyName', data.companyName);
+            if (data.designation) fd.append('designation', data.designation);
+            if (data.companyAddress) fd.append('companyAddress', data.companyAddress);
+            if (data.netSalary) fd.append('netSalary', data.netSalary);
+            if (data.salaryTransferMode) fd.append('salaryTransferMode', data.salaryTransferMode);
+            if (data.jobPeriod) fd.append('jobPeriod', data.jobPeriod);
+            if (data.totalExperience) fd.append('totalJobExperience', data.totalExperience);
+            if (data.officialEmail) fd.append('officialEmailId', data.officialEmail);
+            if (data.officialNumber) fd.append('officialNumber', data.officialNumber);
+
+            if (data.carName) fd.append('carName', data.carName);
+            if (data.carExShowroomPrice) fd.append('carExShowroomPrice', data.carExShowroomPrice);
+            if (data.dependents) fd.append('noOfDependent', data.dependents);
+            if (data.creditCardOutstanding) fd.append('creditCardOutstandingAmount', data.creditCardOutstanding);
+
+            // Running loans as JSON string
+            const validRunningLoans = data.runningLoans
+                .filter(loan => loan.loanType || loan.loanAmount || loan.bankName || loan.emiAmount || loan.paidEmi)
+                .map(loan => ({
+                    loanType: loan.loanType || '',
+                    loanAmount: loan.loanAmount ? Number(loan.loanAmount) : 0,
+                    bankName: loan.bankName || '',
+                    emiAmount: loan.emiAmount ? Number(loan.emiAmount) : 0,
+                    paidEmi: loan.paidEmi ? Number(loan.paidEmi) : 0
+                }));
+
+            if (validRunningLoans.length > 0) {
+                fd.append('runningLoans', JSON.stringify(validRunningLoans));
+            }
+
+            // References as JSON string
+            const validReferences = [];
+            if (data.reference1?.name || data.reference1?.mobile || data.reference1?.address || data.reference1?.relation) {
+                validReferences.push({
+                    name: data.reference1.name || '',
+                    mobileNo: data.reference1.mobile || '',
+                    address: data.reference1.address || '',
+                    relation: data.reference1.relation || ''
+                });
+            }
+            if (data.reference2?.name || data.reference2?.mobile || data.reference2?.address || data.reference2?.relation) {
+                validReferences.push({
+                    name: data.reference2.name || '',
+                    mobileNo: data.reference2.mobile || '',
+                    address: data.reference2.address || '',
+                    relation: data.reference2.relation || ''
+                });
+            }
+
+            if (validReferences.length > 0) {
+                fd.append('references', JSON.stringify(validReferences));
+            }
+
+            // Allocated To
+            if (data.allocateTo) {
+                fd.append('allocatedTo', data.allocateTo);
+            }
+
+            const res = await mutateAsync(fd);
+            console.log('✅ Others lead added successfully:', res);
+
+            form.reset();
+            if (res?.data?.success) {
+                navigate("/admin/my_leads");
+            }
+
+        } catch (error) {
+            console.error('handleOthers error:', error);
+        }
     }
+
+    // Handle Save As Draft for advisors
+    const handleSaveAsDraft = async () => {
+        const formValues = form.getValues();
+
+        // Validate required fields for draft
+        if (!formValues.clientName || !formValues.mobileNo) {
+            alert('Client Name and Mobile No are required to save as draft.');
+            return;
+        }
+
+        try {
+            // Build draft payload with all filled values
+            const draftPayload = {
+                ...formValues,
+                productType: 'Others'
+            };
+
+            // Process running loans - filter out empty ones and format properly
+            if (formValues.runningLoans) {
+                const validRunningLoans = formValues.runningLoans
+                    .filter(loan => loan.loanType || loan.loanAmount || loan.bankName || loan.emiAmount || loan.paidEmi)
+                    .map(loan => ({
+                        loanType: loan.loanType || '',
+                        loanAmount: loan.loanAmount ? Number(loan.loanAmount) : 0,
+                        bankName: loan.bankName || '',
+                        emiAmount: loan.emiAmount ? Number(loan.emiAmount) : 0,
+                        paidEmi: loan.paidEmi ? Number(loan.paidEmi) : 0
+                    }));
+
+                if (validRunningLoans.length > 0) {
+                    draftPayload.runningLoans = validRunningLoans;
+                } else {
+                    delete draftPayload.runningLoans;
+                }
+            }
+
+            // Process references - filter out empty ones and format properly
+            const validReferences = [];
+            if (formValues.reference1?.name || formValues.reference1?.mobile || formValues.reference1?.address || formValues.reference1?.relation) {
+                validReferences.push({
+                    name: formValues.reference1.name || '',
+                    mobileNo: formValues.reference1.mobile || '',
+                    address: formValues.reference1.address || '',
+                    relation: formValues.reference1.relation || ''
+                });
+            }
+            if (formValues.reference2?.name || formValues.reference2?.mobile || formValues.reference2?.address || formValues.reference2?.relation) {
+                validReferences.push({
+                    name: formValues.reference2.name || '',
+                    mobileNo: formValues.reference2.mobile || '',
+                    address: formValues.reference2.address || '',
+                    relation: formValues.reference2.relation || ''
+                });
+            }
+
+            if (validReferences.length > 0) {
+                draftPayload.references = validReferences;
+            }
+            // Remove reference1 and reference2 as they are now in references array
+            delete draftPayload.reference1;
+            delete draftPayload.reference2;
+
+            // Remove empty/undefined values
+            Object.keys(draftPayload).forEach(key => {
+                if (draftPayload[key] === '' || draftPayload[key] === undefined || draftPayload[key] === null) {
+                    delete draftPayload[key];
+                }
+            });
+
+            const res = await mutateAsyncDraft(draftPayload);
+            console.log('✅ Others draft saved successfully:', res);
+
+            form.reset();
+            if (res?.data?.success) {
+                alert('Draft saved successfully!');
+                navigate("/advisor/my_leads");
+            }
+        } catch (error) {
+            console.error('handleSaveAsDraft error:', error);
+        }
+    };
 
 
     return (
@@ -209,6 +412,14 @@ const OthersForm = () => {
                 onSubmit={form.handleSubmit(handleOthers)}
                 className=" w-full mt-2 py-4 rounded-md"
             >
+
+
+                {isError && (
+                    <Alert variant="destructive">{getErrorMessage(error)}</Alert>
+                )}
+                {isDraftError && (
+                    <Alert variant="destructive">{getErrorMessage(draftError)}</Alert>
+                )}
 
 
                 <div className=' p-2 bg-[#FED8B1] rounded-md shadow'>
@@ -863,7 +1074,23 @@ const OthersForm = () => {
                 />
 
 
-                <Button type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                {isAdvisor ? (
+                    <div className="flex gap-4 mt-4">
+                        <Button loading={isLoading} type="submit" className="bg-blue-800 text-white">
+                            SEND TO LOAN SHAYAK
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleSaveAsDraft}
+                            loading={isDraftLoading}
+                            className="bg-gray-600 text-white hover:bg-gray-700"
+                        >
+                            SAVE AS DRAFT
+                        </Button>
+                    </div>
+                ) : (
+                    <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4">SAVE</Button>
+                )}
 
 
             </form>

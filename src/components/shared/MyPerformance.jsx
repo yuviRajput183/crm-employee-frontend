@@ -11,7 +11,7 @@ import {
     TableCell,
 } from "@/components/ui/table";
 import { useQuery } from '@tanstack/react-query';
-import { apiGetMyPerformance } from '@/services/invoices.api';
+import { apiGetMyPerformance, apiGetEmployeePerformance } from '@/services/invoices.api';
 import { Alert } from '../ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useForm } from 'react-hook-form';
@@ -27,11 +27,23 @@ const filterSchema = z.object({
     toDate: z.string().optional(),
 });
 
+// Helper function to get user role from localStorage
+const getUserRole = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?.role?.toLowerCase() || "";
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return "";
+    }
+};
+
 
 const MyPerformance = () => {
     const [performanceData, setPerformanceData] = useState([]);
     const [showFilter, setShowFilter] = useState(false);
     const [filterParams, setFilterParams] = useState({});
+    const userRole = getUserRole();
 
     const form = useForm({
         resolver: zodResolver(filterSchema),
@@ -43,16 +55,18 @@ const MyPerformance = () => {
         },
     });
 
-    // Fetch performance data from API
+    // Fetch performance data from API - use different endpoint based on role
     const {
         isLoading,
         isError,
         error,
         data: queryData,
     } = useQuery({
-        queryKey: ['my-performance', filterParams],
+        queryKey: ['my-performance', filterParams, userRole],
         queryFn: async () => {
-            const res = await apiGetMyPerformance(filterParams);
+            // Use employee-performance endpoint for employee role, advisor-performance for others
+            const apiFunction = userRole === "employee" ? apiGetEmployeePerformance : apiGetMyPerformance;
+            const res = await apiFunction(filterParams);
             console.log("📦 queryFn response of my performance:", res);
             return res;
         },

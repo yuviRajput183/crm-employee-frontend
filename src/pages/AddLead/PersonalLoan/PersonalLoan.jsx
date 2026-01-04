@@ -1,12 +1,26 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import personalLoan from '@/assets/images/personalLoan.jpg';
 import SelectAdvisorName from '@/components/SelectAdvisorName';
 import PersonalLoanForm from './PersonalLoanForm';
 
-const PersonalLoan = () => {
+// Helper function to get user role and profile
+const getUserProfile = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile;
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return null;
+    }
+};
 
-    const [selectedAdvisor, setSelectedAdvisor] = useState(null);
+const PersonalLoan = () => {
+    const profile = getUserProfile();
+    const isAdvisor = profile?.role?.toLowerCase() === "advisor";
+
+    // If user is advisor, use their profile as selectedAdvisor, otherwise start with null
+    const [selectedAdvisor, setSelectedAdvisor] = useState(isAdvisor ? profile : null);
 
 
 

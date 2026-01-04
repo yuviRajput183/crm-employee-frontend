@@ -69,3 +69,21 @@ export const apiDeleteAdvisorPayout = async (id) => {
         },
     );
 }
+
+
+export const apiMyAdvisorPayout = async (params = {}) => {
+    const token = localStorage.getItem('token');
+    console.log("api function for my advisor payout with params:", params);
+
+    return await axios.get(
+        `${baseURL}/payables/advisor-payout`,
+        {
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}

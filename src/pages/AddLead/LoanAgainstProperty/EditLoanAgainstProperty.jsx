@@ -25,8 +25,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useLead } from '@/lib/hooks/useLead';
-import { useNavigate, useParams } from 'react-router-dom';
-import { apiFetchLeadDetails } from '@/services/lead.api';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { apiFetchLeadDetails, apiFetchDraftDetails } from '@/services/lead.api';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import loanAgainstProperty from '@/assets/images/loanAgainstProperty.jpg';
 import HistoryTable from '@/components/shared/HistoryTable';
@@ -171,28 +171,30 @@ const EditLoanAgainstPropertyForm = () => {
     const [selectedAdvisor, setSelectedAdvisor] = useState(null);
 
     const { id: leadId } = useParams();
-    console.log("leadId>>", leadId);
+    const [searchParams] = useSearchParams();
+    const isDraft = searchParams.get('isDraft') === 'true';
+    console.log("leadId>>", leadId, "isDraft>>", isDraft);
 
     const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
     const [history, setHistory] = useState([]);
 
-    // query to  fetch the lead detail on component mount
+    // query to  fetch the lead/draft detail on component mount
     const {
         data: leadData,
         // isLoading,
         isError: isLeadDetailError,
         error: leadDetailError,
     } = useQuery({
-        queryKey: [leadId],
-        queryFn: () => apiFetchLeadDetails(leadId),
+        queryKey: [leadId, isDraft],
+        queryFn: () => isDraft ? apiFetchDraftDetails(leadId) : apiFetchLeadDetails(leadId),
         enabled: !!leadId, // Only run if employeeId exists,
         refetchOnWindowFocus: false,
         onSuccess: (res) => {
-            console.log("fetched data of the lead >>", res);
+            console.log("fetched data of the lead/draft >>", res);
         },
         onError: (err) => {
-            console.error("Error fetching lead detail:", err);
+            console.error("Error fetching lead/draft detail:", err);
         }
     });
 
@@ -1212,10 +1214,19 @@ const EditLoanAgainstPropertyForm = () => {
                         data={history}
                     />
 
-                    <LeadAllocationFeedback
-                        form={form}
-                        leadId={leadId}
-                    />
+                    {(() => {
+                        try {
+                            const profile = JSON.parse(localStorage.getItem("profile"));
+                            const role = profile?.role?.toLowerCase();
+                            if (role === "advisor") return null;
+                        } catch (e) { }
+                        return (
+                            <LeadAllocationFeedback
+                                form={form}
+                                leadId={leadId}
+                            />
+                        );
+                    })()}
 
 
                     <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>

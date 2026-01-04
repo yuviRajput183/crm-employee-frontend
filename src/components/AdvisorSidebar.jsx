@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 const sidebarMenuList = [
     { id: 1, title: "Dashboard", path: "/advisor/dashboard", icon: <Monitor /> },
     { id: 2, title: "Add Lead", path: "/advisor/add_lead", icon: <NotebookPen /> },
-    { id: 3, title: "Draft", path: "/advisor/dashboard", icon: <LayoutDashboard /> },
+    { id: 3, title: "Draft", path: "/advisor/drafts", icon: <LayoutDashboard /> },
     { id: 4, title: "My Lead", path: "/advisor/my_leads", icon: <ChartNoAxesCombined /> },
     { id: 5, title: "My Payout", path: "/advisor/my_payout", icon: <ChartNoAxesCombined /> },
     { id: 6, title: "Loan Documents List", path: "/advisor/loan_documents_list", icon: <ChartNoAxesCombined /> },
