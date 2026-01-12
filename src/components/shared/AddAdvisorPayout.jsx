@@ -23,7 +23,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
-import { apiListLeadNo } from '@/services/invoices.api';
+import { apiListAdvisorPayoutLeadNo } from '@/services/advisorPayout.api';
 import { apiListProcessed } from '@/services/processed.api';
 import { apiFetchLeadDetails } from '@/services/lead.api';
 import { apiListAdvisor } from '@/services/advisor.api';
@@ -47,7 +47,7 @@ const addInvoiceFormSchema = z.object({
     advisorId: z.string().optional(),
     payoutAmount: z.string().optional(),
     finalPayout: z.boolean().optional(),
-    gstApplicable: z.string().optional(),
+    gstApplicable: z.boolean().optional(),
     tdsPercentage: z.string().optional(),
     tdsAmount: z.string().optional(),
     gstPercentage: z.string().optional(),
@@ -87,7 +87,7 @@ const AddAdvisorPayout = ({ onClose }) => {
             advisorId: "",
             payoutAmount: "",
             finalPayout: false,
-            gstApplicable: "Applicable",
+            gstApplicable: true,
             tdsPercentage: "",
             tdsAmount: "",
             gstPercentage: "",
@@ -138,7 +138,7 @@ const AddAdvisorPayout = ({ onClose }) => {
     const gstApplicable = form.watch('gstApplicable');
 
     // Check if GST is not applicable to disable fields
-    const isGstNotApplicable = gstApplicable === 'Not Applicable';
+    const isGstNotApplicable = gstApplicable === false;
 
     useEffect(() => {
         calculateFields();
@@ -151,7 +151,7 @@ const AddAdvisorPayout = ({ onClose }) => {
     } = useQuery({
         queryKey: [''],
         queryFn: async () => {
-            const res = await apiListLeadNo();
+            const res = await apiListAdvisorPayoutLeadNo();
             console.log("📦 queryFn response of list lead no :", res);
             setLeads(res?.data?.data || []);
             return res;
@@ -224,7 +224,7 @@ const AddAdvisorPayout = ({ onClose }) => {
             // Append all form fields
             Object.keys(data).forEach(key => {
                 if (data[key] !== undefined && data[key] !== '') {
-                    if (key === 'finalPayout') {
+                    if (key === 'finalPayout' || key === 'gstApplicable') {
                         formData.append(key, data[key] ? 'true' : 'false');
                     } else {
                         formData.append(key, data[key]);
@@ -390,15 +390,18 @@ const AddAdvisorPayout = ({ onClose }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Is GST Applicable?</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select
+                                    value={field.value ? "true" : "false"}
+                                    onValueChange={(value) => field.onChange(value === "true")}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="Applicable">Applicable</SelectItem>
-                                        <SelectItem value="Not Applicable">Not Applicable</SelectItem>
+                                        <SelectItem value="true">Applicable</SelectItem>
+                                        <SelectItem value="false">Not Applicable</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormItem>

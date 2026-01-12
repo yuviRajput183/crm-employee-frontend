@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
     Form,
     FormControl,
@@ -60,12 +60,68 @@ const getLoggedInUserId = () => {
     }
 };
 
-const CommonLoanSections = ({ form, isEdit = false }) => {
+const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange }) => {
 
     console.log("isEdit>>>", isEdit);
 
     const isAdvisor = isAdvisorUser();
     const [allocatedToUsers, setAllocatedToUsers] = useState([]);
+    const [uploadedDocuments, setUploadedDocuments] = useState([]);
+    const fileInputRef = useRef(null);
+
+    // Notify parent component when documents change
+    useEffect(() => {
+        if (onDocumentsChange) {
+            onDocumentsChange(uploadedDocuments);
+        }
+    }, [uploadedDocuments, onDocumentsChange]);
+
+    // Handle adding a document to the list
+    const handleAddDocument = () => {
+        const attachmentType = form.getValues('attachmentType');
+        const uploadFile = form.getValues('uploadFile');
+        const filePassword = form.getValues('filePassword');
+
+        if (!attachmentType) {
+            alert('Please select an attachment type');
+            return;
+        }
+        if (!uploadFile) {
+            alert('Please select a file to upload');
+            return;
+        }
+
+        const newDocument = {
+            id: Date.now(), // Unique identifier
+            attachmentType,
+            file: uploadFile,
+            password: filePassword || '',
+            fileName: uploadFile.name
+        };
+
+        setUploadedDocuments(prev => [...prev, newDocument]);
+
+        // Clear the form fields
+        form.setValue('attachmentType', '');
+        form.setValue('uploadFile', null);
+        form.setValue('filePassword', '');
+
+        // Reset the file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    // Handle viewing a document
+    const handleViewDocument = (doc) => {
+        const url = URL.createObjectURL(doc.file);
+        window.open(url, '_blank');
+    };
+
+    // Handle deleting a document from the list
+    const handleDeleteDocument = (docId) => {
+        setUploadedDocuments(prev => prev.filter(doc => doc.id !== docId));
+    };
 
     // Auto-set allocateTo for advisor users to their own ID
     useEffect(() => {
@@ -319,7 +375,7 @@ const CommonLoanSections = ({ form, isEdit = false }) => {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Attachment Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select" />
@@ -343,7 +399,11 @@ const CommonLoanSections = ({ form, isEdit = false }) => {
                         <FormItem>
                             <FormLabel>File Upload</FormLabel>
                             <FormControl>
-                                <Input type="file" onChange={(e) => field.onChange(e.target.files?.[0])} />
+                                <Input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={(e) => field.onChange(e.target.files?.[0])}
+                                />
                             </FormControl>
                         </FormItem>
                     )}
@@ -362,8 +422,56 @@ const CommonLoanSections = ({ form, isEdit = false }) => {
                     )}
                 />
 
-                <Button type="submit" className="bg-blue-800 text-white h-10 mt-5 shadow">UPLOAD</Button>
+                <Button
+                    type="button"
+                    onClick={handleAddDocument}
+                    className="bg-blue-800 text-white h-10 mt-5 shadow"
+                >
+                    UPLOAD
+                </Button>
             </div>
+
+            {/* Uploaded Documents Table */}
+            {uploadedDocuments.length > 0 && (
+                <div className="mt-3 border border-gray-200 shadow rounded overflow-hidden">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="bg-[#67C8FF]">
+                                <th className="text-left p-2 text-white font-semibold">Attachment Type</th>
+                                <th className="text-left p-2 text-white font-semibold">Password (If Any)</th>
+                                <th className="text-center p-2 text-white font-semibold">View</th>
+                                <th className="text-center p-2 text-white font-semibold">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {uploadedDocuments.map((doc) => (
+                                <tr key={doc.id} className="border-b border-gray-200">
+                                    <td className="p-2">{doc.attachmentType}</td>
+                                    <td className="p-2">{doc.password || '-'}</td>
+                                    <td className="p-2 text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleViewDocument(doc)}
+                                            className="text-blue-600 hover:underline"
+                                        >
+                                            View
+                                        </button>
+                                    </td>
+                                    <td className="p-2 text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteDocument(doc.id)}
+                                            className="text-red-500 hover:text-red-700 font-bold text-lg"
+                                        >
+                                            ×
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {!isEdit && !isAdvisor && <>
                 <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>

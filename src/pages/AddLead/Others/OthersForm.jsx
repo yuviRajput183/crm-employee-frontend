@@ -152,6 +152,7 @@ const othersSchema = z.object({
 const OthersForm = ({ selectedAdvisor }) => {
 
     const [cities, setCities] = useState([]);
+    const [uploadedDocuments, setUploadedDocuments] = useState([]);
     const navigate = useNavigate();
 
     const form = useForm({
@@ -305,6 +306,21 @@ const OthersForm = ({ selectedAdvisor }) => {
                 fd.append('references', JSON.stringify(validReferences));
             }
 
+            //  Documents - append each file and metadata
+            if (uploadedDocuments.length > 0) {
+                // Append each file with key 'documents' (backend will use multer.array)
+                uploadedDocuments.forEach((doc) => {
+                    fd.append('documents', doc.file);
+                });
+
+                // Append document metadata as JSON array
+                const documentsMetadata = uploadedDocuments.map(doc => ({
+                    attachmentType: doc.attachmentType,
+                    password: doc.password || ''
+                }));
+                fd.append('documentsMetadata', JSON.stringify(documentsMetadata));
+            }
+
             // Allocated To
             if (data.allocateTo) {
                 fd.append('allocatedTo', data.allocateTo);
@@ -314,6 +330,7 @@ const OthersForm = ({ selectedAdvisor }) => {
             console.log('✅ Others lead added successfully:', res);
 
             form.reset();
+            setUploadedDocuments([]); // clear uploaded documents
             if (res?.data?.success) {
                 navigate("/admin/my_leads");
             }
@@ -1071,6 +1088,7 @@ const OthersForm = ({ selectedAdvisor }) => {
 
                 <CommonLoanSections
                     form={form}
+                    onDocumentsChange={setUploadedDocuments}
                 />
 
 

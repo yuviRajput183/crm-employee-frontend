@@ -23,6 +23,20 @@ export const apiListAdvisorPayouts = async (params = {}) => {
     );
 }
 
+export const apiListAdvisorPayoutLeadNo = async () => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/advisorPayouts/disbursed-unpaid-leads`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
 
 export const apiAddAdvisorPayout = async (payload) => {
     const token = localStorage.getItem('token');

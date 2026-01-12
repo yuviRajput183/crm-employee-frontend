@@ -171,6 +171,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
 
     const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
+    const [uploadedDocuments, setUploadedDocuments] = useState([]);
 
     const navigate = useNavigate();
 
@@ -327,26 +328,19 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
             }
 
 
-            //  Documents as JSON string (if file upload)
-            // if (data.uploadFile) {
-            //     const documentData = [{
-            //         attachmentType: data.attachmentType || '',
-            //         password: data.filePassword || ''
-            //     }];
-            //     fd.append('document', JSON.stringify(documentData));
-            //     // fd.append('file', data.uploadFile);
-            // }
-
-
-            const documentsArray = [];
-            if (data.uploadFile) {
-                documentsArray.push({
-                    attachmentType: data.attachmentType || '',
-                    fileUrl: '', // Will be set by backend
-                    password: data.filePassword || ''
+            //  Documents - append each file and metadata
+            if (uploadedDocuments.length > 0) {
+                // Append each file with key 'documents' (backend will use multer.array)
+                uploadedDocuments.forEach((doc) => {
+                    fd.append('documents', doc.file);
                 });
-                // fd.append('file', data.uploadFile); // Single file
-                fd.append('documents', JSON.stringify(documentsArray));
+
+                // Append document metadata as JSON array
+                const documentsMetadata = uploadedDocuments.map(doc => ({
+                    attachmentType: doc.attachmentType,
+                    password: doc.password || ''
+                }));
+                fd.append('documentsMetadata', JSON.stringify(documentsMetadata));
             }
 
 
@@ -360,6 +354,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
             console.log('✅ Personal Loan lead added successfully:', res);
 
             form.reset(); // clear form
+            setUploadedDocuments([]); // clear uploaded documents
             if (res?.data?.success) {
                 navigate("/admin/my_leads");
             }
@@ -1123,6 +1118,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
 
                 <CommonLoanSections
                     form={form}
+                    onDocumentsChange={setUploadedDocuments}
                 />
 
 

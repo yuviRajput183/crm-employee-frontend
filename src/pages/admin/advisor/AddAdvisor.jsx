@@ -375,7 +375,7 @@ const AddAdvisor = () => {
                         {/* State */}
                         <FormField
                             control={form.control}
-                            name="state"
+                            name="stateName"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>State Name <span className=' text-red-500'>*</span></FormLabel>
@@ -408,7 +408,7 @@ const AddAdvisor = () => {
                         {/* City */}
                         <FormField
                             control={form.control}
-                            name="city"
+                            name="cityName"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>City Name <span className=' text-red-500'>*</span></FormLabel>
