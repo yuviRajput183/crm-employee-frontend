@@ -23,14 +23,14 @@ export const apiListReceivables = async (params = {}) => {
 }
 
 
-export const apiAddReceivable = async (formData) => {
+export const apiAddReceivable = async (payload) => {
     const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/receivables/add-receivable`,
-        formData,
+        payload,
         {
             headers: {
-                'Content-Type': 'multipart/form-data',
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             withCredentials: true
@@ -92,6 +92,39 @@ export const apiUpdateReceivable = async (receivableId, payload) => {
         `${baseURL}/receivables/edit-receivable/${receivableId}`,
         payload,
         {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+// Fetch all receivable leads for Lead No dropdown
+export const apiListReceivableLeads = async () => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/receivables/all-receivable-leads`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+// Fetch invoice master details by lead ID (for Payment Against selection)
+export const apiGetInvoiceMasterByLeadId = async (leadId) => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/receivables/invoice-master-by-lead-id`,
+        {
+            params: { leadId },
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`

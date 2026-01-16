@@ -172,6 +172,11 @@ export const adminRoutes = [
         component: lazy(() => import('@/components/shared/Invoices'))
     },
     {
+        path: "add_invoice",
+        name: "Add Invoice",
+        component: lazy(() => import('@/components/shared/AddInvoiceForm'))
+    },
+    {
         path: "edit_invoices/:id",
         name: "Edit Invoices",
         component: lazy(() => import('@/components/shared/EditInvoiceForm'))
@@ -182,6 +187,11 @@ export const adminRoutes = [
         component: lazy(() => import('@/components/shared/Receivables'))
     },
     {
+        path: "add_receivable",
+        name: "Add Receivable",
+        component: lazy(() => import('@/components/shared/AddReceivables'))
+    },
+    {
         path: "edit_receivable/:id",
         name: "Edit Receivable",
         component: lazy(() => import('@/components/shared/EditReceivablesForm'))
@@ -190,6 +200,11 @@ export const adminRoutes = [
         path: "payable_payout",
         name: "Payable Payout",
         component: lazy(() => import('@/components/shared/Payables'))
+    },
+    {
+        path: "add_payables",
+        name: "Add Payable",
+        component: lazy(() => import('@/components/shared/AddPayables'))
     },
     {
         path: "edit_payable/:id",

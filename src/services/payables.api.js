@@ -85,3 +85,52 @@ export const apiUpdatePayable = async (payableId, payload) => {
         },
     );
 }
+
+
+// Fetch all payable leads for Lead No dropdown
+export const apiListPayableLeads = async () => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/payables/all-advisor-payouts-leadIds`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+// Fetch advisors associated with payout by lead ID (for Payment Against selection)
+export const apiGetAdvisorsAssociatedWithPayout = async (leadId) => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/payables/advisors-associated-with-payout`,
+        {
+            params: { leadId },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}
+
+
+// Fetch single advisor payout details by advisor payout ID
+export const apiGetSingleAdvisorPayout = async (advisorPayoutId) => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/advisorPayouts/single-advisor-payout/${advisorPayoutId}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}

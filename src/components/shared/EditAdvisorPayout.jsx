@@ -52,9 +52,9 @@ const editInvoiceFormSchema = z.object({
     payoutAmount: z.string().optional(),
     finalPayout: z.boolean().optional(),
     gstApplicable: z.boolean().optional(),
-    tdsPercentage: z.string().optional(),
+    tdsPercent: z.string().optional(),
     tdsAmount: z.string().optional(),
-    gstPercentage: z.string().optional(),
+    gstPercent: z.string().optional(),
     gstAmount: z.string().optional(),
     netPayableAmount: z.string().optional(),
     remarks: z.string().optional(),
@@ -118,9 +118,9 @@ const EditAdvisorPayoutForm = () => {
             payoutAmount: "",
             finalPayout: false,
             gstApplicable: true, // Applicable by default
-            tdsPercentage: "",
+            tdsPercent: "",
             tdsAmount: "",
-            gstPercentage: "",
+            gstPercent: "",
             gstAmount: "",
             netPayableAmount: "",
             remarks: "",
@@ -138,8 +138,8 @@ const EditAdvisorPayoutForm = () => {
     const calculateFields = () => {
         const disbursalAmount = parseFloat(form.getValues('disbursalAmount')) || 0;
         const payoutPercent = parseFloat(form.getValues('payoutPercent')) || 0;
-        const tdsPercent = parseFloat(form.getValues('tdsPercentage')) || 0;
-        const gstPercent = parseFloat(form.getValues('gstPercentage')) || 0;
+        const tdsPercent = parseFloat(form.getValues('tdsPercent')) || 0;
+        const gstPercent = parseFloat(form.getValues('gstPercent')) || 0;
 
         // Calculate Payout Amount
         const payoutAmount = (disbursalAmount * payoutPercent) / 100;
@@ -163,8 +163,8 @@ const EditAdvisorPayoutForm = () => {
     // Watch for changes in calculation fields
     const disbursalAmount = form.watch('disbursalAmount');
     const payout = form.watch('payoutPercent');
-    const tdsPercentage = form.watch('tdsPercentage');
-    const gstPercentage = form.watch('gstPercentage');
+    const tdsPercent = form.watch('tdsPercent');
+    const gstPercent = form.watch('gstPercent');
     const gstApplicable = form.watch('gstApplicable');
 
     // Check if GST is not applicable to disable fields
@@ -172,7 +172,7 @@ const EditAdvisorPayoutForm = () => {
 
     useEffect(() => {
         calculateFields();
-    }, [disbursalAmount, payout, tdsPercentage, gstPercentage]);
+    }, [disbursalAmount, payout, tdsPercent, gstPercent]);
 
 
     // Query to fetch processed by users on component mount
@@ -260,9 +260,9 @@ const EditAdvisorPayoutForm = () => {
                 payoutAmount: payout?.payoutAmount?.toString() || '',
                 finalPayout: payout?.finalPayout || false,
                 gstApplicable: Boolean(payout?.gstApplicable),
-                tdsPercentage: payout?.tdsPercent?.toString() || '',
+                tdsPercent: payout?.tdsPercent?.toString() || '',
                 tdsAmount: payout?.tdsAmount?.toString() || '',
-                gstPercentage: payout?.gstPercent?.toString() || '',
+                gstPercent: payout?.gstPercent?.toString() || '',
                 gstAmount: payout?.gstAmount?.toString() || '',
                 netPayableAmount: payout?.netPayableAmount?.toString() || '',
                 remarks: payout?.remarks || '',
@@ -466,7 +466,7 @@ const EditAdvisorPayoutForm = () => {
                         {/* TDS % */}
                         <FormField
                             control={form.control}
-                            name="tdsPercentage"
+                            name="tdsPercent"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>TDS %</FormLabel>
@@ -547,7 +547,7 @@ const EditAdvisorPayoutForm = () => {
                         {/* GST % */}
                         <FormField
                             control={form.control}
-                            name="gstPercentage"
+                            name="gstPercent"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>GST %</FormLabel>

@@ -11,8 +11,9 @@ import {
     TableCell,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useQuery } from '@tanstack/react-query';
-import { apiListAllLeads } from '@/services/attachments.api';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiListAllLeads, apiDeleteAttachments } from '@/services/attachments.api';
+import { apiListAdvisor } from '@/services/advisor.api';
 import { Alert } from '../ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 
@@ -22,18 +23,27 @@ const DeleteAttachments = () => {
 
     const [filterParams, setFilterParams] = useState({});
     const [leads, setLeads] = useState([]);
+    const [advisors, setAdvisors] = useState([]);
+    const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+
+    // Filter form state
+    const [loanType, setLoanType] = useState('');
+    const [leadFeedback, setLeadFeedback] = useState('');
+    const [advisorName, setAdvisorName] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
 
     // fetching all leads on component mount and on filtering
     const {
         isError: isLeadsError,
         error: leadsError,
         data: queryData,
-        // refetch
+        refetch
     } = useQuery({
-        queryKey: ['advisor-payouts', filterParams], // Changed queryKey name for clarity
+        queryKey: ['delete-attachments-leads', filterParams],
         queryFn: async () => {
             const res = await apiListAllLeads(filterParams);
-            console.log("📦 queryFn response of list invoices:", res);
+            console.log("📦 queryFn response of list leads:", res);
             return res;
         },
         enabled: true,
@@ -46,17 +56,81 @@ const DeleteAttachments = () => {
         }
     });
 
-    const handleFilter = async (values) => {
-        console.log("submitting values for filter in handle Filter>>", values);
+    // Query to fetch all advisors on component mount
+    const {
+        isError: isAdvisorsError,
+        error: advisorsError,
+    } = useQuery({
+        queryKey: ['all-advisors-delete-attachments'],
+        queryFn: async () => {
+            const res = await apiListAdvisor();
+            console.log("📦 queryFn response of list advisors:", res);
+            setAdvisors(res?.data?.data?.advisors || []);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onError: (err) => {
+            console.error("Error fetching advisors:", err);
+        }
+    });
 
-        const cleanParams = Object.fromEntries(
-            Object.entries(values).filter(([, val]) => val !== '' && val !== undefined)
-        );
+    // Mutation for deleting attachments
+    const deleteAttachmentsMutation = useMutation({
+        mutationFn: apiDeleteAttachments,
+        onSuccess: (res) => {
+            console.log("Delete attachments success:", res);
+            // Clear selection and refetch
+            setSelectedLeadIds([]);
+            refetch();
+            alert("Attachments deleted successfully!");
+        },
+        onError: (err) => {
+            console.error("Error deleting attachments:", err);
+            alert(getErrorMessage(err));
+        }
+    });
+
+    const handleFilter = async () => {
+        const cleanParams = {};
+
+        if (loanType) cleanParams.productType = loanType;
+        if (leadFeedback) cleanParams.feedback = leadFeedback;
+        if (advisorName) cleanParams.advisorName = advisorName;
+        if (fromDate) cleanParams.fromDate = fromDate;
+        if (toDate) cleanParams.toDate = toDate;
+
+        console.log("submitting values for filter in handle Filter>>", cleanParams);
 
         // Only update filterParams - this will trigger the query automatically
         setFilterParams(cleanParams);
     }
 
+    const handleSelectLead = (leadId, checked) => {
+        if (checked) {
+            setSelectedLeadIds(prev => [...prev, leadId]);
+        } else {
+            setSelectedLeadIds(prev => prev.filter(id => id !== leadId));
+        }
+    };
+
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            setSelectedLeadIds(leads.map(lead => lead._id));
+        } else {
+            setSelectedLeadIds([]);
+        }
+    };
+
+    const handleDeleteAttachments = () => {
+        if (selectedLeadIds.length === 0) {
+            alert("Please select at least one lead to delete attachments.");
+            return;
+        }
+
+        if (window.confirm(`Are you sure you want to delete attachments for ${selectedLeadIds.length} lead(s)?`)) {
+            deleteAttachmentsMutation.mutate(selectedLeadIds);
+        }
+    };
 
 
     // Update leads when query data changes
@@ -89,38 +163,57 @@ const DeleteAttachments = () => {
                 {/* Loan Type Dropdown */}
                 <div className="flex flex-col">
                     <label className="font-medium text-gray-700 mb-1">Loan Type</label>
-                    <select className="border rounded px-3 py-2 text-sm text-gray-700">
+                    <select
+                        className="border rounded px-3 py-2 text-sm text-gray-700"
+                        value={loanType}
+                        onChange={(e) => setLoanType(e.target.value)}
+                    >
                         <option value="">Select</option>
-                        <option value="home-loan">Home Loan</option>
-                        <option value="lap">Loan Against Property</option>
-                        <option value="insurance">Insurance</option>
-                        {/* Add more options as needed */}
+                        <option value="Personal Loan">Personal Loan</option>
+                        <option value="Business Loan">Business Loan</option>
+                        <option value="Home Loan">Home Loan</option>
+                        <option value="Loan Against Property">Loan Against Property</option>
+                        <option value="Car Loan">Car Loan</option>
+                        <option value="Used Car Loan">Used Car Loan</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Private Funding">Private Funding</option>
+                        <option value="Professional Loan">Professional Loan</option>
+                        <option value="Others">Others</option>
                     </select>
                 </div>
 
                 {/* Lead Feedback Dropdown */}
                 <div className="flex flex-col">
                     <label className="font-medium text-gray-700 mb-1">Lead Feedback</label>
-                    <select className="border rounded px-3 py-2 text-sm text-gray-700">
+                    <select
+                        className="border rounded px-3 py-2 text-sm text-gray-700"
+                        value={leadFeedback}
+                        onChange={(e) => setLeadFeedback(e.target.value)}
+                    >
                         <option value="">Select</option>
-                        <option value="allocated">Allocated</option>
-                        <option value="policy-issued">Policy Issued</option>
-                        <option value="loan-disbursed">Loan Disbursed</option>
-                        <option value="loan-rejected">Loan Rejected</option>
-                        {/* Add more options as needed */}
+                        <option value="Allocated">Allocated</option>
+                        <option value="Docs Query">Docs Query</option>
+                        <option value="Loan Approved">Loan Approved</option>
+                        <option value="Loan Disbursed">Loan Disbursed</option>
+                        <option value="Loan Rejected">Loan Rejected</option>
+                        <option value="Under Process">Under Process</option>
                     </select>
                 </div>
 
                 {/* Advisor Name Dropdown */}
                 <div className="flex flex-col">
                     <label className="font-medium text-gray-700 mb-1">Advisor Name</label>
-                    <select className="border rounded px-3 py-2 text-sm text-gray-700">
+                    <select
+                        className="border rounded px-3 py-2 text-sm text-gray-700"
+                        value={advisorName}
+                        onChange={(e) => setAdvisorName(e.target.value)}
+                    >
                         <option value="">Select</option>
-                        <option value="Sachin Soni">Sachin Soni</option>
-                        <option value="Parul Gandhi">Parul Gandhi</option>
-                        <option value="Himanshu Sachdeva">Himanshu Sachdeva</option>
-                        <option value="Shivam">Shivam</option>
-                        {/* Add more dynamically */}
+                        {advisors.map((advisor) => (
+                            <option key={advisor._id} value={advisor.name}>
+                                {advisor.name} - {advisor.advisorCode}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
@@ -131,6 +224,8 @@ const DeleteAttachments = () => {
                         type="date"
                         className="border rounded px-3 py-2 text-sm text-gray-700"
                         placeholder="DD/MM/YYYY"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
                     />
                 </div>
 
@@ -141,12 +236,17 @@ const DeleteAttachments = () => {
                         type="date"
                         className="border rounded px-3 py-2 text-sm text-gray-700"
                         placeholder="DD/MM/YYYY"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
                     />
                 </div>
 
                 {/* Show Button */}
                 <div className="flex items-end">
-                    <button className="bg-blue-700 hover:bg-blue-800 text-white font-medium px-4 py-2 rounded w-full">
+                    <button
+                        className="bg-blue-700 hover:bg-blue-800 text-white font-medium px-4 py-2 rounded w-full"
+                        onClick={handleFilter}
+                    >
                         SHOW
                     </button>
                 </div>
@@ -154,6 +254,12 @@ const DeleteAttachments = () => {
 
             {isLeadsError && (
                 <Alert variant="destructive">{getErrorMessage(leadsError)}</Alert>
+            )}
+            {isAdvisorsError && (
+                <Alert variant="destructive">{getErrorMessage(advisorsError)}</Alert>
+            )}
+            {deleteAttachmentsMutation.isError && (
+                <Alert variant="destructive">{getErrorMessage(deleteAttachmentsMutation.error)}</Alert>
             )}
 
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
@@ -171,7 +277,15 @@ const DeleteAttachments = () => {
                             <TableHead className="text-white">Mobile No</TableHead>
                             <TableHead className="text-white">Allocated To</TableHead>
                             <TableHead className="text-white">Feedback</TableHead>
-                            <TableHead className="text-white">Select</TableHead>
+                            <TableHead className="text-white">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        checked={leads.length > 0 && selectedLeadIds.length === leads.length}
+                                        onCheckedChange={handleSelectAll}
+                                    />
+                                    Select
+                                </div>
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -184,14 +298,17 @@ const DeleteAttachments = () => {
                                 <TableCell>{lead?.leadNo}</TableCell>
                                 <TableCell>{lead?.productType}</TableCell>
                                 <TableCell>{lead?.advisorId?.name}</TableCell>
-                                <TableCell>{lead?.amount?.toLocaleString()}</TableCell>
+                                <TableCell>{(lead?.loanRequirementAmount || lead?.insuranceAmount || lead?.amount)?.toLocaleString()}</TableCell>
                                 <TableCell>{lead?.createdAt?.split('T')[0]}</TableCell>
                                 <TableCell>{lead?.clientName}</TableCell>
                                 <TableCell>{lead?.mobileNo}</TableCell>
                                 <TableCell>{lead?.allocatedTo?.name}</TableCell>
-                                <TableCell>{lead?.feedback}</TableCell>
+                                <TableCell>{lead?.history?.[lead?.history?.length - 1]?.feedback}</TableCell>
                                 <TableCell>
-                                    <Checkbox />
+                                    <Checkbox
+                                        checked={selectedLeadIds.includes(lead._id)}
+                                        onCheckedChange={(checked) => handleSelectLead(lead._id, checked)}
+                                    />
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -200,7 +317,18 @@ const DeleteAttachments = () => {
             </div>
 
             <div className="mt-4">
-                <Button className=" bg-blue-500 hover:bg-blue-500">Delete Attachments</Button>
+                <Button
+                    className="bg-blue-500 hover:bg-blue-600"
+                    onClick={handleDeleteAttachments}
+                    disabled={deleteAttachmentsMutation.isLoading || selectedLeadIds.length === 0}
+                >
+                    {deleteAttachmentsMutation.isLoading ? 'Deleting...' : 'Delete Attachments'}
+                </Button>
+                {selectedLeadIds.length > 0 && (
+                    <span className="ml-3 text-sm text-gray-600">
+                        {selectedLeadIds.length} lead(s) selected
+                    </span>
+                )}
             </div>
 
         </div>

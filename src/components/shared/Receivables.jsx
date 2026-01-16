@@ -141,7 +141,7 @@ const Receivables = () => {
                 </div>
                 {!showAddAdvisorPayout && <div className=' flex items-center gap-2'>
                     <Button className=" bg-purple-950 px-10" onClick={() => setShowFilter(!showFilter)}>{showFilter ? "Hide Filter" : "Show Filter"}</Button>
-                    <Button className=" bg-purple-950 px-10" onClick={() => setShowAddAdvisorPayout(!showAddAdvisorPayout)}>Add +</Button>
+                    <Button className=" bg-purple-950 px-10" onClick={() => navigate('/admin/add_receivable')}>Add +</Button>
                 </div>
                 }
             </div>

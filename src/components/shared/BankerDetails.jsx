@@ -31,7 +31,7 @@ const indianStates = [
 
 
 
-const BankerDetails = ({ form, leadId }) => {
+const BankerDetails = ({ form, leadId, prefilledBankerDetails }) => {
 
     const [selectedState, setSelectedState] = useState(null);
     const [bankerCities, setBankerCities] = useState([]);
@@ -147,6 +147,65 @@ const BankerDetails = ({ form, leadId }) => {
         }
     }, [bankerDetails, form]);
 
+    useEffect(() => {
+        const stateName = prefilledBankerDetails?.stateName || prefilledBankerDetails?.state;
+        if (stateName) {
+            // Always set form value and state. React handles state update bail-out if identical.
+            setSelectedState(stateName);
+            form.setValue("bankStateName", stateName);
+        }
+    }, [prefilledBankerDetails, form]);
+
+    // 2️⃣ Prefill City (Dependent on State/Cities loaded)
+    useEffect(() => {
+        if (prefilledBankerDetails?.city && bankerCities?.length > 0) {
+            const cityToSelect = bankerCities.find(c => c._id === prefilledBankerDetails.city._id || c.cityName === prefilledBankerDetails.city.cityName);
+
+            if (cityToSelect) {
+                // Only set if not already set (or if we want to enforce prefill)
+                // Using form.getValues to check current value might be safer to avoid overwriting user interaction 
+                // BUT for this task, ensuring prefill works is priority.
+
+                if (selectedCity !== cityToSelect._id) {
+                    setSelectedCity(cityToSelect._id);
+                    form.setValue("bankCityName", cityToSelect.cityName);
+                }
+            }
+        }
+    }, [bankerCities, prefilledBankerDetails, form]);
+
+    // 3️⃣ Prefill Bank (Dependent on City/Banks loaded)
+    useEffect(() => {
+        if (prefilledBankerDetails?.bank && banks?.length > 0) {
+            const bankToSelect = banks.find(b => b._id === prefilledBankerDetails.bank._id || b.name === prefilledBankerDetails.bank.name);
+
+            if (bankToSelect) {
+                if (selectedBank !== bankToSelect._id) {
+                    setSelectedBank(bankToSelect._id);
+                    form.setValue("bankName", bankToSelect.name);
+                }
+            }
+        }
+    }, [banks, prefilledBankerDetails, form]);
+
+    // 4️⃣ Prefill Banker (Dependent on Bank/Bankers loaded)
+    useEffect(() => {
+        if (prefilledBankerDetails?._id && bankers?.length > 0) {
+            const bankerToSelect = bankers.find(b => b._id === prefilledBankerDetails._id);
+
+            if (bankerToSelect) {
+                if (selectedBanker !== bankerToSelect._id) {
+                    setSelectedBanker(bankerToSelect._id);
+                    form.setValue("bankerId", bankerToSelect._id);
+
+                    // Also set readonly fields here explicitly if needed, 
+                    // though the separate useEffect[bankerDetails] might handle it if it triggers fetch
+                    // actually setting selectedBanker triggers the single banker fetch
+                }
+            }
+        }
+    }, [bankers, prefilledBankerDetails, form]);
+
     return (
         <>
             <div className="bg-sky-300 text-slate-900 font-medium px-3 py-2 rounded my-4">
@@ -179,7 +238,7 @@ const BankerDetails = ({ form, leadId }) => {
                                     field.onChange(value);
                                     setSelectedState(value);
                                 }}
-                                value={field.value}
+                                value={field.value || ""}
                             >
                                 <FormControl>
                                     <SelectTrigger>

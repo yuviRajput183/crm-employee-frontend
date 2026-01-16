@@ -1224,6 +1224,7 @@ const EditLoanAgainstPropertyForm = () => {
                             <LeadAllocationFeedback
                                 form={form}
                                 leadId={leadId}
+                                prefilledBankerDetails={leadData?.data?.data?.bankerId}
                             />
                         );
                     })()}

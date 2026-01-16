@@ -139,7 +139,7 @@ const Payables = () => {
                 </div>
                 {!showAddPayable && <div className=' flex items-center gap-2'>
                     <Button className=" bg-purple-950 px-10" onClick={() => setShowFilter(!showFilter)}>{showFilter ? "Hide Filter" : "Show Filter"}</Button>
-                    <Button className=" bg-purple-950 px-10" onClick={() => setShowAddPayable(!showAddPayable)}>Add +</Button>
+                    <Button className=" bg-purple-950 px-10" onClick={() => navigate('/admin/add_payables')}>Add +</Button>
                 </div>
                 }
             </div>

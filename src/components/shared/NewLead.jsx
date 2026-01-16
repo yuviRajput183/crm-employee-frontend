@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { Alert } from '../ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import EditLeadAdvisor from './EditLeadAdvisor';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 
 
@@ -111,6 +111,7 @@ const NewLead = () => {
     const [selectedLead, setSelectedLead] = useState(null);
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     // fetching new leads on component mount and on filtering
     const {
@@ -137,9 +138,8 @@ const NewLead = () => {
 
 
     useEffect(() => {
-
-        if (newLeadsData?.leads?.length > 0) {
-            setLeads(newLeadsData?.leads);
+        if (newLeadsData?.leads) {
+            setLeads(newLeadsData.leads);
         }
         if (newLeadsData?.stats) {
             setStats(newLeadsData?.stats);
@@ -180,8 +180,6 @@ const NewLead = () => {
         // update local state for queryKey + pass to API
         setFilterParams(cleanParams);
 
-        // manually trigger query
-        refetch();
         setShowFilter(false);
 
     }
@@ -304,7 +302,7 @@ const NewLead = () => {
                                         <TableCell>{lead?.history[lead?.history?.length - 1].feedback}</TableCell>
                                         <TableCell>
                                             <Button
-                                                onClick={() => navigate(`${getRoleBasedPrefix()}/${editProductPathMap[lead.productType]}/${lead?._id}`)}
+                                                onClick={() => navigate(`${getRoleBasedPrefix()}/${editProductPathMap[lead.productType]}/${lead?._id}?returnPath=${location.pathname}`)}
                                                 variant="default"
                                                 size="sm"
                                                 className="bg-blue-600 hover:bg-blue-700 text-white"

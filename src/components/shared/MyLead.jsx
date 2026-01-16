@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import EditLeadAdvisor from './EditLeadAdvisor';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const statusKeyMap = {
     "Loan Disbursed": "disbursed",
@@ -104,6 +104,7 @@ const MyLead = () => {
     const [selectedLead, setSelectedLead] = useState(null);
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     // fetching my leads on component mount and on filtering
     const {
@@ -129,9 +130,8 @@ const MyLead = () => {
     });
 
     useEffect(() => {
-
-        if (myLeadsData?.leads?.length > 0) {
-            setLeads(myLeadsData?.leads);
+        if (myLeadsData?.leads) {
+            setLeads(myLeadsData.leads);
         }
         if (myLeadsData?.stats) {
             setStats(myLeadsData?.stats);
@@ -170,8 +170,6 @@ const MyLead = () => {
         // update local state for queryKey + pass to API
         setFilterParams(cleanParams);
 
-        // manually trigger query
-        refetch();
         setShowFilter(false);
 
     }
@@ -294,7 +292,7 @@ const MyLead = () => {
                                         <TableCell>{lead?.history[lead?.history?.length - 1].feedback}</TableCell>
                                         <TableCell>
                                             <Button
-                                                onClick={() => navigate(`${getRoleBasedPrefix()}/${editProductPathMap[lead.productType]}/${lead?._id}`)}
+                                                onClick={() => navigate(`${getRoleBasedPrefix()}/${editProductPathMap[lead.productType]}/${lead?._id}?returnPath=${location.pathname}`)}
                                                 variant="default"
                                                 size="sm"
                                                 className="bg-blue-600 hover:bg-blue-700 text-white"

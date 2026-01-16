@@ -61,6 +61,9 @@ const AddEmployee = () => {
     const [selectedDesignation, setSelectedDesignation] = useState(null);
     const [reportingOfficers, setReportingOfficers] = useState([]);
     const [selectedReportingOfficer, setSelectedReportingOfficer] = useState(null);
+    const [savedDesignation, setSavedDesignation] = useState(null); // Store the employee's designation from API
+    const [savedReportingOfficer, setSavedReportingOfficer] = useState(null); // Store the employee's reporting officer from API
+    const [photoPreview, setPhotoPreview] = useState(null); // For image preview
     const navigate = useNavigate();
 
     const { addEmployee, updateEmployee } = useEmployee();
@@ -92,6 +95,9 @@ const AddEmployee = () => {
             const editData = employeeData?.data?.data;
             console.log("employee fetched data>>", editData);
 
+            // Store the saved designation and reporting officer for later use
+            setSavedDesignation(editData?.designation);
+            setSavedReportingOfficer(editData?.reportingOfficer);
 
             form.reset({
                 employeeName: editData?.name || '',
@@ -106,8 +112,6 @@ const AddEmployee = () => {
                 resignDate: editData?.dateOfResign?.split('T')[0] || '', // for later
                 photograph: editData?.photoUrl || ''
             });
-
-            form.setValue("designation", editData?.designation);
 
             setSelectedDept(editData?.department);
             setSelectedDesignation(editData?.designation);
@@ -229,12 +233,13 @@ const AddEmployee = () => {
         isError: isDesignationError,
         error: designationError,
     } = useQuery({
-        queryKey: ['designations', selectedDept],
+        queryKey: ['designations', selectedDept?._id],
         enabled: !!selectedDept,
         queryFn: async () => {
             const res = await apiGetAllDesignationOfDepartment(selectedDept?._id);
             console.log("📦 queryFn response of designation:", res);
-            setDesignations(res?.data?.data?.designations || []);
+            const fetchedDesignations = res?.data?.data?.designations || [];
+            setDesignations(fetchedDesignations);
             return res;
         },
         refetchOnWindowFocus: false,
@@ -246,6 +251,16 @@ const AddEmployee = () => {
         }
     });
 
+    // Set designation value after designations are loaded (separate effect to avoid stale closure)
+    useEffect(() => {
+        if (isEditMode && savedDesignation && designations.length > 0) {
+            if (designations.includes(savedDesignation)) {
+                form.setValue("designation", savedDesignation);
+                setSelectedDesignation(savedDesignation);
+            }
+        }
+    }, [designations, savedDesignation, isEditMode]);
+
 
 
 
@@ -254,11 +269,12 @@ const AddEmployee = () => {
         isError: isReportingOfficersError,
         error: reportingOfficersError,
     } = useQuery({
-        queryKey: ['', employeeId],
+        queryKey: ['reporting-officers'],
         queryFn: async () => {
             const res = await apiGetAllReportingOfficer();
             console.log("📦 queryFn response of reporting officers:", res);
-            setReportingOfficers(res?.data?.data || []);
+            const fetchedOfficers = res?.data?.data || [];
+            setReportingOfficers(fetchedOfficers);
             return res;
         },
         refetchOnWindowFocus: false,
@@ -269,6 +285,19 @@ const AddEmployee = () => {
             console.error("Error fetching reporting officers:", err);
         }
     });
+
+    // Set reporting officer value after officers are loaded (separate effect to avoid stale closure)
+    useEffect(() => {
+        if (isEditMode && savedReportingOfficer && reportingOfficers.length > 0) {
+            const matchedOfficer = reportingOfficers.find(
+                (officer) => officer._id === savedReportingOfficer._id || officer.name === savedReportingOfficer.name
+            );
+            if (matchedOfficer) {
+                form.setValue("reportingOfficer", matchedOfficer.name);
+                setSelectedReportingOfficer(matchedOfficer);
+            }
+        }
+    }, [reportingOfficers, savedReportingOfficer, isEditMode]);
 
 
     return (
@@ -512,14 +541,44 @@ const AddEmployee = () => {
                                                 const file = e.target.files?.[0];
                                                 if (file) {
                                                     field.onChange(file); // new file replaces old
+                                                    // Create preview using FileReader
+                                                    const reader = new FileReader();
+                                                    reader.onload = () => setPhotoPreview(reader.result);
+                                                    reader.readAsDataURL(file);
                                                 }
                                             }}
                                         />
-                                        {typeof field.value === "string" && field.value && (
-                                            <p className="text-sm font-bold text-gray-500 mt-1">Current: {field.value}</p>
+                                        {/* Show existing image from server (when no new file selected) */}
+                                        {!photoPreview && typeof field.value === "string" && field.value && (
+                                            <div className="mt-2">
+                                                <p className="text-sm font-bold text-gray-500 mb-1">Current Photo:</p>
+                                                <a
+                                                    href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/uploads/${field.value}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title="Click to open in new tab"
+                                                >
+                                                    <img
+                                                        src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/uploads/${field.value}`}
+                                                        alt="Employee Photo"
+                                                        className="w-20 h-20 object-cover rounded border-2 border-gray-300 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all"
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                        }}
+                                                    />
+                                                </a>
+                                            </div>
                                         )}
-                                        {field.value instanceof File && (
-                                            <p className="text-sm font-bold text-green-600 mt-1">New: {field.value.name}</p>
+                                        {/* Show preview of newly selected file */}
+                                        {photoPreview && (
+                                            <div className="mt-2">
+                                                <p className="text-sm font-bold text-green-600 mb-1">New Photo Preview:</p>
+                                                <img
+                                                    src={photoPreview}
+                                                    alt="New Photo Preview"
+                                                    className="w-24 h-24 object-cover rounded-md border-2 border-green-300"
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 </FormControl>

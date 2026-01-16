@@ -278,3 +278,49 @@ export const apiFetchDraftDetails = async (draftId) => {
         }
     );
 }
+
+
+// Statistics API functions (role-based)
+export const apiAdminStatistics = async () => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/leads/statistics`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+
+export const apiEmployeeStatistics = async () => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/leads/employee-statistics`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
+
+export const apiAdvisorStatistics = async () => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/leads/advisor-statistics`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}

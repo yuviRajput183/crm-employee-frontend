@@ -27,6 +27,7 @@ import { apiListLeadNo } from '@/services/invoices.api';
 import { apiListProcessed } from '@/services/processed.api';
 import { apiFetchLeadDetails } from '@/services/lead.api';
 import { useInvoice } from '@/lib/hooks/useInvoice';
+import { useNavigate } from 'react-router-dom';
 
 // Zod schema for disbursement form
 const addInvoiceFormSchema = z.object({
@@ -66,6 +67,16 @@ const AddInvoiceForm = ({ onClose }) => {
     const [leads, setLeads] = useState([]);
     const [selectedLead, setSelectedLead] = useState(null);
     const [processedByUsers, setProcessedByUsers] = useState([]);
+    const navigate = useNavigate();
+
+    // Handle close/back action - works both as embedded component and standalone page
+    const handleClose = (shouldRefetch) => {
+        if (onClose) {
+            onClose(shouldRefetch);
+        } else {
+            navigate('/admin/invoices');
+        }
+    };
 
     const form = useForm({
         resolver: zodResolver(addInvoiceFormSchema),
@@ -198,13 +209,22 @@ const AddInvoiceForm = ({ onClose }) => {
         try {
             const formData = new FormData();
 
+            // Map form field names to API field names
+            const fieldMapping = {
+                tdsPercentage: 'tdsPercent',
+                gstPercentage: 'gstPercent',
+            };
+
             // Append all form fields
             Object.keys(data).forEach(key => {
                 if (data[key] !== undefined && data[key] !== '') {
+                    // Get the mapped key or use original key
+                    const apiKey = fieldMapping[key] || key;
+
                     if (key === 'finalInvoice') {
-                        formData.append(key, data[key] ? 'true' : 'false');
+                        formData.append(apiKey, data[key] ? 'true' : 'false');
                     } else {
-                        formData.append(key, data[key]);
+                        formData.append(apiKey, data[key]);
                     }
                 }
             });
@@ -213,7 +233,7 @@ const AddInvoiceForm = ({ onClose }) => {
             console.log("New Invoice added successfully ....");
 
             if (res?.data?.success) {
-                onClose();
+                handleClose(true); // Pass true to indicate successful save for refetch
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
@@ -641,7 +661,7 @@ const AddInvoiceForm = ({ onClose }) => {
                         {isLoading ? 'SAVING...' : 'SAVE'}
                     </Button>
                     <Button
-                        onClick={onClose}
+                        onClick={() => handleClose(false)}
                         type="button"
                         variant="outline"
                         className="bg-gray-500 text-white"

@@ -73,6 +73,8 @@ const AddAdvisor = () => {
     const [selectedReportingOfficer, setSelectedReportingOfficer] = useState(null);
     const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
+    const [savedCity, setSavedCity] = useState(null); // Store the advisor's city from API for later use
+    const [savedReportingOfficer, setSavedReportingOfficer] = useState(null); // Store the advisor's reporting officer from API
 
 
     const navigate = useNavigate();
@@ -206,6 +208,14 @@ const AddAdvisor = () => {
             const advisor = advisorData?.data?.data;
             console.log("advisor>>", advisor);
 
+            // Store the saved city and reporting officer for later use
+            setSavedCity(advisor?.city);
+            setSavedReportingOfficer(advisor?.reportingOfficer);
+
+            // Set the state first to trigger cities fetch
+            if (advisor?.city?.stateName) {
+                setSelectedState(advisor.city.stateName);
+            }
 
             form.reset({
                 advisorName: advisor.name || '',
@@ -216,7 +226,7 @@ const AddAdvisor = () => {
                 address: advisor.address || '',
                 reportingOfficer: advisor.reportingOfficer?.name || '',
                 stateName: advisor?.city?.stateName || '',
-                cityName: advisor?.city?.cityName || '',
+                cityName: advisor?.city?._id || '', // Use city _id to match Select value
                 aadharNo: advisor.aadharNo || '',
                 panNo: advisor.panNo || '',
                 dateOfJoining: advisor.dateOfJoining?.split('T')[0] || '',
@@ -245,7 +255,7 @@ const AddAdvisor = () => {
         isError: isCitiesError,
         error: citiesError,
     } = useQuery({
-        queryKey: [selectedState],
+        queryKey: ['cities', selectedState],
         enabled: !!selectedState,
         queryFn: async () => {
             const res = await apiGetCitiesByStateName(selectedState);
@@ -261,6 +271,31 @@ const AddAdvisor = () => {
             console.error("Error fetching cities:", err);
         }
     });
+
+    // Set city value after cities are loaded (separate effect to avoid stale closure)
+    useEffect(() => {
+        if (advisorId && savedCity && cities.length > 0) {
+            const matchedCity = cities.find(
+                (city) => city._id === savedCity._id || city.cityName === savedCity.cityName
+            );
+            if (matchedCity) {
+                form.setValue("cityName", matchedCity._id);
+            }
+        }
+    }, [cities, savedCity, advisorId]);
+
+    // Set reporting officer value after officers are loaded (separate effect to avoid stale closure)
+    useEffect(() => {
+        if (advisorId && savedReportingOfficer && reportingOfficers.length > 0) {
+            const matchedOfficer = reportingOfficers.find(
+                (officer) => officer._id === savedReportingOfficer._id || officer.name === savedReportingOfficer.name
+            );
+            if (matchedOfficer) {
+                form.setValue("reportingOfficer", matchedOfficer.name);
+                setSelectedReportingOfficer(matchedOfficer);
+            }
+        }
+    }, [reportingOfficers, savedReportingOfficer, advisorId]);
 
 
     return (

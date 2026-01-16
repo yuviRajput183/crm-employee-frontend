@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Monitor, NotebookPen, LayoutDashboard, ChartNoAxesCombined, Command, UserRound, FileCheck2, File, LaptopMinimal, ShieldHalf, Landmark, BriefcaseBusiness, Gauge } from 'lucide-react'
 import {
     DropdownMenu,
@@ -8,7 +8,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 
 const sidebarMenuList = [
@@ -98,6 +98,7 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
     const [isMasterOpen, setIsMasterOpen] = useState(false);
     const [openMenus, setOpenMenus] = useState({}); // store which menus are expanded
     const navigate = useNavigate();
+    const location = useLocation();
 
 
     console.log("isOwner>>", isOwner);
@@ -123,7 +124,7 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
             <div>
                 {!isMasterOpen && sidebarMenuList.map((menu) => (
                     <div
-                        key={menu.id} className='flex gap-2 items-center p-4 bg-gray-800 text-white hover:bg-black'
+                        key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
                         onClick={() => { onMenuClick(); navigate(menu.path) }}
                     >
                         {menu.icon}
@@ -145,7 +146,7 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
                             <div
                                 key={menu.id}
                                 onClick={() => toggleMenu(menu.id)}
-                                className='flex gap-2 items-center p-4 bg-gray-800 text-gray-100 hover:bg-black border-b-1 border-white '
+                                className={`flex gap-2 items-center p-4 text-gray-100 hover:bg-black border-b-1 border-white ${openMenus[menu.id] ? 'bg-black' : 'bg-gray-800'}`}
                             >
                                 {menu.icon}
                                 <h1>{menu.title}</h1>
@@ -155,7 +156,7 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
                             {/* show the submenus only if the parent menu is open */}
                             {openMenus[menu.id] && menu.subList.map((sub) => (
                                 <div
-                                    key={sub.id} className=' pl-5 text-[12px] flex gap-2 items-center p-3 bg-gray-800 text-white hover:bg-black'
+                                    key={sub.id} className={`pl-5 text-[12px] flex gap-2 items-center p-3 text-white hover:bg-black ${location.pathname === sub.path ? 'bg-black' : 'bg-gray-800'}`}
                                     onClick={() => { onMenuClick(); navigate(sub.path) }}
                                 >
                                     {sub.icon}
@@ -175,7 +176,7 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
                                     navigate(menu.path)
                                 }
                             }}
-                            key={menu.id} className='flex gap-2 items-center p-4 bg-gray-800 text-white hover:bg-black'>
+                            key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}>
                             {menu.icon}
                             <h1>{menu.title}</h1>
                         </div>

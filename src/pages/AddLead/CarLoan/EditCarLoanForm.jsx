@@ -157,8 +157,8 @@ const carLoanSchema = z.object({
     uploadFile: z.any().optional(), // For file uploads, we use z.any() since File objects are complex
     filePassword: z.string().optional(),
     allocateTo: z.string().optional(),
-    loanFeedback: z.string().optional(),
-    remarks: z.string().optional(),
+    loanFeedback: z.string().nullable().optional(),
+    remarks: z.string().nullable().optional(),
     bankerId: z.string().optional(),
 });
 
@@ -179,6 +179,7 @@ const EditCarLoanForm = () => {
     const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
     const [history, setHistory] = useState([]);
+    const [savedCityName, setSavedCityName] = useState(null); // Store the lead's city from API for later use
 
 
     // query to  fetch the lead/draft detail on component mount
@@ -409,7 +410,12 @@ const EditCarLoanForm = () => {
 
             form.reset(); // clear form
             if (res?.data?.success) {
-                navigate("/admin/my_leads");
+                const returnPath = searchParams.get('returnPath');
+                if (returnPath) {
+                    navigate(returnPath);
+                } else {
+                    navigate("/admin/my_leads");
+                }
             }
 
 
@@ -453,6 +459,11 @@ const EditCarLoanForm = () => {
             // Set selected state for cities dropdown
             if (lead?.stateName) {
                 setSelectedState(lead?.stateName);
+            }
+
+            // Store the saved city name for later use
+            if (lead?.cityName) {
+                setSavedCityName(lead?.cityName);
             }
 
             if (lead?.history) {
@@ -513,16 +524,27 @@ const EditCarLoanForm = () => {
                 uploadFile: null,
                 filePassword: '',
                 allocateTo: lead?.allocatedTo?._id || "",
-                loanFeedback: lead?.loanFeedback ?? null,
-                remarks: lead?.remarks ?? null,
+                loanFeedback: lead?.loanFeedback ?? "",
+                remarks: lead?.remarks ?? "",
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
-            form.setValue("cityName", lead?.cityName);
 
 
         }
     }, [leadData, form]);
+
+    // Set city value after cities are loaded (separate effect to avoid stale closure)
+    useEffect(() => {
+        if (leadId && savedCityName && cities.length > 0) {
+            const matchedCity = cities.find(
+                (city) => city.cityName === savedCityName
+            );
+            if (matchedCity) {
+                form.setValue("cityName", matchedCity.cityName);
+            }
+        }
+    }, [cities, savedCityName, leadId, form]);
 
 
     return (
@@ -1178,6 +1200,7 @@ const EditCarLoanForm = () => {
                             <LeadAllocationFeedback
                                 form={form}
                                 leadId={leadId}
+                                prefilledBankerDetails={leadData?.data?.data?.bankerId}
                             />
                         );
                     })()}

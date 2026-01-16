@@ -251,7 +251,7 @@ const EditInvoiceForm = () => {
                 payoutPercent: invoice?.payoutPercent?.toString() || '',
                 disbursalDate: invoice?.disbursalDate?.split('T')[0] || '',
                 invoiceDate: invoice?.invoiceDate?.split('T')[0] || '',
-                processedById: processedByUsers.find(user => user?.processedBy === 'Hardik')?._id || '',
+                processedById: invoice?.processedById?._id || '',
                 loanServiceType: invoice?.leadId?.productType || '',
                 customerName: invoice?.leadId?.clientName || '',
                 advisorName: invoice?.leadId?.advisorId?.name || '',

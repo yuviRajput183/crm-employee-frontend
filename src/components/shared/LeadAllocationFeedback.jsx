@@ -40,11 +40,15 @@ const getUserRole = () => {
     }
 };
 
-const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
+const LeadAllocationFeedback = ({ form, leadId, disabled, prefilledBankerDetails }) => {
 
-    const [allocatedToUsers, setAllocatedToUsers] = useState([]);
+
     const [feedback, setFeedback] = useState(form.getValues('loanFeedback') || "");
-    const isAdmin = getUserRole() === "admin";
+
+    // Check if user is an advisor
+    const role = getUserRole();
+    const isAdvisor = role === "advisor";
+    const canAllocate = !isAdvisor; // Admin and other roles can allocate/reallocate
 
     // Watch for changes in loanFeedback to keep state in sync
     useEffect(() => {
@@ -59,8 +63,10 @@ const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
 
     console.log("form >>>", form);
 
-    // query to fetch all the allocated To users on component mount - only for admin
+    // query to fetch all the allocated To users on component mount - for non-advisors
+    // query to fetch all the allocated To users on component mount - for non-advisors
     const {
+        data: allocatedToData,
         isError: isListAllocatedToError,
         error: listAllocatedToError,
     } = useQuery({
@@ -68,10 +74,9 @@ const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
         queryFn: async () => {
             const res = await apiListAllocatedTo();
             console.log("📦 queryFn response of list allocated To users:", res);
-            setAllocatedToUsers(res?.data?.data || []);
             return res;
         },
-        enabled: isAdmin, // Only fetch when user is admin
+        enabled: canAllocate, // Fetch when user is NOT an advisor
         refetchOnWindowFocus: false,
         onSuccess: (res) => {
             console.log("data >>", res);
@@ -80,6 +85,8 @@ const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
             console.error("Error fetching list allocated To Users:", err);
         }
     });
+
+    const allocatedToUsers = allocatedToData?.data?.data || [];
 
     console.log('allocateTo Users>>', allocatedToUsers);
     console.log("feedback >>", feedback);
@@ -91,13 +98,13 @@ const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
                 Lead Allocation & Feedback
             </div>
 
-            {/* Error alert - only show for admin */}
-            {isAdmin && isListAllocatedToError && (
+            {/* Error alert - show if error exists and user can allocate */}
+            {canAllocate && isListAllocatedToError && (
                 <Alert variant="destructive">{getErrorMessage(listAllocatedToError)}</Alert>
             )}
 
-            {/* Reallocate To - only visible for admin users */}
-            {isAdmin && (
+            {/* Reallocate To - visible for non-advisors */}
+            {canAllocate && (
                 <FormField
                     control={form.control}
                     name="allocateTo"
@@ -161,7 +168,7 @@ const LeadAllocationFeedback = ({ form, leadId, disabled }) => {
             </div>
 
 
-            {feedback === "Loan Disbursed" && <BankerDetails form={form} leadId={leadId} />}
+            {feedback === "Loan Disbursed" && <BankerDetails form={form} leadId={leadId} prefilledBankerDetails={prefilledBankerDetails} />}
 
 
             {/* Remarks */}

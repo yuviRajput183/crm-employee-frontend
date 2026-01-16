@@ -19,3 +19,18 @@ export const apiListAllLeads = async (params = {}) => {
         },
     );
 }
+
+export const apiDeleteAttachments = async (leadIds) => {
+    const token = localStorage.getItem('token');
+    return await axios.delete(
+        `${baseURL}/leads/attachments`,
+        {
+            data: { leadIds },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        },
+    );
+}

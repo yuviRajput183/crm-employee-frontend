@@ -86,8 +86,8 @@ const servicesSchema = z.object({
             message: "Income must be a number",
         }),
     allocateTo: z.string().optional(),
-    loanFeedback: z.string().optional(),
-    remarks: z.string().optional(),
+    loanFeedback: z.string().nullable().optional(),
+    remarks: z.string().nullable().optional(),
     bankerId: z.string().optional(),
 });
 
@@ -124,6 +124,8 @@ const EditServicesForm = () => {
     const [allocatedToUsers, setAllocatedToUsers] = useState([]);
     const [cities, setCities] = useState([]);
     const [history, setHistory] = useState([]);
+    const [savedCityName, setSavedCityName] = useState(null); // Store the lead's city from API for later use
+
 
 
     const navigate = useNavigate();
@@ -226,7 +228,12 @@ const EditServicesForm = () => {
 
             form.reset(); // clear form
             if (res?.data?.success) {
-                navigate("/admin/my_leads");
+                const returnPath = searchParams.get('returnPath');
+                if (returnPath) {
+                    navigate(returnPath);
+                } else {
+                    navigate("/admin/my_leads");
+                }
             }
 
 
@@ -293,6 +300,11 @@ const EditServicesForm = () => {
                 setSelectedState(lead?.stateName);
             }
 
+            // Store the saved city name for later use
+            if (lead?.cityName) {
+                setSavedCityName(lead?.cityName);
+            }
+
             if (lead?.history) {
                 setHistory(lead.history);
             }
@@ -323,16 +335,27 @@ const EditServicesForm = () => {
                 monthlyIncome: lead?.monthlyIncome?.toString() || '',
 
                 allocateTo: lead?.allocatedTo?._id || "",
-                loanFeedback: lead?.loanFeedback ?? null,
-                remarks: lead?.remarks ?? null,
+                loanFeedback: lead?.loanFeedback ?? "",
+                remarks: lead?.remarks ?? "",
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
-            form.setValue("cityName", lead?.cityName);
 
 
         }
     }, [leadData, form]);
+
+    // Set city value after cities are loaded (separate effect to avoid stale closure)
+    useEffect(() => {
+        if (leadId && savedCityName && cities.length > 0) {
+            const matchedCity = cities.find(
+                (city) => city.cityName === savedCityName
+            );
+            if (matchedCity) {
+                form.setValue("cityName", matchedCity.cityName);
+            }
+        }
+    }, [cities, savedCityName, leadId, form]);
 
 
     return (
@@ -676,6 +699,7 @@ const EditServicesForm = () => {
                             <LeadAllocationFeedback
                                 form={form}
                                 leadId={leadId}
+                                prefilledBankerDetails={leadData?.data?.data?.bankerId}
                             />
                         );
                     })()}

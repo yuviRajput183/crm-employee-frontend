@@ -1,5 +1,5 @@
 import Navbar from '@/components/Navbar'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Monitor, NotebookPen, LayoutDashboard, ChartNoAxesCombined, ChartGantt } from 'lucide-react'
 import Sidebar from '@/components/Sidebar'
 import { Slider } from "@/components/ui/slider";
@@ -17,6 +17,9 @@ import image4 from "@/assets/images/image4.jpg";
 import image5 from "@/assets/images/image5.jpg";
 
 import Footer from '@/components/Footer';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { apiAdminStatistics, apiEmployeeStatistics, apiAdvisorStatistics } from '@/services/lead.api';
 
 
 import personalLoan from '@/assets/images/personalLoan.jpg';
@@ -31,13 +34,6 @@ import services from '@/assets/images/services.png';
 
 const images = [image1, image2, image3, image4, image5];
 
-const leadStatusData = [
-    { label: "Total Leads", count: 0, colorKey: "total" },
-    { label: "Under Process", count: 0, percent: 0, colorKey: "process" },
-    { label: "Approved", count: 0, percent: 0, colorKey: "approved" },
-    { label: "Disbursed", count: 0, percent: 0, colorKey: "disbursed" },
-];
-
 const statusColors = {
     total: "text-red-500",
     process: "text-blue-500",
@@ -45,43 +41,151 @@ const statusColors = {
     disbursed: "text-teal-500",
 };
 
-const disbursalData = [
-    {
-        id: 1,
-        title: "Disbursal Till Date",
-        count: 0,
-        textColor: "text-blue-600",
-        iconBg: "bg-blue-500",
-    },
-    {
-        id: 2,
-        title: "Disbursal This Year",
-        count: 0,
-        textColor: "text-green-500",
-        iconBg: "bg-green-400",
-    },
-    {
-        id: 3,
-        title: "Disbursal This Month",
-        count: 0,
-        textColor: "text-orange-400",
-        iconBg: "bg-orange-400",
-    },
+const products = [
+    { name: 'Personal Loan', img: personalLoan, path: "personal_loan" },
+    { name: 'Business Loan', img: businessLoan, path: "business_loan" },
+    { name: 'Home Loan', img: homeLoan, path: "home_loan" },
+    { name: 'Loan Against Property', img: loanAgainstProperty, path: "loan_against_property" },
+    { name: 'Car Loan', img: carLoan, path: "car_loan" },
+    { name: 'Used Car Loan', img: usedCarLoan, path: "used_car_loan" },
+    { name: 'Insurance', img: insurance, path: "insurance" },
+    { name: 'Private Funding', img: privateFunding, path: "others" },
+    { name: 'Services', img: services, path: "services" },
 ];
 
-const products = [
-    { name: 'Personal Loan', img: personalLoan },
-    { name: 'Business Loan', img: businessLoan },
-    { name: 'Home Loan', img: homeLoan },
-    { name: 'Loan Against Property', img: loanAgainstProperty },
-    { name: 'Car Loan', img: carLoan },
-    { name: 'Used Car Loan', img: usedCarLoan },
-    { name: 'Insurance', img: insurance },
-    { name: 'Private Funding', img: privateFunding },
-    { name: 'Services', img: services },
-];
+// Helper function to get role-based path prefix
+const getRoleBasedPrefix = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        const role = profile?.role?.toLowerCase();
+
+        if (role === "employee") {
+            return "/employee";
+        } else if (role === "advisor") {
+            return "/advisor";
+        } else {
+            // Default to admin for admin users or if role is not recognized
+            return "/admin";
+        }
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return "/admin"; // Default fallback
+    }
+};
+
+// Helper function to get user role
+const getUserRole = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?.role?.toLowerCase() || "admin";
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return "admin";
+    }
+};
+
+// Helper function to get statistics API based on role
+const getStatisticsApiByRole = (role) => {
+    switch (role) {
+        case "employee":
+            return apiEmployeeStatistics;
+        case "advisor":
+            return apiAdvisorStatistics;
+        default:
+            return apiAdminStatistics;
+    }
+};
 
 const Dashboard = () => {
+    const navigate = useNavigate();
+    const rolePrefix = getRoleBasedPrefix();
+    const userRole = getUserRole();
+
+    // State for statistics data
+    const [leadStatusData, setLeadStatusData] = useState([
+        { label: "Total Leads", count: 0, colorKey: "total" },
+        { label: "Under Process", count: 0, percent: 0, colorKey: "process" },
+        { label: "Approved", count: 0, percent: 0, colorKey: "approved" },
+        { label: "Disbursed", count: 0, percent: 0, colorKey: "disbursed" },
+    ]);
+
+    const [disbursalData, setDisbursalData] = useState([
+        {
+            id: 1,
+            title: "Disbursal Till Date",
+            count: 0,
+            textColor: "text-blue-600",
+            iconBg: "bg-blue-500",
+        },
+        {
+            id: 2,
+            title: "Disbursal This Year",
+            count: 0,
+            textColor: "text-green-500",
+            iconBg: "bg-green-400",
+        },
+        {
+            id: 3,
+            title: "Disbursal This Month",
+            count: 0,
+            textColor: "text-orange-400",
+            iconBg: "bg-orange-400",
+        },
+    ]);
+
+    // Fetch statistics based on role
+    const { data: statisticsData, isLoading, isError } = useQuery({
+        queryKey: ['dashboard-statistics', userRole],
+        queryFn: getStatisticsApiByRole(userRole),
+        refetchOnWindowFocus: false,
+        onSuccess: (res) => {
+            console.log("Statistics data >>", res);
+        },
+        onError: (err) => {
+            console.error("Error fetching statistics:", err);
+        }
+    });
+
+    // Update state when statistics data is fetched
+    useEffect(() => {
+        if (statisticsData?.data?.data) {
+            const stats = statisticsData.data.data;
+
+            // Update lead status data based on actual API response
+            setLeadStatusData([
+                { label: "Total Leads", count: stats.totalLeads || 0, colorKey: "total" },
+                { label: "Under Process", count: 0, percent: parseFloat(stats.percentageUnderProcess) || 0, colorKey: "process" },
+                { label: "Approved", count: 0, percent: parseFloat(stats.percentageApproved) || 0, colorKey: "approved" },
+                { label: "Disbursed", count: 0, percent: parseFloat(stats.percentageDisbursed) || 0, colorKey: "disbursed" },
+            ]);
+
+            // Update disbursal data based on actual API response
+            setDisbursalData([
+                {
+                    id: 1,
+                    title: "Disbursal Till Date",
+                    count: stats.totalDisbursalAmount || 0,
+                    textColor: "text-blue-600",
+                    iconBg: "bg-blue-500",
+                },
+                {
+                    id: 2,
+                    title: "Disbursal This Year",
+                    count: stats.totalDisbursalAmountThisYear || 0,
+                    textColor: "text-green-500",
+                    iconBg: "bg-green-400",
+                },
+                {
+                    id: 3,
+                    title: "Disbursal This Month",
+                    count: stats.totalDisbursalAmountThisMonth || 0,
+                    textColor: "text-orange-400",
+                    iconBg: "bg-orange-400",
+                },
+            ]);
+        }
+    }, [statisticsData]);
+
     return (
         <div className=' flex-1 p-2 '>
             <div className=' w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 shadow-md rounded-md'>
@@ -163,7 +267,8 @@ const Dashboard = () => {
                     {products.map((product, index) => (
                         <div
                             key={index}
-                            className="flex items-center justify-between border-2 border-indigo-300 rounded-md p-4 bg-white shadow-sm w-full md:w-[calc(33.33%-1rem)] min-w-[250px] hover:shadow-md transition-shadow"
+                            onClick={() => navigate(`${rolePrefix}/${product?.path}`)}
+                            className="flex items-center justify-between border-2 border-indigo-300 rounded-md p-4 bg-white shadow-sm w-full md:w-[calc(33.33%-1rem)] min-w-[250px] hover:shadow-md transition-shadow cursor-pointer"
                         >
                             <div className="flex items-center gap-4">
                                 <img src={product.img} alt={product.name} className="w-10 h-10 object-contain" />

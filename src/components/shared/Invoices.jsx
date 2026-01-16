@@ -165,7 +165,7 @@ const Invoices = () => {
                 </div>
                 {!showAddInvoice && <div className=' flex items-center gap-2'>
                     <Button className=" bg-purple-950 px-10" onClick={() => setShowFilter(!showFilter)}>{showFilter ? "Hide Filter" : "Show Filter"}</Button>
-                    <Button className=" bg-purple-950 px-10" onClick={() => setShowAddInvoice(!showAddInvoice)}>Add +</Button>
+                    <Button className=" bg-purple-950 px-10" onClick={() => navigate('/admin/add_invoice')}>Add +</Button>
                 </div>}
             </div>
 
@@ -177,7 +177,7 @@ const Invoices = () => {
             )}
 
 
-            {showAddInvoice ? <AddInvoiceForm onClose={() => setShowAddInvoice(false)} /> : <>
+            {showAddInvoice ? <AddInvoiceForm onClose={(shouldRefetch) => { setShowAddInvoice(false); if (shouldRefetch) refetch(); }} /> : <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-4">
                     {payoutData.map((item, index) => (
                         <div

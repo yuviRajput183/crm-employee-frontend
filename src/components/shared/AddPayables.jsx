@@ -22,10 +22,10 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
-import { apiListLeadNo } from '@/services/invoices.api';
+import { apiListPayableLeads, apiGetAdvisorsAssociatedWithPayout, apiGetSingleAdvisorPayout } from '@/services/payables.api';
 import { apiFetchLeadDetails } from '@/services/lead.api';
-import { apiListAdvisor } from '@/services/advisor.api';
 import { usePayables } from '@/lib/hooks/usePayables';
+import { useNavigate } from 'react-router-dom';
 
 // Zod schema for payables form
 const addPayablesFormSchema = z.object({
@@ -55,17 +55,18 @@ const addPayablesFormSchema = z.object({
 });
 
 const paymentAgainstOptions = [
-    { value: "payable_amount", label: "Payable Amount" },
+    { value: "receivable_amount", label: "Receivable Amount" },
     { value: "gst_amount", label: "GST Amount" },
-    { value: "advance", label: "Advance" },
-    { value: "partial", label: "Partial Payment" },
-    { value: "full", label: "Full Payment" },
 ];
 
 const AddPayables = ({ onClose }) => {
     const [leads, setLeads] = useState([]);
     const [selectedLead, setSelectedLead] = useState(null);
     const [advisors, setAdvisors] = useState([]);
+    const [selectedAdvisor, setSelectedAdvisor] = useState(null);
+    const [selectedPaymentAgainst, setSelectedPaymentAgainst] = useState(null);
+    const [advisorPayoutData, setAdvisorPayoutData] = useState(null);
+    const navigate = useNavigate();
 
     const form = useForm({
         resolver: zodResolver(addPayablesFormSchema),
@@ -91,15 +92,15 @@ const AddPayables = ({ onClose }) => {
         },
     });
 
-    // query to fetch all the lead no on component mount
+    // query to fetch all the lead no on component mount using new API endpoint
     const {
         isError: isListLeadNoError,
         error: listLeadNoError,
     } = useQuery({
         queryKey: ['payables-lead-list'],
         queryFn: async () => {
-            const res = await apiListLeadNo();
-            console.log("📦 queryFn response of list lead no :", res);
+            const res = await apiListPayableLeads();
+            console.log("📦 queryFn response of all payable leads :", res);
             setLeads(res?.data?.data || []);
             return res;
         },
@@ -108,25 +109,52 @@ const AddPayables = ({ onClose }) => {
             console.log("data >>", res);
         },
         onError: (err) => {
-            console.error("Error fetching list lead no:", err);
+            console.error("Error fetching all payable leads:", err);
         }
     });
 
-    // Query to fetch advisors list on component mount
+    // Query to fetch advisors associated with payout when Lead No is selected
     const {
+        isLoading: isAdvisorsLoading,
         isError: isAdvisorsError,
         error: advisorsError,
     } = useQuery({
-        queryKey: ['payables-advisors-list'],
+        queryKey: ['advisors-associated-with-payout', selectedLead],
+        enabled: !!selectedLead,
         queryFn: async () => {
-            const res = await apiListAdvisor();
-            console.log("📦 queryFn response of list advisors:", res);
-            setAdvisors(res?.data?.data?.advisors || []);
+            const res = await apiGetAdvisorsAssociatedWithPayout(selectedLead);
+            console.log("📦 Advisors associated with payout response:", res);
+            // If the response contains advisors array, set it
+            if (res?.data?.data?.advisors) {
+                setAdvisors(res.data.data.advisors);
+            } else if (Array.isArray(res?.data?.data)) {
+                setAdvisors(res.data.data);
+            }
             return res;
         },
         refetchOnWindowFocus: false,
         onError: (err) => {
-            console.error("Error fetching advisors list:", err);
+            console.error("Error fetching advisors associated with payout:", err);
+        }
+    });
+
+    // Query to fetch single advisor payout details when advisor is selected
+    const {
+        isLoading: isAdvisorPayoutLoading,
+        isError: isAdvisorPayoutError,
+        error: advisorPayoutError,
+    } = useQuery({
+        queryKey: ['single-advisor-payout', selectedAdvisor],
+        enabled: !!selectedAdvisor,
+        queryFn: async () => {
+            const res = await apiGetSingleAdvisorPayout(selectedAdvisor);
+            console.log("📦 Single advisor payout response:", res);
+            setAdvisorPayoutData(res?.data?.data || null);
+            return res;
+        },
+        refetchOnWindowFocus: false,
+        onError: (err) => {
+            console.error("Error fetching single advisor payout:", err);
         }
     });
 
@@ -211,6 +239,9 @@ const AddPayables = ({ onClose }) => {
                 {isAdvisorsError && (
                     <Alert variant="destructive">{getErrorMessage(advisorsError)}</Alert>
                 )}
+                {isAdvisorPayoutError && (
+                    <Alert variant="destructive">{getErrorMessage(advisorPayoutError)}</Alert>
+                )}
                 {isError && (
                     <Alert variant="destructive">{getErrorMessage(error)}</Alert>
                 )}
@@ -281,16 +312,23 @@ const AddPayables = ({ onClose }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Advisor Name <span className="text-red-500">*</span></FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setSelectedAdvisor(value);
+                                    }}
+                                    defaultValue={field.value}
+                                    disabled={!selectedLead || isAdvisorsLoading}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
+                                            <SelectValue placeholder={isAdvisorsLoading ? "Loading..." : "Select"} />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
                                         {advisors.map((advisor) => (
                                             <SelectItem key={advisor?._id} value={advisor?._id}>
-                                                {advisor?.name}
+                                                {advisor?.name || advisor?.advisorName}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -307,7 +345,13 @@ const AddPayables = ({ onClose }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Payment Against <span className="text-red-500">*</span></FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setSelectedPaymentAgainst(value);
+                                    }}
+                                    defaultValue={field.value}
+                                >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
