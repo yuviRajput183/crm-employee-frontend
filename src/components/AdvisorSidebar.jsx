@@ -9,7 +9,7 @@ const sidebarMenuList = [
     { id: 3, title: "Draft", path: "/advisor/drafts", icon: <LayoutDashboard /> },
     { id: 4, title: "My Lead", path: "/advisor/my_leads", icon: <ChartNoAxesCombined /> },
     { id: 5, title: "My Payout", path: "/advisor/my_payout", icon: <ChartNoAxesCombined /> },
-    { id: 6, title: "Loan Documents List", path: "/advisor/loan_documents_list", icon: <ChartNoAxesCombined /> },
+    { id: 6, title: "Loan Documents List", path: "/assets/loan_document.pdf", icon: <ChartNoAxesCombined />, isExternal: true },
     { id: 7, title: "Payout Percentage", path: "/advisor/payout_percentage", icon: <ChartNoAxesCombined /> },
     { id: 8, title: "My Performance", path: "/advisor/my_performance", icon: <ChartNoAxesCombined /> }
 ]
@@ -25,7 +25,14 @@ const AdvisorSidebar = ({ onMenuClick }) => {
             {sidebarMenuList.map((menu) => (
                 <div
                     key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black border-b border-gray-500 border-opacity-15 ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
-                    onClick={() => { onMenuClick(); navigate(menu.path) }}
+                    onClick={() => {
+                        onMenuClick();
+                        if (menu.isExternal) {
+                            window.open(menu.path, '_blank');
+                        } else {
+                            navigate(menu.path);
+                        }
+                    }}
                 >
                     {menu.icon}
                     <h1>{menu.title}</h1>

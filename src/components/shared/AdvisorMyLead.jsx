@@ -284,9 +284,9 @@ const AdvisorMyLead = () => {
                 </div>
 
                 {/* Add Button */}
-                <div className="mt-4">
+                {/* <div className="mt-4">
                     <Button className=" bg-blue-500 hover:bg-blue-500">Export</Button>
-                </div>
+                </div> */}
             </>
 
         </div>

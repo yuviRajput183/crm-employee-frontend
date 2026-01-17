@@ -28,6 +28,7 @@ import { apiListProcessed } from '@/services/processed.api';
 import { apiFetchLeadDetails } from '@/services/lead.api';
 import { apiListAdvisor } from '@/services/advisor.api';
 import { useAdvisorPayout } from '@/lib/hooks/useAdvisorPayout';
+import { useNavigate } from 'react-router-dom';
 
 // Zod schema for disbursement form
 const addInvoiceFormSchema = z.object({
@@ -66,6 +67,7 @@ const addInvoiceFormSchema = z.object({
 });
 
 const AddAdvisorPayout = ({ onClose }) => {
+    const navigate = useNavigate();
     const [leads, setLeads] = useState([]);
     const [selectedLead, setSelectedLead] = useState(null);
     const [processedByUsers, setProcessedByUsers] = useState([]);
@@ -236,7 +238,11 @@ const AddAdvisorPayout = ({ onClose }) => {
             console.log("New Advisor Payout added successfully ....");
 
             if (res?.data?.success) {
-                onClose();
+                if (onClose) {
+                    onClose();
+                } else {
+                    navigate(-1);
+                }
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
@@ -724,7 +730,7 @@ const AddAdvisorPayout = ({ onClose }) => {
                         {isLoading ? 'SAVING...' : 'SAVE'}
                     </Button>
                     <Button
-                        onClick={onClose}
+                        onClick={() => onClose ? onClose() : navigate(-1)}
                         type="button"
                         variant="outline"
                         className="bg-gray-500 text-white"

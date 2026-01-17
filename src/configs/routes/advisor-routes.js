@@ -26,11 +26,11 @@ export const advisorRoutes = [
         name: "My Payout",
         component: lazy(() => import('@/components/shared/MyPayout'))
     },
-    {
-        path: "loan_documents_list",
-        name: "Loan Documents List",
-        component: lazy(() => import('@/pages/Dashboard'))
-    },
+    // {
+    //     path: "loan_documents_list",
+    //     name: "Loan Documents List",
+    //     component: lazy(() => import('@/pages/Dashboard'))
+    // },
     {
         path: "payout_percentage",
         name: "Payout Percentage",

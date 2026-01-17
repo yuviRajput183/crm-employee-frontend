@@ -27,6 +27,11 @@ export const employeeRoutes = [
         component: lazy(() => import('@/components/shared/AdvisorPayout'))
     },
     {
+        path: "add_advisor_payout",
+        name: "Add Advisor Payout",
+        component: lazy(() => import('@/components/shared/AddAdvisorPayout'))
+    },
+    {
         path: "my_performance",
         name: "My Performance",
         component: lazy(() => import('@/components/shared/MyPerformance'))

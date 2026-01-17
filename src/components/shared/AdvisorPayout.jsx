@@ -21,7 +21,6 @@ import { Alert } from '../ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useAdvisorPayout } from '@/lib/hooks/useAdvisorPayout';
 import { useNavigate } from 'react-router-dom';
-import AddAdvisorPayout from './AddAdvisorPayout';
 
 
 const filterSchema = z.object({
@@ -38,7 +37,7 @@ const AdvisorPayout = () => {
     const [filterParams, setFilterParams] = useState({});
     const [leads, setLeads] = useState([]);
     const [payoutData, setPayoutData] = useState([]);
-    const [showAddAdvisorPayout, setShowAddAdvisorPayout] = useState(false);
+
 
     const navigate = useNavigate();
 
@@ -163,11 +162,10 @@ const AdvisorPayout = () => {
                     </Avatar>
                     <h1 className=' text-2xl text-bold'>Advisor Payout</h1>
                 </div>
-                {!showAddAdvisorPayout && <div className=' flex items-center gap-2'>
+                <div className=' flex items-center gap-2'>
                     <Button className=" bg-purple-950 px-10" onClick={() => setShowFilter(!showFilter)}>{showFilter ? "Hide Filter" : "Show Filter"}</Button>
-                    <Button className=" bg-purple-950 px-10" onClick={() => setShowAddAdvisorPayout(!showAddAdvisorPayout)}>Add +</Button>
+                    <Button className=" bg-purple-950 px-10" onClick={() => navigate('../add_advisor_payout')}>Add +</Button>
                 </div>
-                }
 
             </div>
 
@@ -178,92 +176,86 @@ const AdvisorPayout = () => {
                 <Alert variant="destructive">{getErrorMessage(error)}</Alert>
             )}
 
-            {showAddAdvisorPayout ?
-                <AddAdvisorPayout onClose={() => {
-                    setShowAddAdvisorPayout(false);
-                    refetch();
-                }} /> :
-                <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-4">
-                        {payoutData.map((item, index) => (
-                            <div
-                                key={index}
-                                className={` cursor-pointer text-white p-5 rounded-md shadow-md flex items-center justify-between ${item.color} opacity-`}
-                            >
-                                <div>
-                                    <h2 className="text-md font-semibold">{item.label}</h2>
-                                    <p className="text-xl font-bold mt-1">{item.value}</p>
-                                </div>
-                                <div className="bg-white/80 p-2 rounded shadow-md">
-                                    <Monitor className={`w-5 h-5 ${item.iconColor}`} />
-                                </div>
+            <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-4">
+                    {payoutData.map((item, index) => (
+                        <div
+                            key={index}
+                            className={` cursor-pointer text-white p-5 rounded-md shadow-md flex items-center justify-between ${item.color} opacity-`}
+                        >
+                            <div>
+                                <h2 className="text-md font-semibold">{item.label}</h2>
+                                <p className="text-xl font-bold mt-1">{item.value}</p>
                             </div>
-                        ))}
-                    </div>
+                            <div className="bg-white/80 p-2 rounded shadow-md">
+                                <Monitor className={`w-5 h-5 ${item.iconColor}`} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
-                    {showFilter && <AdvisorInvoicesFilter form={form} handleFilter={handleFilter} showFilter={showFilter}></AdvisorInvoicesFilter>}
+                {showFilter && <AdvisorInvoicesFilter form={form} handleFilter={handleFilter} showFilter={showFilter}></AdvisorInvoicesFilter>}
 
-                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-green-900 text-white hover:bg-green-900 cursor-pointer">
-                                    <TableHead className="text-white">Lead No</TableHead>
-                                    <TableHead className="text-white">Loan Type</TableHead>
-                                    <TableHead className="text-white">Advisor Name</TableHead>
-                                    <TableHead className="text-white">Customer Name</TableHead>
-                                    <TableHead className="text-white">Disbursal Amt</TableHead>
-                                    <TableHead className="text-white">Disbursal Date</TableHead>
-                                    <TableHead className="text-white">Payout %</TableHead>
-                                    <TableHead className="text-white">Payout Amt</TableHead>
-                                    <TableHead className="text-white">TDS %</TableHead>
-                                    <TableHead className="text-white">TDS Amt</TableHead>
-                                    <TableHead className="text-white">GST</TableHead>
-                                    <TableHead className="text-white">Invoice Date</TableHead>
-                                    <TableHead className="text-white">Invoice No</TableHead>
-                                    <TableHead className="text-white">GST %</TableHead>
-                                    <TableHead className="text-white">GST Amt</TableHead>
-                                    <TableHead className="text-white">Payable Amt</TableHead>
-                                    <TableHead className="text-white">Edit</TableHead>
-                                    <TableHead className="text-white">Delete</TableHead>
+                <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-green-900 text-white hover:bg-green-900 cursor-pointer">
+                                <TableHead className="text-white">Lead No</TableHead>
+                                <TableHead className="text-white">Loan Type</TableHead>
+                                <TableHead className="text-white">Advisor Name</TableHead>
+                                <TableHead className="text-white">Customer Name</TableHead>
+                                <TableHead className="text-white">Disbursal Amt</TableHead>
+                                <TableHead className="text-white">Disbursal Date</TableHead>
+                                <TableHead className="text-white">Payout %</TableHead>
+                                <TableHead className="text-white">Payout Amt</TableHead>
+                                <TableHead className="text-white">TDS %</TableHead>
+                                <TableHead className="text-white">TDS Amt</TableHead>
+                                <TableHead className="text-white">GST</TableHead>
+                                <TableHead className="text-white">Invoice Date</TableHead>
+                                <TableHead className="text-white">Invoice No</TableHead>
+                                <TableHead className="text-white">GST %</TableHead>
+                                <TableHead className="text-white">GST Amt</TableHead>
+                                <TableHead className="text-white">Payable Amt</TableHead>
+                                <TableHead className="text-white">Edit</TableHead>
+                                <TableHead className="text-white">Delete</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {leads.map((lead, index) => (
+                                <TableRow key={lead?._id} className={index % 2 === 0 ? "bg-gray-100" : ""}>
+                                    <TableCell>{lead?.leadId?.leadNo}</TableCell>
+                                    <TableCell>{lead?.leadId?.productType}</TableCell>
+                                    <TableCell>{lead?.advisorId?.name}</TableCell>
+                                    <TableCell>{lead?.leadId?.clientName}</TableCell>
+                                    <TableCell>{lead?.disbursalAmount}</TableCell>
+                                    <TableCell>{lead?.disbursalDate?.split('T')[0]}</TableCell>
+                                    <TableCell>{lead.payoutPercent}</TableCell>
+                                    <TableCell>{lead.payoutAmount}</TableCell>
+                                    <TableCell>{lead.tdsPercent}</TableCell>
+                                    <TableCell>{lead.tdsAmount}</TableCell>
+                                    <TableCell>{lead.gstApplicable ? "Applicable" : "Not Applicable"}</TableCell>
+                                    <TableCell>{lead.invoiceDate?.split('T')[0]}</TableCell>
+                                    <TableCell>{lead.invoiceNo}</TableCell>
+                                    <TableCell>{lead.gstPercent}</TableCell>
+                                    <TableCell>{lead.gstAmount}</TableCell>
+                                    <TableCell>{lead.netPayableAmount}</TableCell>
+                                    <TableCell>
+                                        <Button
+                                            onClick={() => navigate(`/admin/edit_advisor_payout/${lead?._id}`)}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs">Edit</Button>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            loading={isLoading}
+                                            onClick={() => handleDelete(lead?._id)}
+                                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs">Delete</Button>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {leads.map((lead, index) => (
-                                    <TableRow key={lead?._id} className={index % 2 === 0 ? "bg-gray-100" : ""}>
-                                        <TableCell>{lead?.leadId?.leadNo}</TableCell>
-                                        <TableCell>{lead?.leadId?.productType}</TableCell>
-                                        <TableCell>{lead?.advisorId?.name}</TableCell>
-                                        <TableCell>{lead?.leadId?.clientName}</TableCell>
-                                        <TableCell>{lead?.disbursalAmount}</TableCell>
-                                        <TableCell>{lead?.disbursalDate?.split('T')[0]}</TableCell>
-                                        <TableCell>{lead.payoutPercent}</TableCell>
-                                        <TableCell>{lead.payoutAmount}</TableCell>
-                                        <TableCell>{lead.tdsPercent}</TableCell>
-                                        <TableCell>{lead.tdsAmount}</TableCell>
-                                        <TableCell>{lead.gstApplicable ? "Applicable" : "Not Applicable"}</TableCell>
-                                        <TableCell>{lead.invoiceDate?.split('T')[0]}</TableCell>
-                                        <TableCell>{lead.invoiceNo}</TableCell>
-                                        <TableCell>{lead.gstPercent}</TableCell>
-                                        <TableCell>{lead.gstAmount}</TableCell>
-                                        <TableCell>{lead.netPayableAmount}</TableCell>
-                                        <TableCell>
-                                            <Button
-                                                onClick={() => navigate(`/admin/edit_advisor_payout/${lead?._id}`)}
-                                                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs">Edit</Button>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Button
-                                                loading={isLoading}
-                                                onClick={() => handleDelete(lead?._id)}
-                                                className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs">Delete</Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </>
-            }
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </>
 
 
         </div>

@@ -57,17 +57,17 @@ const editPayablesFormSchema = z.object({
 });
 
 const paymentAgainstOptions = [
-    { value: "payable_amount", label: "Payable Amount" },
-    { value: "gst_amount", label: "GST Amount" },
-    { value: "advance", label: "Advance" },
-    { value: "partial", label: "Partial Payment" },
-    { value: "full", label: "Full Payment" },
+    { value: "payableAmount", label: "Payable Amount" },
+    { value: "gstPayment", label: "GST Payment" },
 ];
+
+
 
 const EditPayablesForm = () => {
     const { id: payableId } = useParams();
     console.log("payableId>>", payableId);
     const [advisors, setAdvisors] = useState([]);
+    // Removed dynamic logic states
 
     const navigate = useNavigate();
 
@@ -138,20 +138,38 @@ const EditPayablesForm = () => {
         console.log("Submitted values:", data);
 
         try {
-            const formData = new FormData();
-
-            // Append all form fields
+            // Build JSON payload, filtering out empty values
+            const payload = {};
             Object.keys(data).forEach(key => {
-                if (data[key] !== undefined && data[key] !== '') {
-                    formData.append(key, data[key]);
+                // Rename fields for backend
+                if (key === 'payableGstAmount') {
+                    payload['payableAmount'] = data[key] || '0';
+                } else if (key === 'balancePayableAmount') {
+                    payload['balanceAmount'] = data[key] || '0';
+                } else if (data[key] !== undefined && data[key] !== '') {
+                    payload[key] = data[key];
                 }
             });
 
-            const res = await mutateAsync({ payableId, payload: formData });
+            // Override leadId with the actual ID from the fetched data (since form has display string)
+            const originalPayable = payableData?.data?.data;
+            if (originalPayable?.leadId?._id) {
+                payload['leadId'] = originalPayable.leadId._id;
+            }
+
+            // Add payoutId if present in original data
+            if (originalPayable?.payoutId) {
+                payload['payoutId'] = originalPayable.payoutId;
+            } else if (originalPayable?.advisorPayoutId) {
+                // Fallback if it's stored as advisorPayoutId
+                payload['payoutId'] = originalPayable.advisorPayoutId;
+            }
+
+            const res = await mutateAsync({ payableId, payload });
             console.log("Payable updated successfully ....");
 
             if (res?.data?.success) {
-                navigate('/admin/payable_payout');
+                navigate('../payable_payout');
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
@@ -185,6 +203,20 @@ const EditPayablesForm = () => {
             });
         }
     }, [payableData, form]);
+
+    // Initialize selectedAdvisor when payableData loads
+    useEffect(() => {
+        if (payableData?.data?.data?.advisorId?._id) {
+            // Check if we have an explicit payoutId or advisorPayoutId to use, otherwise fall back to advisorId
+            // However, AddPayables uses the value from the Advisor Select dropdown which is advisorPayoutId || _id.
+            // For existing payables, we need the ID that fetches the Payout Details. 
+            // Assuming the existing 'advisorId' field or 'payoutId' field in payableData is what we need.
+            // If payableData has 'advisorPayoutId' or 'payoutId', use that.
+            const pData = payableData.data.data;
+            const advisorRef = pData.advisorPayoutId || pData.payoutId || pData.advisorId._id;
+            setSelectedAdvisor(advisorRef);
+        }
+    }, [payableData]);
 
     return (
         <div className=' p-3 bg-white rounded shadow'>
@@ -324,13 +356,35 @@ const EditPayablesForm = () => {
                         <FormField
                             control={form.control}
                             name="paidAmount"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Paid Amount <span className="text-red-500">*</span></FormLabel>
-                                    <Input {...field} />
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                            render={({ field }) => {
+                                const payableGstAmount = parseFloat(form.watch('payableGstAmount')) || 0;
+                                return (
+                                    <FormItem>
+                                        <FormLabel>Paid Amount <span className="text-red-500">*</span></FormLabel>
+                                        <Input
+                                            {...field}
+                                            type="number"
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                const numValue = parseFloat(value) || 0;
+
+                                                // Validate that paid amount is not greater than payable amount
+                                                if (numValue <= payableGstAmount) {
+                                                    field.onChange(value);
+                                                    // Calculate balance
+                                                    const balance = payableGstAmount - numValue;
+                                                    form.setValue('balancePayableAmount', balance.toString());
+                                                } else {
+                                                    // Set to max allowed value
+                                                    field.onChange(payableGstAmount.toString());
+                                                    form.setValue('balancePayableAmount', '0');
+                                                }
+                                            }}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                );
+                            }}
                         />
 
                         {/* Balance Payable Amount */}
@@ -491,7 +545,7 @@ const EditPayablesForm = () => {
                             {isLoading ? 'SAVING...' : 'SAVE'}
                         </Button>
                         <Button
-                            onClick={() => navigate('/admin/payable_payout')}
+                            onClick={() => navigate('../payable_payout')}
                             type="button"
                             variant="outline"
                             className="bg-gray-500 text-white"

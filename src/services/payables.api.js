@@ -23,14 +23,14 @@ export const apiListPayables = async (params = {}) => {
 }
 
 
-export const apiAddPayable = async (formData) => {
+export const apiAddPayable = async (payload) => {
     const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/payables/add-payable`,
-        formData,
+        payload,
         {
             headers: {
-                'Content-Type': 'multipart/form-data',
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             withCredentials: true

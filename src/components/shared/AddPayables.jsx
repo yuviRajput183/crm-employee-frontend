@@ -54,11 +54,6 @@ const addPayablesFormSchema = z.object({
     cityName: z.string().optional(),
 });
 
-const paymentAgainstOptions = [
-    { value: "receivable_amount", label: "Receivable Amount" },
-    { value: "gst_amount", label: "GST Amount" },
-];
-
 const AddPayables = ({ onClose }) => {
     const [leads, setLeads] = useState([]);
     const [selectedLead, setSelectedLead] = useState(null);
@@ -66,6 +61,7 @@ const AddPayables = ({ onClose }) => {
     const [selectedAdvisor, setSelectedAdvisor] = useState(null);
     const [selectedPaymentAgainst, setSelectedPaymentAgainst] = useState(null);
     const [advisorPayoutData, setAdvisorPayoutData] = useState(null);
+    const [paymentAgainstOptions, setPaymentAgainstOptions] = useState([]);
     const navigate = useNavigate();
 
     const form = useForm({
@@ -182,20 +178,31 @@ const AddPayables = ({ onClose }) => {
         console.log("Submitted values:", data);
 
         try {
-            const formData = new FormData();
-
-            // Append all form fields
+            // Build JSON payload, filtering out empty values
+            const payload = {};
             Object.keys(data).forEach(key => {
                 if (data[key] !== undefined && data[key] !== '') {
-                    formData.append(key, data[key]);
+                    // Rename fields for backend
+                    if (key === 'payableGstAmount') {
+                        payload['payableAmount'] = data[key];
+                    } else if (key === 'balancePayableAmount') {
+                        payload['balanceAmount'] = data[key];
+                    } else {
+                        payload[key] = data[key];
+                    }
                 }
             });
 
-            const res = await mutateAsync(formData);
+            // Add payoutId from advisorPayoutData
+            if (advisorPayoutData?._id) {
+                payload['payoutId'] = advisorPayoutData._id;
+            }
+
+            const res = await mutateAsync(payload);
             console.log("New Payable added successfully ....");
 
             if (res?.data?.success) {
-                onClose();
+                navigate('../payable_payout');
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
@@ -221,6 +228,41 @@ const AddPayables = ({ onClose }) => {
             form.setValue('cityName', lead?.bankerId?.city?.cityName || '');
         }
     }, [leadData, form]);
+
+    // Build payment against options based on advisor payout data
+    useEffect(() => {
+        if (advisorPayoutData) {
+            console.log("Building payment options from:", advisorPayoutData);
+            const options = [];
+
+            // Add Payable Amount option if remainingPayableAmount > 0
+            if (advisorPayoutData?.remainingPayableAmount && advisorPayoutData.remainingPayableAmount > 0) {
+                options.push({
+                    value: "payableAmount",
+                    label: `Payable Amount`
+                });
+            }
+
+            // Add GST Payment option if remainingGstAmount > 0
+            if (advisorPayoutData?.remainingGstAmount && advisorPayoutData.remainingGstAmount > 0) {
+                options.push({
+                    value: "gstPayment",
+                    label: `GST Payment`
+                });
+            }
+
+            setPaymentAgainstOptions(options);
+
+            // Reset payment against selection when advisor changes
+            form.setValue('paymentAgainst', '');
+            form.setValue('payableGstAmount', '');
+            form.setValue('paidAmount', '');
+            form.setValue('balancePayableAmount', '');
+            setSelectedPaymentAgainst(null);
+        } else {
+            setPaymentAgainstOptions([]);
+        }
+    }, [advisorPayoutData, form]);
 
 
     return (
@@ -314,10 +356,11 @@ const AddPayables = ({ onClose }) => {
                                 <FormLabel>Advisor Name <span className="text-red-500">*</span></FormLabel>
                                 <Select
                                     onValueChange={(value) => {
+                                        console.log("Selected advisor value:", value);
                                         field.onChange(value);
                                         setSelectedAdvisor(value);
                                     }}
-                                    defaultValue={field.value}
+                                    value={field.value || ""}
                                     disabled={!selectedLead || isAdvisorsLoading}
                                 >
                                     <FormControl>
@@ -326,11 +369,15 @@ const AddPayables = ({ onClose }) => {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {advisors.map((advisor) => (
-                                            <SelectItem key={advisor?._id} value={advisor?._id}>
-                                                {advisor?.name || advisor?.advisorName}
-                                            </SelectItem>
-                                        ))}
+                                        {advisors.map((advisor) => {
+                                            const advisorId = advisor?.advisorPayoutId || advisor?._id || advisor?.id;
+                                            const advisorName = advisor?.advisorName || advisor?.name;
+                                            return (
+                                                <SelectItem key={advisorId} value={advisorId}>
+                                                    {advisorName}
+                                                </SelectItem>
+                                            );
+                                        })}
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -349,12 +396,26 @@ const AddPayables = ({ onClose }) => {
                                     onValueChange={(value) => {
                                         field.onChange(value);
                                         setSelectedPaymentAgainst(value);
+
+                                        // Fill Payable/GST Amount based on selection
+                                        if (advisorPayoutData) {
+                                            let amount = '';
+                                            if (value === 'payableAmount') {
+                                                amount = advisorPayoutData?.remainingPayableAmount?.toString() || '';
+                                            } else if (value === 'gstPayment') {
+                                                amount = advisorPayoutData?.remainingGstAmount?.toString() || '';
+                                            }
+                                            form.setValue('payableGstAmount', amount);
+                                            form.setValue('paidAmount', amount);
+                                            form.setValue('balancePayableAmount', '0');
+                                        }
                                     }}
-                                    defaultValue={field.value}
+                                    value={field.value || ""}
+                                    disabled={!selectedAdvisor || paymentAgainstOptions.length === 0}
                                 >
                                     <FormControl>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
+                                            <SelectValue placeholder={paymentAgainstOptions.length === 0 ? "Select Advisor First" : "Select"} />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -386,13 +447,35 @@ const AddPayables = ({ onClose }) => {
                     <FormField
                         control={form.control}
                         name="paidAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Paid Amount <span className="text-red-500">*</span></FormLabel>
-                                <Input {...field} />
-                                <FormMessage />
-                            </FormItem>
-                        )}
+                        render={({ field }) => {
+                            const payableGstAmount = parseFloat(form.watch('payableGstAmount')) || 0;
+                            return (
+                                <FormItem>
+                                    <FormLabel>Paid Amount <span className="text-red-500">*</span></FormLabel>
+                                    <Input
+                                        {...field}
+                                        type="number"
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            const numValue = parseFloat(value) || 0;
+
+                                            // Validate that paid amount is not greater than payable amount
+                                            if (numValue <= payableGstAmount) {
+                                                field.onChange(value);
+                                                // Calculate balance
+                                                const balance = payableGstAmount - numValue;
+                                                form.setValue('balancePayableAmount', balance.toString());
+                                            } else {
+                                                // Set to max allowed value
+                                                field.onChange(payableGstAmount.toString());
+                                                form.setValue('balancePayableAmount', '0');
+                                            }
+                                        }}
+                                    />
+                                    <FormMessage />
+                                </FormItem>
+                            );
+                        }}
                     />
 
                     {/* Balance Payable Amount */}
