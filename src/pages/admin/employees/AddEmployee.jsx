@@ -64,6 +64,8 @@ const AddEmployee = () => {
     const [savedDesignation, setSavedDesignation] = useState(null); // Store the employee's designation from API
     const [savedReportingOfficer, setSavedReportingOfficer] = useState(null); // Store the employee's reporting officer from API
     const [photoPreview, setPhotoPreview] = useState(null); // For image preview
+    const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
+    const fileInputRef = React.useRef(null);
     const navigate = useNavigate();
 
     const { addEmployee, updateEmployee } = useEmployee();
@@ -112,6 +114,10 @@ const AddEmployee = () => {
                 resignDate: editData?.dateOfResign?.split('T')[0] || '', // for later
                 photograph: editData?.photoUrl || ''
             });
+
+            setIsPhotoRemoved(false);
+            setPhotoPreview(null); // Clear any previous preview
+            if (fileInputRef.current) fileInputRef.current.value = "";
 
             setSelectedDept(editData?.department);
             setSelectedDesignation(editData?.designation);
@@ -168,6 +174,7 @@ const AddEmployee = () => {
             if (data?.resignDate) {
                 formData.append('dateOfResign', data.resignDate);
             }
+            formData.append('isPhotoRemoved', isPhotoRemoved);
 
 
             let res;
@@ -534,50 +541,94 @@ const AddEmployee = () => {
                                 <FormLabel>Photograph</FormLabel>
                                 <FormControl>
                                     <div>
-                                        <Input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    field.onChange(file); // new file replaces old
-                                                    // Create preview using FileReader
-                                                    const reader = new FileReader();
-                                                    reader.onload = () => setPhotoPreview(reader.result);
-                                                    reader.readAsDataURL(file);
-                                                }
-                                            }}
-                                        />
+                                        <div className="flex gap-2 items-center">
+                                            <Input
+                                                type="file"
+                                                accept="image/*"
+                                                ref={fileInputRef}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        field.onChange(file); // new file replaces old
+                                                        setIsPhotoRemoved(false); // Ensure removal flag is off
+                                                        // Create preview using FileReader
+                                                        const reader = new FileReader();
+                                                        reader.onload = () => setPhotoPreview(reader.result);
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                         {/* Show existing image from server (when no new file selected) */}
-                                        {!photoPreview && typeof field.value === "string" && field.value && (
-                                            <div className="mt-2">
+                                        {!photoPreview && !isPhotoRemoved && typeof field.value === "string" && field.value && (
+                                            <div className="mt-2 relative inline-block">
                                                 <p className="text-sm font-bold text-gray-500 mb-1">Current Photo:</p>
-                                                <a
-                                                    href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/uploads/${field.value}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    title="Click to open in new tab"
-                                                >
-                                                    <img
-                                                        src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/uploads/${field.value}`}
-                                                        alt="Employee Photo"
-                                                        className="w-20 h-20 object-cover rounded border-2 border-gray-300 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all"
-                                                        onError={(e) => {
-                                                            e.target.style.display = 'none';
+                                                <div className="relative group">
+                                                    <a
+                                                        href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/uploads/images/${field.value}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        title="Click to open in new tab"
+                                                    >
+                                                        <img
+                                                            src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/uploads/images/${field.value}`}
+                                                            alt="Employee Photo"
+                                                            className="w-20 h-20 object-cover rounded border-2 border-gray-300 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all"
+                                                            onError={(e) => {
+                                                                e.target.style.display = 'none';
+                                                            }}
+                                                        />
+                                                    </a>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setIsPhotoRemoved(true);
+                                                            field.onChange('');
+                                                            // We do not set photoPreview here
                                                         }}
-                                                    />
-                                                </a>
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        title="Remove Photo"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                         {/* Show preview of newly selected file */}
                                         {photoPreview && (
-                                            <div className="mt-2">
+                                            <div className="mt-2 relative inline-block">
                                                 <p className="text-sm font-bold text-green-600 mb-1">New Photo Preview:</p>
-                                                <img
-                                                    src={photoPreview}
-                                                    alt="New Photo Preview"
-                                                    className="w-24 h-24 object-cover rounded-md border-2 border-green-300"
-                                                />
+                                                <div className="relative group">
+                                                    <img
+                                                        src={photoPreview}
+                                                        alt="New Photo Preview"
+                                                        className="w-24 h-24 object-cover rounded-md border-2 border-green-300"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setPhotoPreview(null);
+                                                            setIsPhotoRemoved(false); // Reset removal state if they just cancel new upload? Or should it revert to 'existing'?
+                                                            // If we cancel new upload, we want to revert to "Current photo" if it wasn't explicitly removed before?
+                                                            // Actually, simpler: if cancel new, just clear new. The existing photo is still controlled by `field.value`.
+                                                            // But field.value is now the `File` object. We need to revert field.value to the original string if we want to show current photo again.
+                                                            // Since `field.value` is controlled by react-hook-form, we might need to reset it to `employeeData` value if we cancel.
+                                                            // For simplicity: Clear preview and reset `isPhotoRemoved` to false.
+                                                            // The `photograph` field in form will need to be reset to something?
+                                                            // If we just set it to undefined, useForm might keep `File`.
+                                                            // Let's reset it to the original photoUrl if available.
+                                                            const originalUrl = employeeData?.data?.data?.photoUrl || '';
+                                                            field.onChange(originalUrl);
+                                                            if (fileInputRef.current) fileInputRef.current.value = "";
+                                                        }}
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        title="Remove New Photo"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>

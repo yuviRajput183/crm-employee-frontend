@@ -20,6 +20,7 @@ import Footer from '@/components/Footer';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiAdminStatistics, apiEmployeeStatistics, apiAdvisorStatistics } from '@/services/lead.api';
+import { useSlider } from '@/lib/hooks/useSlider';
 
 
 import personalLoan from '@/assets/images/personalLoan.jpg';
@@ -32,7 +33,7 @@ import insurance from '@/assets/images/insurance.jpg';
 import privateFunding from '@/assets/images/privateFunding.jpg';
 import services from '@/assets/images/services.png';
 
-const images = [image1, image2, image3, image4, image5];
+const defaultImages = [image1, image2, image3, image4, image5];
 
 const statusColors = {
     total: "text-red-500",
@@ -101,7 +102,29 @@ const Dashboard = () => {
     const rolePrefix = getRoleBasedPrefix();
     const userRole = getUserRole();
 
-    // State for statistics data
+    const { fetchSliders } = useSlider();
+    const { data: sliderData } = fetchSliders;
+    const [sliderImages, setSliderImages] = useState(defaultImages);
+
+    // Update slider images when data is fetched
+    useEffect(() => {
+        if (sliderData?.data?.data && sliderData.data.data.length > 0) {
+            const sliders = sliderData.data.data[0];
+            const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '');
+            const fetchedImages = [];
+
+            ['slider1', 'slider2', 'slider3', 'slider4', 'slider5'].forEach(key => {
+                if (sliders[key]) {
+                    fetchedImages.push(`${baseUrl}/uploads/sliders/${sliders[key]}`);
+                }
+            });
+
+            if (fetchedImages.length > 0) {
+                setSliderImages(fetchedImages);
+            }
+        }
+    }, [sliderData]);
+
     const [leadStatusData, setLeadStatusData] = useState([
         { label: "Total Leads", count: 0, colorKey: "total" },
         { label: "Under Process", count: 0, percent: 0, colorKey: "process" },
@@ -216,7 +239,7 @@ const Dashboard = () => {
                 <div className=" flex-[6.5] w-full relative">
                     <Carousel className="  w-full">
                         <CarouselContent>
-                            {images.map((img, index) => (
+                            {sliderImages.map((img, index) => (
                                 <CarouselItem key={index} className="w-full">
                                     <img
                                         src={img}

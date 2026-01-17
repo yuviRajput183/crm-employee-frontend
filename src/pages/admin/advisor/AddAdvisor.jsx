@@ -58,7 +58,11 @@ const formSchema = z.object({
     ifscCode: z.string().optional(),
     photograph: z
         .any()
-        .refine((file) => file instanceof File || file?.length > 0, {
+        .refine((file) => {
+            if (!file) return false;
+            if (typeof file === 'string' && file.length > 0) return true; // Existing photo URL
+            return file instanceof File || file?.length > 0; // New File or FileList
+        }, {
             message: 'Photograph is required',
         }),
 });
@@ -75,6 +79,8 @@ const AddAdvisor = () => {
     const [cities, setCities] = useState([]);
     const [savedCity, setSavedCity] = useState(null); // Store the advisor's city from API for later use
     const [savedReportingOfficer, setSavedReportingOfficer] = useState(null); // Store the advisor's reporting officer from API
+    const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
+    const fileInputRef = React.useRef(null);
 
 
     const navigate = useNavigate();
@@ -133,6 +139,7 @@ const AddAdvisor = () => {
             if (data?.dateOfResign) {
                 formData.append('dateOfResign', data?.dateOfResign);
             }
+            formData.append('isPhotoRemoved', isPhotoRemoved);
 
             let res;
             if (advisorId) {
@@ -235,12 +242,19 @@ const AddAdvisor = () => {
                 accountHolderName: advisor.accountHolderName || '',
                 accountNo: advisor.accountNumber || '',
                 ifscCode: advisor.ifscCode || '',
-                photograph: null,
+                photograph: advisor.photoUrl || '',
             });
 
-            if (advisor.photo) {
-                setPhotoPreview(advisor.photo);
+            if (advisor.photoUrl) {
+                // Not setting photoPreview here because we will render existing photo using URL
+                // unless we want to convert URL to blob which is complex and unnecessary.
+                // Employee form used separate rendering for existing vs new.
+                // setPhotoPreview(advisor.photoUrl); 
             }
+
+            setIsPhotoRemoved(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            setPhotoPreview(null);
 
             if (advisor.reportingOfficer) {
                 setSelectedReportingOfficer(advisor.reportingOfficer);
@@ -537,31 +551,92 @@ const AddAdvisor = () => {
                             <FormItem className=" flex flex-col gap-1">
                                 <FormLabel className=" text-red-600 font-semibold py-4 border-b-2 border-black">Photograph <span className="text-sm">(150*150 pixels)</span></FormLabel>
                                 <FormControl>
-                                    <Input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            field.onChange(file);
-                                            if (file) {
-                                                const reader = new FileReader();
-                                                reader.onload = () => setPhotoPreview(reader.result);
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }}
-                                    />
+                                    <div>
+                                        <div className="flex gap-2 items-center">
+                                            <Input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    field.onChange(file);
+                                                    if (file) {
+                                                        setIsPhotoRemoved(false);
+                                                        const reader = new FileReader();
+                                                        reader.onload = () => setPhotoPreview(reader.result);
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Existing Photo */}
+                                        {!photoPreview && !isPhotoRemoved && advisorData?.data?.data?.photoUrl && (
+                                            <div className="mt-2 relative inline-block">
+                                                <p className="text-sm font-bold text-gray-500 mb-1">Current Photo:</p>
+                                                <div className="relative group">
+                                                    <a
+                                                        href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/uploads/images/${advisorData?.data?.data?.photoUrl}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        <img
+                                                            src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/uploads/images/${advisorData?.data?.data?.photoUrl}`}
+                                                            alt="Current"
+                                                            className="mt-2 border rounded w-[150px] h-[150px] object-cover"
+                                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                                        />
+                                                    </a>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setIsPhotoRemoved(true);
+                                                            form.setValue('photograph', '');
+                                                        }}
+                                                        className="absolute top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        title="Remove Photo"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* New Preview */}
+                                        {photoPreview && (
+                                            <div className="mt-2 relative inline-block">
+                                                <p className="text-sm font-bold text-green-600 mb-1">New Photo Preview:</p>
+                                                <div className="relative group">
+                                                    <img
+                                                        src={photoPreview}
+                                                        alt="Preview"
+                                                        className="mt-2 border rounded w-[150px] h-[150px] object-cover"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setPhotoPreview(null);
+                                                            setIsPhotoRemoved(false);
+                                                            // Revert to original if available
+                                                            const originalUrl = advisorData?.data?.data?.photoUrl || '';
+                                                            form.setValue('photograph', originalUrl);
+                                                            if (fileInputRef.current) fileInputRef.current.value = "";
+                                                        }}
+                                                        className="absolute top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        title="Remove New Photo"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
-
-                        {photoPreview && (
-                            <img
-                                src={photoPreview}
-                                alt="Preview"
-                                className="mt-2 border rounded w-[150px] h-[150px] object-cover"
-                            />
-                        )}
 
                         {/* <Button type="submit" className="mt-4 bg-blue-800">Upload</Button> */}
 
@@ -575,7 +650,7 @@ const AddAdvisor = () => {
                 </form>
             </Form>
 
-        </div>
+        </div >
     )
 }
 
