@@ -60,7 +60,7 @@ const getLoggedInUserId = () => {
     }
 };
 
-const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange }) => {
+const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange, existingDocuments = [] }) => {
 
     console.log("isEdit>>>", isEdit);
 
@@ -69,10 +69,27 @@ const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange }) => {
     const [uploadedDocuments, setUploadedDocuments] = useState([]);
     const fileInputRef = useRef(null);
 
-    // Notify parent component when documents change
+    // Initialize uploadedDocuments with existing documents when in edit mode
+    useEffect(() => {
+        if (isEdit && existingDocuments.length > 0 && uploadedDocuments.length === 0) {
+            const formattedExistingDocs = existingDocuments.map((doc, index) => ({
+                id: `existing-${index}`,
+                attachmentType: doc.attachmentType,
+                file: null, // No file object for existing documents
+                password: doc.password || '',
+                fileName: doc.fileUrl.split('/').pop() || 'Document',
+                fileUrl: doc.fileUrl, // Keep original fileUrl for viewing
+                isExisting: true // Flag to identify existing documents
+            }));
+            setUploadedDocuments(formattedExistingDocs);
+        }
+    }, [isEdit, existingDocuments]);
+
+    // Notify parent component when documents change (only new uploads)
     useEffect(() => {
         if (onDocumentsChange) {
-            onDocumentsChange(uploadedDocuments);
+            const newUploads = uploadedDocuments.filter(doc => !doc.isExisting);
+            onDocumentsChange(newUploads);
         }
     }, [uploadedDocuments, onDocumentsChange]);
 
@@ -114,11 +131,19 @@ const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange }) => {
 
     // Handle viewing a document
     const handleViewDocument = (doc) => {
-        const url = URL.createObjectURL(doc.file);
-        window.open(url, '_blank');
+        if (doc.isExisting) {
+            // For existing documents, construct URL from backend
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const fileUrl = `${baseUrl}/${doc.fileUrl.replace(/\\/g, '/')}`;
+            window.open(fileUrl, '_blank');
+        } else {
+            // For new uploads, create object URL
+            const url = URL.createObjectURL(doc.file);
+            window.open(url, '_blank');
+        }
     };
 
-    // Handle deleting a document from the list
+    // Handle deleting a document from the list (only for new uploads)
     const handleDeleteDocument = (docId) => {
         setUploadedDocuments(prev => prev.filter(doc => doc.id !== docId));
     };
@@ -422,16 +447,26 @@ const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange }) => {
                     )}
                 />
 
-                <Button
-                    type="button"
-                    onClick={handleAddDocument}
-                    className="bg-blue-800 text-white h-10 mt-5 shadow"
-                >
-                    UPLOAD
-                </Button>
+                {(() => {
+                    try {
+                        const profile = JSON.parse(localStorage.getItem("profile"));
+                        const role = profile?.role?.toLowerCase();
+                        // Hide UPLOAD button for advisor only in edit/view mode
+                        if (role === "advisor" && isEdit) return null;
+                    } catch (e) { }
+                    return (
+                        <Button
+                            type="button"
+                            onClick={handleAddDocument}
+                            className="bg-blue-800 text-white h-10 mt-5 shadow"
+                        >
+                            UPLOAD
+                        </Button>
+                    );
+                })()}
             </div>
 
-            {/* Uploaded Documents Table */}
+            {/* Uploaded Documents Table - Now includes both new and existing */}
             {uploadedDocuments.length > 0 && (
                 <div className="mt-3 border border-gray-200 shadow rounded overflow-hidden">
                     <table className="w-full">
@@ -472,6 +507,7 @@ const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange }) => {
                     </table>
                 </div>
             )}
+
 
             {!isEdit && !isAdvisor && <>
                 <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>

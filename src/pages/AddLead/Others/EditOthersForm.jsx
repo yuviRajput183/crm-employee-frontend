@@ -1107,9 +1107,9 @@ const EditOthersForm = () => {
 
                     <CommonLoanSections
                         form={form}
-                    />
-
-                    <HistoryTable data={history} />
+                        isEdit={!!leadId}
+                        existingDocuments={leadData?.data?.data?.documents || []}
+                    /><HistoryTable data={history} />
 
                     {(() => {
                         try {
@@ -1126,7 +1126,14 @@ const EditOthersForm = () => {
                         );
                     })()}
 
-                    <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                    {(() => {
+                        try {
+                            const profile = JSON.parse(localStorage.getItem("profile"));
+                            const role = profile?.role?.toLowerCase();
+                            if (role === "advisor") return null;
+                        } catch (e) { }
+                        return <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>;
+                    })()}
 
 
                 </form>

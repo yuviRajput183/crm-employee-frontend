@@ -177,7 +177,8 @@ const EditHomeLoanForm = () => {
     const [selectedState, setSelectedState] = useState(null);
     const [cities, setCities] = useState([]);
     const [history, setHistory] = useState([]);
-    const [savedCityName, setSavedCityName] = useState(null); // Store the lead's city from API for later use
+    const [savedCityName, setSavedCityName] = useState(null);
+    const [uploadedDocuments, setUploadedDocuments] = useState([]); // Store the lead's city from API for later use
 
 
     // query to  fetch the lead/draft detail on component mount
@@ -376,15 +377,16 @@ const EditHomeLoanForm = () => {
             // }
 
 
-            const documentsArray = [];
-            if (data.uploadFile) {
-                documentsArray.push({
-                    attachmentType: data.attachmentType || '',
-                    fileUrl: '', // Will be set by backend
-                    password: data.filePassword || ''
+            //  Documents - append each file and metadata
+            if (uploadedDocuments.length > 0) {
+                uploadedDocuments.forEach((doc) => {
+                    fd.append('documents', doc.file);
                 });
-                // fd.append('file', data.uploadFile); // Single file
-                fd.append('documents', JSON.stringify(documentsArray));
+                const documentsMetadata = uploadedDocuments.map(doc => ({
+                    attachmentType: doc.attachmentType,
+                    password: doc.password || ''
+                }));
+                fd.append('documentsMetadata', JSON.stringify(documentsMetadata));
             }
 
 
@@ -1233,6 +1235,8 @@ const EditHomeLoanForm = () => {
                     <CommonLoanSections
                         form={form}
                         isEdit={!!leadId}
+                        existingDocuments={leadData?.data?.data?.documents || []}
+                        onDocumentsChange={setUploadedDocuments}
                     />
 
                     <HistoryTable
@@ -1254,7 +1258,14 @@ const EditHomeLoanForm = () => {
                         );
                     })()}
 
-                    <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPLOAD</Button>
+                    {(() => {
+                        try {
+                            const profile = JSON.parse(localStorage.getItem("profile"));
+                            const role = profile?.role?.toLowerCase();
+                            if (role === "advisor") return null;
+                        } catch (e) { }
+                        return <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPLOAD</Button>;
+                    })()}
 
                 </form>
             </Form>
