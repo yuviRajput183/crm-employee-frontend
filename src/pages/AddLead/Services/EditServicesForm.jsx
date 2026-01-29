@@ -73,6 +73,15 @@ const servicesSchema = z.object({
     }),
     qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
     occupation: z.enum(["salaried", "self employeed", "professional"]).optional(),
+    runningLoans: z.array(
+        z.object({
+            loanType: z.string().optional(),
+            loanAmount: z.union([z.string(), z.number()]).optional(),
+            bankName: z.string().optional(),
+            emiAmount: z.union([z.string(), z.number()]).optional(),
+            paidEmi: z.union([z.string(), z.number()]).optional(),
+        })
+    ).length(4),
     residentialAddress: z.string().optional(),
     stateName: z.string().optional(),
     cityName: z.string().optional(),
@@ -315,24 +324,41 @@ const EditServicesForm = () => {
                 description: lead?.description || '',
                 amount: lead?.amount?.toString() || '',
                 clientName: lead?.clientName || '',
-                mobileNo: lead?.mobileNo || '',
+                mobileNo: lead?.mobileNo?.toString() || '',
                 emailId: lead?.emailId || '',
                 dateOfBirth: lead?.dob?.split('T')[0] || '',
                 panNo: lead?.panNo || '',
                 aadharNo: lead?.aadharNo || '',
                 maritalStatus: lead?.maritalStatus || undefined,
                 spouseName: lead?.spouseName || '',
-                otherContactNo: lead?.otherContactNo || '',
+                otherContactNo: lead?.otherContactNo?.toString() || '',
                 qualification: lead?.qualification || undefined,
                 occupation: lead?.occupation || undefined,
                 residentialAddress: lead?.residentialAddress || '',
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                pinCode: lead?.pinCode || '',
+                cityName: lead?.cityName || '',
+                pinCode: lead?.pinCode?.toString() || '',
 
                 nomineeName: lead?.nomineeName || '',
                 relationWithNominee: lead?.relationWithNominee || '',
                 monthlyIncome: lead?.monthlyIncome?.toString() || '',
+                runningLoans: (() => {
+                    const loans = lead?.runningLoans || [];
+                    if (loans.length === 4) return loans;
+                    const needed = 4 - loans.length;
+                    if (needed < 0) return loans.slice(0, 4);
+                    return [
+                        ...loans,
+                        ...Array(needed).fill({
+                            loanType: '',
+                            loanAmount: 0,
+                            bankName: '',
+                            emiAmount: 0,
+                            paidEmi: 0
+                        })
+                    ];
+                })(),
 
                 allocateTo: lead?.allocatedTo?._id || "",
                 loanFeedback: lead?.loanFeedback ?? "",
@@ -377,7 +403,7 @@ const EditServicesForm = () => {
 
             <Form {...form}>
                 <form
-                    onSubmit={form.handleSubmit(handleServices)}
+                    onSubmit={form.handleSubmit(handleServices, (errors) => console.log("Form Validation Errors:", errors))}
                     className=" w-full mt-2 py-4 rounded-md"
                 >
 
