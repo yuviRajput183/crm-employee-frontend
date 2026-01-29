@@ -314,7 +314,7 @@ const EditInsuranceForm = () => {
                 insuranceType: lead?.insuranceType || '',
                 insuranceAmount: lead?.insuranceAmount?.toString() || '',
                 clientName: lead?.clientName || '',
-                mobileNo: lead?.mobileNo || '',
+                mobileNo: lead?.mobileNo?.toString() || '',
                 emailId: lead?.emailId || '',
                 dateOfBirth: lead?.dob?.split('T')[0] || '',
                 panNo: lead?.panNo || '',
@@ -322,13 +322,13 @@ const EditInsuranceForm = () => {
                 maritalStatus: lead?.maritalStatus || undefined,
                 spouseName: lead?.spouseName || '',
                 // motherName: lead?.motherName || '',
-                otherContactNo: lead?.otherContactNo || '',
+                otherContactNo: lead?.otherContactNo?.toString() || '',
                 qualification: lead?.qualification || undefined,
                 occupation: lead?.occupation || undefined,
                 residentialAddress: lead?.residentialAddress || '',
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                pinCode: lead?.pinCode || '',
+                pinCode: lead?.pinCode?.toString() || '',
 
                 nomineeName: lead?.nomineeName || '',
                 relationWithNominee: lead?.relationWithNominee || '',
@@ -377,7 +377,7 @@ const EditInsuranceForm = () => {
 
             <Form {...form}>
                 <form
-                    onSubmit={form.handleSubmit(handleInsurance)}
+                    onSubmit={form.handleSubmit(handleInsurance, (errors) => console.log("Form Validation Errors:", errors))}
                     className=" w-full mt-2 py-4 rounded-md"
                 >
 

@@ -132,10 +132,10 @@ const loanAgainstPropertySchema = z.object({
     runningLoans: z.array(
         z.object({
             loanType: z.string().optional(),
-            loanAmount: z.number().optional(),
+            loanAmount: z.union([z.string(), z.number()]).optional(),
             bankName: z.string().optional(),
-            emiAmount: z.number().optional(),
-            paidEmi: z.number().optional(),
+            emiAmount: z.union([z.string(), z.number()]).optional(),
+            paidEmi: z.union([z.string(), z.number()]).optional(),
         })
     ).length(4),
 
@@ -466,7 +466,7 @@ const EditLoanAgainstPropertyForm = () => {
             form.reset({
                 loanRequirementAmount: lead?.loanRequirementAmount?.toString() || '',
                 clientName: lead?.clientName || '',
-                mobileNo: lead?.mobileNo || '',
+                mobileNo: lead?.mobileNo?.toString() || '',
                 emailId: lead?.emailId || '',
                 dateOfBirth: lead?.dob?.split('T')[0] || '',
                 panNo: lead?.panNo || '',
@@ -474,7 +474,7 @@ const EditLoanAgainstPropertyForm = () => {
                 maritalStatus: lead?.maritalStatus || undefined,
                 spouseName: lead?.spouseName || '',
                 motherName: lead?.motherName || '',
-                otherContactNo: lead?.otherContactNo || '',
+                otherContactNo: lead?.otherContactNo?.toString() || '',
                 qualification: lead?.qualification || undefined,
                 residenceType: lead?.residenceType || undefined,
                 residentialAddress: lead?.residentialAddress || '',
@@ -482,7 +482,7 @@ const EditLoanAgainstPropertyForm = () => {
                 residenceStability: lead?.residentialStability || undefined,
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                pinCode: lead?.pinCode || '',
+                pinCode: lead?.pinCode?.toString() || '',
                 companyName: lead?.companyName || '',
                 designation: lead?.designation || '',
                 companyAddress: lead?.companyAddress || '',
@@ -491,7 +491,7 @@ const EditLoanAgainstPropertyForm = () => {
                 jobPeriod: lead?.jobPeriod || undefined,
                 totalExperience: lead?.totalJobExperience || undefined,
                 officialEmail: lead?.officialEmailId || '',
-                officialNumber: lead?.officialNumber || '',
+                officialNumber: lead?.officialNumber?.toString() || '',
 
                 employment: lead?.employment || undefined,
                 propertyType: lead?.propertyType || undefined,
@@ -501,16 +501,31 @@ const EditLoanAgainstPropertyForm = () => {
 
                 dependents: lead?.noOfDependent?.toString() || '',
                 creditCardOutstanding: lead?.creditCardOutstandingAmount?.toString() || '',
-                runningLoans: lead?.runningLoans,
+                runningLoans: (() => {
+                    const loans = lead?.runningLoans || [];
+                    if (loans.length === 4) return loans;
+                    const needed = 4 - loans.length;
+                    if (needed < 0) return loans.slice(0, 4);
+                    return [
+                        ...loans,
+                        ...Array(needed).fill({
+                            loanType: '',
+                            loanAmount: 0,
+                            bankName: '',
+                            emiAmount: 0,
+                            paidEmi: 0
+                        })
+                    ];
+                })(),
                 reference1: {
                     name: lead?.references[0]?.name || '',
-                    mobile: lead?.references[0]?.mobileNo || '',
+                    mobile: lead?.references[0]?.mobileNo?.toString() || '',
                     address: lead?.references[0]?.address || '',
                     relation: lead?.references[0]?.relation || ''
                 },
                 reference2: {
                     name: lead?.references[1]?.name || '',
-                    mobile: lead?.references[1]?.mobileNo || '',
+                    mobile: lead?.references[1]?.mobileNo?.toString() || '',
                     address: lead?.references[1]?.address || '',
                     relation: lead?.references[1]?.relation || ''
                 },
@@ -550,7 +565,7 @@ const EditLoanAgainstPropertyForm = () => {
 
             <Form {...form}>
                 <form
-                    onSubmit={form.handleSubmit(handleLoanAgainstProperty)}
+                    onSubmit={form.handleSubmit(handleLoanAgainstProperty, (errors) => console.log("Form Validation Errors:", errors))}
                     className=" w-full mt-2 py-4 rounded-md"
                 >
 
