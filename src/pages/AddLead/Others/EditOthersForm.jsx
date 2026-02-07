@@ -27,7 +27,7 @@ import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useLead } from '@/lib/hooks/useLead';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import others from '@/assets/images/others.png';
+// import others from '@/assets/images/others.png';
 import HistoryTable from '@/components/shared/HistoryTable';
 import LeadAllocationFeedback from '@/components/shared/LeadAllocationFeedback';
 
