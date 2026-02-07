@@ -23,7 +23,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { apiListReceivableLeads, apiGetInvoiceMasterByLeadId } from '@/services/receivables.api';
-import { apiFetchLeadDetails } from '@/services/lead.api';
 import { useReceivables } from '@/lib/hooks/useReceivables';
 import { useNavigate } from 'react-router-dom';
 
@@ -112,14 +111,14 @@ const AddReceivables = ({ onClose }) => {
         }
     });
 
-    // Query to fetch invoice master details when Payment Against is selected
+    // Query to fetch invoice master details when a lead is selected
     const {
         isLoading: isInvoiceMasterLoading,
         isError: isInvoiceMasterError,
         error: invoiceMasterError,
     } = useQuery({
-        queryKey: ['invoice-master-by-lead', selectedLead, selectedPaymentAgainst],
-        enabled: !!selectedLead && !!selectedPaymentAgainst,
+        queryKey: ['invoice-master-by-lead', selectedLead],
+        enabled: !!selectedLead,
         queryFn: async () => {
             const res = await apiGetInvoiceMasterByLeadId(selectedLead);
             console.log("📦 Invoice master response:", res);
@@ -130,23 +129,6 @@ const AddReceivables = ({ onClose }) => {
         onError: (err) => {
             console.error("Error fetching invoice master:", err);
         }
-    });
-
-    // Query to fetch lead details when a lead is selected
-    const {
-        isLoading: isLeadDetailsLoading,
-        isError: isLeadDetailsError,
-        error: leadDetailsError,
-        data: leadData
-    } = useQuery({
-        queryKey: ['receivables-leadDetails', selectedLead],
-        enabled: !!selectedLead,
-        queryFn: async () => {
-            const res = await apiFetchLeadDetails(selectedLead);
-            console.log("📦 Lead details response:", res);
-            return res;
-        },
-        refetchOnWindowFocus: false,
     });
 
     const { addReceivable } = useReceivables();
@@ -179,36 +161,48 @@ const AddReceivables = ({ onClose }) => {
             }
 
             const res = await mutateAsync(payload);
-            console.log("New Receivable added successfully ....");
+            console.log("New Receivable added successfully ....", res);
 
             if (res?.data?.success) {
-                onClose();
+                if (onClose) {
+                    onClose();
+                } else {
+                    navigate('/admin/receivables_payout');
+                }
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
         }
     };
 
-    useEffect(() => {
-        if (leadData?.data) {
-            const lead = leadData?.data?.data || {};
-            console.log("lead>>", lead);
-
-            // Auto-fill form fields with lead data
-            form.setValue('loanServiceType', lead?.productType || '');
-            form.setValue('customerName', lead?.clientName || '');
-            form.setValue('advisorName', lead?.advisorId?.name || '');
-
-            // Fill banker details (non-editable)
-            form.setValue('bankName', lead?.bankerId?.bank?.name || '');
-            form.setValue('bankerName', lead?.bankerId?.bankerName || '');
-            form.setValue('bankerDesignation', lead?.bankerId?.designation || '');
-            form.setValue('bankerMobileNo', lead?.bankerId?.mobile || '');
-            form.setValue('bankerEmailId', lead?.bankerId?.email || '');
-            form.setValue('stateName', lead?.bankerId?.city?.stateName || '');
-            form.setValue('cityName', lead?.bankerId?.city?.cityName || '');
+    const handleClose = () => {
+        if (onClose) {
+            onClose();
+        } else {
+            navigate('/admin/receivables_payout');
         }
-    }, [leadData, form]);
+    };
+
+    useEffect(() => {
+        if (invoiceMasterData) {
+            console.log("invoice master data >>", invoiceMasterData);
+
+            // Auto-fill form fields with invoice master data (similar to EditReceivablesForm)
+            form.setValue('loanServiceType', invoiceMasterData?.leadId?.productType || '');
+            form.setValue('customerName', invoiceMasterData?.leadId?.clientName || '');
+            form.setValue('advisorName', invoiceMasterData?.leadId?.advisorId?.name || '');
+
+            // Fill banker details from invoice master (non-editable)
+            const bankerDetails = invoiceMasterData?.leadId?.bankerId;
+            form.setValue('bankName', bankerDetails?.bank?.name || '');
+            form.setValue('bankerName', bankerDetails?.bankerName || '');
+            form.setValue('bankerDesignation', bankerDetails?.designation || '');
+            form.setValue('bankerMobileNo', bankerDetails?.mobile || '');
+            form.setValue('bankerEmailId', bankerDetails?.email || '');
+            form.setValue('stateName', bankerDetails?.stateName || '');
+            form.setValue('cityName', bankerDetails?.cityName || '');
+        }
+    }, [invoiceMasterData, form]);
 
     // Effect to populate form fields when invoice master data is received
     useEffect(() => {
@@ -267,8 +261,8 @@ const AddReceivables = ({ onClose }) => {
                 {isListLeadNoError && (
                     <Alert variant="destructive">{getErrorMessage(listLeadNoError)}</Alert>
                 )}
-                {isLeadDetailsError && (
-                    <Alert variant="destructive">{getErrorMessage(leadDetailsError)}</Alert>
+                {isInvoiceMasterError && (
+                    <Alert variant="destructive">{getErrorMessage(invoiceMasterError)}</Alert>
                 )}
                 {isError && (
                     <Alert variant="destructive">{getErrorMessage(error)}</Alert>
@@ -563,13 +557,13 @@ const AddReceivables = ({ onClose }) => {
                 <div className="flex gap-4 mt-6">
                     <Button
                         type="submit"
-                        disabled={isLoading || isLeadDetailsLoading}
+                        disabled={isLoading || isInvoiceMasterLoading}
                         className="bg-blue-800 text-white"
                     >
                         {isLoading ? 'SAVING...' : 'SAVE'}
                     </Button>
                     <Button
-                        onClick={onClose}
+                        onClick={handleClose}
                         type="button"
                         variant="outline"
                         className="bg-gray-500 text-white"

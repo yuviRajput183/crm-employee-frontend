@@ -94,10 +94,14 @@ const MyPerformance = () => {
     useEffect(() => {
         console.log("query data >>>", queryData);
 
-        if (queryData?.data?.data?.performance?.length > 0) {
-            setPerformanceData(queryData.data.data.performance);
+        if (userRole === "employee") {
+            if (queryData?.data?.data?.records?.length > 0) {
+                setPerformanceData(queryData.data.data.records);
+            } else if (queryData?.data?.data) {
+                setPerformanceData([]);
+            }
         } else if (queryData?.data?.data) {
-            setPerformanceData([]);
+            setPerformanceData(queryData.data.data);
         }
     }, [queryData]);
 
@@ -159,7 +163,7 @@ const MyPerformance = () => {
                                         <TableCell>{row.loanType || row.loanServiceType}</TableCell>
                                         <TableCell>{row.customerName || "-"}</TableCell>
                                         <TableCell>{row.bankName || "-"}</TableCell>
-                                        <TableCell>{row.disbursalAmt || row.disbursalAmount}</TableCell>
+                                        <TableCell>{row.disbursalAmt || row.disbursalAmount || row.loanRequirementAmount}</TableCell>
                                         <TableCell>{row.disbursalDate?.split('T')[0] || "-"}</TableCell>
                                         <TableCell>{row.month || "-"}</TableCell>
                                     </TableRow>
