@@ -53,10 +53,7 @@ const addReceivablesFormSchema = z.object({
     cityName: z.string().optional(),
 });
 
-const paymentAgainstOptions = [
-    { value: "receivableAmount", label: "Receivable Amount" },
-    { value: "gstPayment", label: "GST Amount" },
-];
+
 
 const AddReceivables = ({ onClose }) => {
     const [leads, setLeads] = useState([]);
@@ -64,6 +61,7 @@ const AddReceivables = ({ onClose }) => {
     const [invoiceMasterData, setInvoiceMasterData] = useState(null);
     const [selectedPaymentAgainst, setSelectedPaymentAgainst] = useState(null);
     const [maxReceivableAmount, setMaxReceivableAmount] = useState(0);
+    const [paymentAgainstOptions, setPaymentAgainstOptions] = useState([]);
     const navigate = useNavigate();
 
     const form = useForm({
@@ -205,18 +203,36 @@ const AddReceivables = ({ onClose }) => {
     }, [invoiceMasterData, form]);
 
     // Effect to populate form fields when invoice master data is received
+    // Build payment against options based on invoice master data
     useEffect(() => {
-        if (invoiceMasterData && selectedPaymentAgainst) {
-            // Map Receivable/GST Amount based on payment against selection
-            const gstAmount = invoiceMasterData?.remainingGstAmount || 0;
-            const receivableAmount = invoiceMasterData?.remainingReceivableAmount || 0;
+        if (invoiceMasterData) {
+            console.log("Building payment options from:", invoiceMasterData);
+            const options = [];
 
-            // Set Receivable/GST Amount field to remainingGstAmount
-            form.setValue('receivableGstAmount', String(gstAmount));
-            setMaxReceivableAmount(gstAmount);
+            // Add Receivable Amount option if remainingReceivableAmount > 0
+            if (invoiceMasterData?.remainingReceivableAmount && invoiceMasterData.remainingReceivableAmount > 0) {
+                options.push({
+                    value: "receivableAmount",
+                    label: `Receivable Amount`
+                });
+            }
 
-            // Set Balance Receivable Amount to remainingReceivableAmount initially
-            form.setValue('balanceReceivableAmount', String(receivableAmount));
+            // Add GST Amount option if remainingGstAmount > 0
+            if (invoiceMasterData?.remainingGstAmount && invoiceMasterData.remainingGstAmount > 0) {
+                options.push({
+                    value: "gstPayment",
+                    label: `GST Amount`
+                });
+            }
+
+            setPaymentAgainstOptions(options);
+
+            // Reset payment against selection when lead changes
+            form.setValue('paymentAgainst', '');
+            form.setValue('receivableGstAmount', '');
+            form.setValue('receivableAmount', '');
+            form.setValue('balanceReceivableAmount', '');
+            setSelectedPaymentAgainst(null);
 
             // Map Received Date to createdAt from API response
             if (invoiceMasterData?.createdAt) {
@@ -225,10 +241,10 @@ const AddReceivables = ({ onClose }) => {
                 form.setValue('receivedDate', formattedDate);
             }
 
-            // Reset received amount when payment against changes
-            form.setValue('receivableAmount', '');
+        } else {
+            setPaymentAgainstOptions([]);
         }
-    }, [invoiceMasterData, selectedPaymentAgainst, form]);
+    }, [invoiceMasterData, form]);
 
     // Handler for Received Amount change with validation
     const handleReceivedAmountChange = (e, fieldOnChange) => {
@@ -350,12 +366,28 @@ const AddReceivables = ({ onClose }) => {
                                     onValueChange={(value) => {
                                         field.onChange(value);
                                         setSelectedPaymentAgainst(value);
+
+                                        // Fill Receivable/GST Amount based on selection
+                                        if (invoiceMasterData) {
+                                            let amount = 0;
+                                            if (value === 'receivableAmount') {
+                                                amount = invoiceMasterData?.remainingReceivableAmount || 0;
+                                            } else if (value === 'gstPayment') {
+                                                amount = invoiceMasterData?.remainingGstAmount || 0;
+                                            }
+                                            const amountStr = String(amount);
+                                            form.setValue('receivableGstAmount', amountStr);
+                                            form.setValue('receivableAmount', amountStr);
+                                            form.setValue('balanceReceivableAmount', '0');
+                                            setMaxReceivableAmount(amount);
+                                        }
                                     }}
-                                    defaultValue={field.value}
+                                    value={field.value || ""}
+                                    disabled={!selectedLead || paymentAgainstOptions.length === 0}
                                 >
                                     <FormControl>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
+                                            <SelectValue placeholder={paymentAgainstOptions.length === 0 ? "Select Lead First" : "Select"} />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -366,6 +398,7 @@ const AddReceivables = ({ onClose }) => {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
