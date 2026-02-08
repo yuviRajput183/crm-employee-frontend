@@ -198,7 +198,7 @@ const AddReceivables = ({ onClose }) => {
             form.setValue('bankerMobileNo', bankerDetails?.mobile || '');
             form.setValue('bankerEmailId', bankerDetails?.email || '');
             form.setValue('stateName', bankerDetails?.stateName || '');
-            form.setValue('cityName', bankerDetails?.cityName || '');
+            form.setValue('cityName', bankerDetails?.city?.cityName || '');
         }
     }, [invoiceMasterData, form]);
 
