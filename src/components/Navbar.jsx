@@ -18,7 +18,7 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 
 
 
-const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name }) => {
+const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name, role }) => {
 
     const navigate = useNavigate();
 
@@ -46,6 +46,18 @@ const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name }) => {
         }
     }
 
+    const handleProfileClick = () => {
+        if (role) {
+            navigate(`/${role}/profile`);
+        }
+    }
+
+    const handlePasswordClick = () => {
+        if (role) {
+            navigate(`/${role}/change_password`);
+        }
+    }
+
     return (
         <nav className=' h-16 px-4 sm:px-8 md:px-12 flex items-center justify-between border-b-2 overflow-hidden'>
 
@@ -56,7 +68,7 @@ const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name }) => {
 
             {/* left navbar */}
             <div className=' h-full'>
-                <img src={logo} className=' h-full cursor-pointer'></img>
+                <img src={logo} className=' h-full cursor-pointer' onClick={() => navigate("/")}></img>
             </div>
 
             {/* right navbar */}
@@ -77,16 +89,16 @@ const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name }) => {
                     </DropdownMenuTrigger>
 
                     <DropdownMenuContent className='cursor-pointer'>
-                        <DropdownMenuLabel className=' flex gap-2'>
+                        <DropdownMenuItem className=' flex gap-2 cursor-pointer' onClick={handleProfileClick}>
                             <UserRound />
                             My Profile
-                        </DropdownMenuLabel>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
 
-                        <DropdownMenuLabel className=' flex gap-2'>
+                        <DropdownMenuItem className=' flex gap-2 cursor-pointer' onClick={handlePasswordClick}>
                             <KeySquare />
                             Change Password
-                        </DropdownMenuLabel>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
 
                         <DropdownMenuLabel className=' flex gap-2' onClick={handleLogout}>

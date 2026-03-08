@@ -60,6 +60,7 @@ const UserLayout = () => {
                 setIsSidebarOpen={setIsSidebarOpen}
                 isSidebarOpen={isSidebarOpen}
                 name={profile?.name}
+                role={profile?.role}
             />
 
             <div className="w-full flex overflow-hidden ">

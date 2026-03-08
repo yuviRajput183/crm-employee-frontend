@@ -325,5 +325,40 @@ export const adminRoutes = [
         path: "edit_others/:id",
         name: "Edit Others",
         component: lazy(() => import('@/pages/AddLead/Others/EditOthersForm'))
+    },
+    {
+        path: "profile",
+        name: "My Profile",
+        component: lazy(() => import('@/pages/Profile'))
+    },
+    {
+        path: "change_password",
+        name: "Change Password",
+        component: lazy(() => import('@/pages/ChangePassword'))
+    },
+    {
+        path: "receivables_report",
+        name: "Receivables Report",
+        component: lazy(() => import('@/components/shared/ReceivableReport'))
+    },
+    {
+        path: "gst_receivables_report",
+        name: "GST Receivables Report",
+        component: lazy(() => import('@/components/shared/GSTReceivableReport'))
+    },
+    {
+        path: "payables_report",
+        name: "Payables Report",
+        component: lazy(() => import('@/components/shared/PayableReport'))
+    },
+    {
+        path: "gst_payables_report",
+        name: "GST Payables Report",
+        component: lazy(() => import('@/components/shared/GSTPayableReport'))
+    },
+    {
+        path: "performance_report",
+        name: "Performance Report",
+        component: lazy(() => import('@/components/shared/PerformanceReport'))
     }
 ]

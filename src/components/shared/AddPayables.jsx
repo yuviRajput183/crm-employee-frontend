@@ -356,9 +356,16 @@ const AddPayables = ({ onClose }) => {
                                 <FormLabel>Advisor Name <span className="text-red-500">*</span></FormLabel>
                                 <Select
                                     onValueChange={(value) => {
-                                        console.log("Selected advisor value:", value);
+                                        console.log("Selected advisorId:", value);
                                         field.onChange(value);
-                                        setSelectedAdvisor(value);
+                                        // Find more details about the advisor to get advisorPayoutId
+                                        const selectedAdvisorObj = advisors.find(
+                                            (advisor) => (advisor.advisorId || advisor._id || advisor.id) === value
+                                        );
+                                        if (selectedAdvisorObj) {
+                                            console.log("Found advisor object:", selectedAdvisorObj);
+                                            setSelectedAdvisor(selectedAdvisorObj.advisorPayoutId);
+                                        }
                                     }}
                                     value={field.value || ""}
                                     disabled={!selectedLead || isAdvisorsLoading}
@@ -370,7 +377,7 @@ const AddPayables = ({ onClose }) => {
                                     </FormControl>
                                     <SelectContent>
                                         {advisors.map((advisor) => {
-                                            const advisorId = advisor?.advisorPayoutId || advisor?._id || advisor?.id;
+                                            const advisorId = advisor?.advisorId || advisor?._id || advisor?.id;
                                             const advisorName = advisor?.advisorName || advisor?.name;
                                             return (
                                                 <SelectItem key={advisorId} value={advisorId}>

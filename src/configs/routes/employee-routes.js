@@ -136,5 +136,15 @@ export const employeeRoutes = [
         path: "edit_others/:id",
         name: "Edit Others",
         component: lazy(() => import('@/pages/AddLead/Others/EditOthersForm'))
+    },
+    {
+        path: "profile",
+        name: "My Profile",
+        component: lazy(() => import('@/pages/Profile'))
+    },
+    {
+        path: "change_password",
+        name: "Change Password",
+        component: lazy(() => import('@/pages/ChangePassword'))
     }
 ]

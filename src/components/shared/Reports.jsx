@@ -2,8 +2,11 @@ import React from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import barchart from "@/assets/images/barchat.png";
 import { Button } from '../ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const Reports = () => {
+    const navigate = useNavigate();
+
     return (
         <div className=' p-3 bg-white rounded shadow'>
 
@@ -17,11 +20,36 @@ const Reports = () => {
             </div>
 
             <div className=" w-full grid grid-cols-1 sm:grid-cols-2 gap-4 shadow mt-4 border border-gray-100 rounded-md p-4 bg-white">
-                <Button className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg">RECEIVABLES REPORT</Button>
-                <Button className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg">GST RECEIVABLE REPORT</Button>
-                <Button className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg">PAYABLES REPORT</Button>
-                <Button className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg">GST PAYABLES REPORT</Button>
-                <Button className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg">PERFORMANCE REPORT</Button>
+                <Button
+                    className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg"
+                    onClick={() => navigate('/admin/receivables_report')}
+                >
+                    RECEIVABLES REPORT
+                </Button>
+                <Button
+                    className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg"
+                    onClick={() => navigate('/admin/gst_receivables_report')}
+                >
+                    GST RECEIVABLE REPORT
+                </Button>
+                <Button
+                    className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg"
+                    onClick={() => navigate('/admin/payables_report')}
+                >
+                    PAYABLES REPORT
+                </Button>
+                <Button
+                    className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg"
+                    onClick={() => navigate('/admin/gst_payables_report')}
+                >
+                    GST PAYABLES REPORT
+                </Button>
+                <Button
+                    className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg"
+                    onClick={() => navigate('/admin/performance_report')}
+                >
+                    PERFORMANCE REPORT
+                </Button>
                 <Button className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg">LEAD DOWNLOAD</Button>
             </div>
 
