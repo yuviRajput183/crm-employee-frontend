@@ -204,20 +204,6 @@ const EditPayablesForm = () => {
         }
     }, [payableData, form]);
 
-    // Initialize selectedAdvisor when payableData loads
-    useEffect(() => {
-        if (payableData?.data?.data?.advisorId?._id) {
-            // Check if we have an explicit payoutId or advisorPayoutId to use, otherwise fall back to advisorId
-            // However, AddPayables uses the value from the Advisor Select dropdown which is advisorPayoutId || _id.
-            // For existing payables, we need the ID that fetches the Payout Details. 
-            // Assuming the existing 'advisorId' field or 'payoutId' field in payableData is what we need.
-            // If payableData has 'advisorPayoutId' or 'payoutId', use that.
-            const pData = payableData.data.data;
-            const advisorRef = pData.advisorPayoutId || pData.payoutId || pData.advisorId._id;
-            setSelectedAdvisor(advisorRef);
-        }
-    }, [payableData]);
-
     return (
         <div className=' p-3 bg-white rounded shadow'>
 
