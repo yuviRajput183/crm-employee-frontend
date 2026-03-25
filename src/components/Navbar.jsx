@@ -35,7 +35,6 @@ const Navbar = ({ setIsSidebarOpen, isSidebarOpen, name, role }) => {
             console.log("response of logOut api call inside navbar>>", res?.data?.data);
 
             if (res?.data?.success) {
-                alert(res?.data?.message);
                 localStorage.removeItem("token");
                 localStorage.removeItem("profile");
                 // const redirectPath = res?.data?.data?.role === "employee" ? "/admin/dashboard" : "/advisor/dashboard";

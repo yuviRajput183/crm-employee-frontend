@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiGetCitiesByStateName } from '@/services/city.api';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
+import { numberToWords } from '@/lib/helpers/number-to-words';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLead } from '@/lib/hooks/useLead';
 import { apiFetchLeadDetails, apiFetchDraftDetails } from '@/services/lead.api';
@@ -158,6 +159,7 @@ const businessLoanSchema = z.object({
     loanFeedback: z.string().nullable().optional(),
     remarks: z.string().nullable().optional(),
     bankerId: z.string().optional(),
+    disbursalDate: z.string().optional(),
 });
 
 
@@ -384,6 +386,10 @@ const EditBusinessLoanForm = () => {
                 fd.append('bankerId', data.bankerId);
             }
 
+            if (data.disbursalDate) {
+                fd.append('disbursalDate', data.disbursalDate);
+            }
+
             const res = await mutateAsync({
                 leadId,
                 payload: fd
@@ -396,7 +402,7 @@ const EditBusinessLoanForm = () => {
                 if (returnPath) {
                     navigate(returnPath);
                 } else {
-                    navigate("/admin/my_leads");
+                    navigate("/admin/new_leads");
                 }
             }
 
@@ -521,6 +527,7 @@ const EditBusinessLoanForm = () => {
                 allocateTo: lead?.allocatedTo?._id || "",
                 loanFeedback: lead?.loanFeedback ?? "",
                 remarks: lead?.remarks ?? "",
+                
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -591,6 +598,11 @@ const EditBusinessLoanForm = () => {
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
+                                {field.value && !isNaN(Number(field.value)) && (
+                                    <p className="text-sm text-green-600 font-medium mt-1">
+                                        {numberToWords(field.value)}
+                                    </p>
+                                )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -619,7 +631,7 @@ const EditBusinessLoanForm = () => {
                                 <FormItem>
                                     <FormLabel>Mobile No <span className="text-red-500">*</span></FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -665,7 +677,7 @@ const EditBusinessLoanForm = () => {
                                 <FormItem>
                                     <FormLabel>PAN No</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -754,7 +766,7 @@ const EditBusinessLoanForm = () => {
                                 <FormItem>
                                     <FormLabel>Other Contact No</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -819,7 +831,7 @@ const EditBusinessLoanForm = () => {
                                 <FormItem>
                                     <FormLabel>Residential Address</FormLabel>
                                     <FormControl>
-                                        <Input  {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -1234,7 +1246,23 @@ const EditBusinessLoanForm = () => {
                             const role = profile?.role?.toLowerCase();
                             if (role === "advisor") return null;
                         } catch (e) { }
-                        return <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPDATE</Button>;
+                        return (
+                            <div className="flex gap-4">
+                                {searchParams.get('returnPath')?.includes('new_leads') && (
+                                    <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        onClick={() => {
+                                            const rp = searchParams.get('returnPath');
+                                            if (rp) navigate(rp);
+                                            else navigate(-1);
+                                        }} 
+                                        className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
+                                    >BACK</Button>
+                                )}
+                                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPDATE</Button>
+                            </div>
+                        );
                     })()}
 
                 </form>

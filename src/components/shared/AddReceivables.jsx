@@ -1,4 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import money from '@/assets/images/money.png';
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -268,7 +270,19 @@ const AddReceivables = ({ onClose }) => {
 
 
     return (
-        <Form {...form}>
+        <div className=' p-3 bg-white rounded shadow'>
+            {/* Heading */}
+            <div className=' flex justify-between items-center pb-2 border-b-2 mb-4'>
+                <div className=' flex items-center gap-2'>
+                    <Avatar>
+                        <AvatarImage src={money} />
+                        <AvatarFallback>CN</AvatarFallback>
+                    </Avatar>
+                    <h1 className=' text-2xl font-bold'>Receivables</h1>
+                </div>
+            </div>
+
+            <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(handleSubmit)}
                 className="w-full mt-2 py-4 rounded-md"
@@ -606,6 +620,7 @@ const AddReceivables = ({ onClose }) => {
                 </div>
             </form>
         </Form>
+        </div>
     );
 };
 

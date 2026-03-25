@@ -93,6 +93,7 @@ const insuranceFormSchema = z.object({
     loanFeedback: z.string().nullable().optional(),
     remarks: z.string().nullable().optional(),
     bankerId: z.string().optional(),
+    disbursalDate: z.string().optional(),
 });
 
 
@@ -219,6 +220,10 @@ const EditInsuranceForm = () => {
                 fd.append('bankerId', data.bankerId);
             }
 
+            if (data.disbursalDate) {
+                fd.append('disbursalDate', data.disbursalDate);
+            }
+
             const res = await mutateAsync({
                 leadId,
                 payload: fd
@@ -231,7 +236,7 @@ const EditInsuranceForm = () => {
                 if (returnPath) {
                     navigate(returnPath);
                 } else {
-                    navigate("/admin/my_leads");
+                    navigate("/admin/new_leads");
                 }
             }
 
@@ -337,6 +342,7 @@ const EditInsuranceForm = () => {
                 allocateTo: lead?.allocatedTo?._id || "",
                 loanFeedback: lead?.loanFeedback ?? "",
                 remarks: lead?.remarks ?? "",
+                
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -479,7 +485,7 @@ const EditInsuranceForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>PAN No</FormLabel>
-                                    <Input {...field} />
+                                    <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                 </FormItem>
                             )}
                         />
@@ -530,7 +536,7 @@ const EditInsuranceForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Other Contact No</FormLabel>
-                                    <Input {...field} />
+                                    <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                 </FormItem>
                             )}
                         />
@@ -737,7 +743,19 @@ const EditInsuranceForm = () => {
                         );
                     })()}
 
-                    <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPDATE</Button>
+                    <div className="flex gap-4">
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={() => {
+                                        const rp = searchParams.get('returnPath');
+                                        if (rp) navigate(rp);
+                                        else navigate(-1);
+                                    }} 
+                                    className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
+                                >BACK</Button>
+                                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPDATE</Button>
+                            </div>
 
 
 

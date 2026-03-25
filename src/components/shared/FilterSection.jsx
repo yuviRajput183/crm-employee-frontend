@@ -231,12 +231,25 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
                                     <SelectValue placeholder="Select" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    {/* Existing Values */}
                                     <SelectItem value="Loan Disbursed">Loan Disbursed</SelectItem>
                                     <SelectItem value="Loan Rejected">Loan Rejected</SelectItem>
                                     <SelectItem value="Rejected">Rejected</SelectItem>
                                     <SelectItem value="Policy Issued">Policy Issued</SelectItem>
                                     <SelectItem value="Invoice Raised">Invoice Raised</SelectItem>
                                     <SelectItem value="Fees Received">Fees Received</SelectItem>
+
+                                    {/* New Values from Image */}
+                                    <SelectItem value="Allocated">Allocated</SelectItem>
+                                    <SelectItem value="Docs Query">Docs Query</SelectItem>
+                                    <SelectItem value="Loan Approved">Loan Approved</SelectItem>
+                                    <SelectItem value="Under Process">Under Process</SelectItem>
+                                    <SelectItem value="Premium/ BI Fetched">Premium/ BI Fetched</SelectItem>
+                                    <SelectItem value="Shared with Client">Shared with Client</SelectItem>
+                                    <SelectItem value="Client Denied">Client Denied</SelectItem>
+                                    <SelectItem value="Payment Done">Payment Done</SelectItem>
+                                    <SelectItem value="Payout Received">Payout Received</SelectItem>
+                                    <SelectItem value="Documents Completed">Documents Completed</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />

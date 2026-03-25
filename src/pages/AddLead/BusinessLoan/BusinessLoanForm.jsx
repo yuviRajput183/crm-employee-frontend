@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiGetCitiesByStateName } from '@/services/city.api';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
+import { numberToWords } from '@/lib/helpers/number-to-words';
 import { useNavigate } from 'react-router-dom';
 import { useLead } from '@/lib/hooks/useLead';
 
@@ -356,7 +357,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
             form.reset(); // clear form
             setUploadedDocuments([]); // clear uploaded documents
             if (res?.data?.success) {
-                navigate("/admin/my_leads");
+                navigate("/admin/new_leads");
             }
 
 
@@ -505,6 +506,11 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                                 <FormControl>
                                     <Input {...field} />
                                 </FormControl>
+                                {field.value && !isNaN(Number(field.value)) && (
+                                    <p className="text-sm text-green-600 font-medium mt-1">
+                                        {numberToWords(field.value)}
+                                    </p>
+                                )}
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -533,7 +539,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                             <FormItem>
                                 <FormLabel>Mobile No <span className="text-red-500">*</span></FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -579,7 +585,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                             <FormItem>
                                 <FormLabel>PAN No</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -668,7 +674,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                             <FormItem>
                                 <FormLabel>Other Contact No</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -733,7 +739,7 @@ const BusinessLoanForm = ({ selectedAdvisor }) => {
                             <FormItem>
                                 <FormLabel>Residential Address</FormLabel>
                                 <FormControl>
-                                    <Input  {...field} />
+                                    <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

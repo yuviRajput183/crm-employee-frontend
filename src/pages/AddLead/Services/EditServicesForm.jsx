@@ -98,6 +98,7 @@ const servicesSchema = z.object({
     loanFeedback: z.string().nullable().optional(),
     remarks: z.string().nullable().optional(),
     bankerId: z.string().optional(),
+    disbursalDate: z.string().optional(),
 });
 
 const EditServicesForm = () => {
@@ -229,6 +230,10 @@ const EditServicesForm = () => {
                 fd.append('bankerId', data.bankerId);
             }
 
+            if (data.disbursalDate) {
+                fd.append('disbursalDate', data.disbursalDate);
+            }
+
             const res = await mutateAsync({
                 leadId,
                 payload: fd
@@ -241,7 +246,7 @@ const EditServicesForm = () => {
                 if (returnPath) {
                     navigate(returnPath);
                 } else {
-                    navigate("/admin/my_leads");
+                    navigate("/admin/new_leads");
                 }
             }
 
@@ -363,6 +368,7 @@ const EditServicesForm = () => {
                 allocateTo: lead?.allocatedTo?._id || "",
                 loanFeedback: lead?.loanFeedback ?? "",
                 remarks: lead?.remarks ?? "",
+                
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -475,7 +481,7 @@ const EditServicesForm = () => {
                         <FormField name="mobileNo" control={form.control} render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Mobile No<span className="text-red-500">*</span></FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -499,7 +505,7 @@ const EditServicesForm = () => {
                         <FormField name="panNo" control={form.control} render={({ field }) => (
                             <FormItem>
                                 <FormLabel>PAN No</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -539,7 +545,7 @@ const EditServicesForm = () => {
                         <FormField name="otherContactNo" control={form.control} render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Other Contact No</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -586,7 +592,7 @@ const EditServicesForm = () => {
                         <FormField name="residentialAddress" control={form.control} render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Residential Address</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -730,7 +736,19 @@ const EditServicesForm = () => {
                         );
                     })()}
 
-                    <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                    <div className="flex gap-4">
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={() => {
+                                        const rp = searchParams.get('returnPath');
+                                        if (rp) navigate(rp);
+                                        else navigate(-1);
+                                    }} 
+                                    className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
+                                >BACK</Button>
+                                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                            </div>
 
 
                 </form>

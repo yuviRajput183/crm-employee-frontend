@@ -46,9 +46,9 @@ const SelectAdvisorName = ({ selectedAdvisor, setSelectedAdvisor }) => {
                 <Alert variant="destructive">{getErrorMessage(listAdvisorError)}</Alert>
             )}
             <div className="w-[90%] md:max-w-md mx-auto">
-                <Select value={selectedAdvisor} onValueChange={setSelectedAdvisor} className=" text-white">
-                    <SelectTrigger className="w-full bg-blue-950  text-white font-semibold outline-none">
-                        <SelectValue placeholder="SELECT ADVISOR NAME" />
+                <Select value={selectedAdvisor || undefined} onValueChange={setSelectedAdvisor} className=" text-white">
+                    <SelectTrigger className="w-full bg-blue-950 text-white font-semibold outline-none items-center justify-center [&>span]:mx-auto [&>span]:text-white">
+                        <SelectValue placeholder="Select advisor name" />
                     </SelectTrigger>
                     <SelectContent className="w-full">
                         <SelectGroup>

@@ -1,4 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import money from '@/assets/images/money.png';
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -252,7 +254,8 @@ const AddInvoiceForm = ({ onClose }) => {
             form.setValue('customerName', lead?.clientName || '');
             form.setValue('advisorName', lead?.advisorId?.name || '');
             form.setValue('finalInvoice', lead?.finalInvoice);
-            form.setValue('disbursalAmount', lead?.disbursalAmount?.toString() || '');
+            form.setValue('disbursalAmount', lead?.loanRequirementAmount?.toString() || '');
+            form.setValue('disbursalDate', lead?.disbursalDate ? lead.disbursalDate.split('T')[0] : '');
 
             // Fill banker details (non-editable)
             form.setValue('bankName', lead?.bankerId?.bank?.name || '');
@@ -268,7 +271,19 @@ const AddInvoiceForm = ({ onClose }) => {
 
 
     return (
-        <Form {...form}>
+        <div className=' p-3 bg-white rounded shadow'>
+            {/* Heading */}
+            <div className=' flex justify-between items-center pb-2 border-b-2 mb-4'>
+                <div className=' flex items-center gap-2'>
+                    <Avatar>
+                        <AvatarImage src={money} />
+                        <AvatarFallback>CN</AvatarFallback>
+                    </Avatar>
+                    <h1 className=' text-2xl font-bold'>Invoices</h1>
+                </div>
+            </div>
+
+            <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(handleSubmit)}
                 className="w-full mt-2 py-4 rounded-md"
@@ -391,7 +406,7 @@ const AddInvoiceForm = ({ onClose }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Disbursal Date <span className="text-red-500">*</span></FormLabel>
-                                <Input type="date" {...field} />
+                                <Input type="date" {...field} readOnly className="bg-gray-50" />
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -423,7 +438,7 @@ const AddInvoiceForm = ({ onClose }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Disbursal Amount <span className="text-red-500">*</span></FormLabel>
-                                <Input {...field} className="" />
+                                <Input {...field} readOnly className="bg-gray-50" />
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -671,6 +686,7 @@ const AddInvoiceForm = ({ onClose }) => {
                 </div>
             </form>
         </Form>
+        </div>
     );
 };
 
