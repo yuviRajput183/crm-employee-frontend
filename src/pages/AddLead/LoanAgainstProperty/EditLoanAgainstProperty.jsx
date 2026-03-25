@@ -24,6 +24,7 @@ import { apiGetCitiesByStateName } from '@/services/city.api';
 import { useQuery } from '@tanstack/react-query';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
+import { numberToWords } from '@/lib/helpers/number-to-words';
 import { useLead } from '@/lib/hooks/useLead';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { apiFetchLeadDetails, apiFetchDraftDetails } from '@/services/lead.api';
@@ -156,10 +157,12 @@ const loanAgainstPropertySchema = z.object({
     attachmentType: z.string().optional(),
     uploadFile: z.any().optional(), // For file uploads, we use z.any() since File objects are complex
     filePassword: z.string().optional(),
-    allocateTo: z.string().optional(),
+    allocateTo: z.string().optional(), 
+                
     loanFeedback: z.string().optional(),
     remarks: z.string().optional(),
     bankerId: z.string().optional(),
+    disbursalDate: z.string().optional(),
 });
 
 
@@ -260,7 +263,8 @@ const EditLoanAgainstPropertyForm = () => {
             attachmentType: '',
             uploadFile: null,
             filePassword: '',
-            allocateTo: "",
+            allocateTo: "", 
+                disbursalDate: lead?.disbursalDate ? lead.disbursalDate.split("T")[0] : "",
             loanFeedback: null,
             remarks: '',
         },
@@ -404,6 +408,8 @@ const EditLoanAgainstPropertyForm = () => {
                 fd.append('bankerId', data.bankerId);
             }
 
+            if (data.disbursalDate) fd.append('disbursalDate', data.disbursalDate);
+
             const res = await mutateAsync({
                 leadId,
                 payload: fd
@@ -412,7 +418,7 @@ const EditLoanAgainstPropertyForm = () => {
 
             form.reset(); // clear form
             if (res?.data?.success) {
-                navigate("/admin/my_leads");
+                navigate("/admin/new_leads");
             }
 
 
@@ -532,7 +538,8 @@ const EditLoanAgainstPropertyForm = () => {
                 attachmentType: '',
                 uploadFile: null,
                 filePassword: '',
-                allocateTo: lead?.allocatedTo?._id || "",
+                allocateTo: lead?.allocatedTo?._id || "", 
+                disbursalDate: lead?.disbursalDate ? lead.disbursalDate.split("T")[0] : "",
                 loanFeedback: lead?.loanFeedback ?? null,
                 remarks: lead?.remarks ?? null,
             });
@@ -593,6 +600,11 @@ const EditLoanAgainstPropertyForm = () => {
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
+                                {field.value && !isNaN(Number(field.value)) && (
+                                    <p className="text-sm text-green-600 font-medium mt-1">
+                                        {numberToWords(field.value)}
+                                    </p>
+                                )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -621,7 +633,7 @@ const EditLoanAgainstPropertyForm = () => {
                                 <FormItem>
                                     <FormLabel>Mobile No <span className="text-red-500">*</span></FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -667,7 +679,7 @@ const EditLoanAgainstPropertyForm = () => {
                                 <FormItem>
                                     <FormLabel>PAN No</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -756,7 +768,7 @@ const EditLoanAgainstPropertyForm = () => {
                                 <FormItem>
                                     <FormLabel>Other Contact No</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -821,7 +833,7 @@ const EditLoanAgainstPropertyForm = () => {
                                 <FormItem>
                                     <FormLabel>Residential Address</FormLabel>
                                     <FormControl>
-                                        <Input  {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -1113,7 +1125,7 @@ const EditLoanAgainstPropertyForm = () => {
                                 <FormItem>
                                     <FormLabel>Official Number</FormLabel>
                                     <FormControl>
-                                        <Input  {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -1154,7 +1166,7 @@ const EditLoanAgainstPropertyForm = () => {
                                 <FormItem>
                                     <FormLabel>Property Market Value</FormLabel>
                                     <FormControl>
-                                        <Input  {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -1255,7 +1267,21 @@ const EditLoanAgainstPropertyForm = () => {
                             const role = profile?.role?.toLowerCase();
                             if (role === "advisor") return null;
                         } catch (e) { }
-                        return <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>;
+                        return (
+                            <div className="flex gap-4">
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={() => {
+                                        const rp = searchParams.get('returnPath');
+                                        if (rp) navigate(rp);
+                                        else navigate(-1);
+                                    }} 
+                                    className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
+                                >BACK</Button>
+                                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                            </div>
+                        );
                     })()}
 
                 </form>

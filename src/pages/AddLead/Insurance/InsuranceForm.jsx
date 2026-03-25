@@ -209,7 +209,7 @@ const InsuranceForm = ({ selectedAdvisor }) => {
 
             form.reset(); // clear form
             if (res?.data?.success) {
-                navigate("/admin/my_leads");
+                navigate("/admin/new_leads");
             }
 
 
@@ -410,7 +410,7 @@ const InsuranceForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>PAN No</FormLabel>
-                                <Input {...field} />
+                                <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                             </FormItem>
                         )}
                     />
@@ -461,7 +461,7 @@ const InsuranceForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Other Contact No</FormLabel>
-                                <Input {...field} />
+                                <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                             </FormItem>
                         )}
                     />

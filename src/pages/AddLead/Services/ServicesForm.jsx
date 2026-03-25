@@ -202,7 +202,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
 
             form.reset(); // clear form
             if (res?.data?.success) {
-                navigate("/admin/my_leads");
+                navigate("/admin/new_leads");
             }
 
 
@@ -372,7 +372,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                     <FormField name="mobileNo" control={form.control} render={({ field }) => (
                         <FormItem>
                             <FormLabel>Mobile No<span className="text-red-500">*</span></FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
+                            <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -396,7 +396,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                     <FormField name="panNo" control={form.control} render={({ field }) => (
                         <FormItem>
                             <FormLabel>PAN No</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
+                            <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -436,7 +436,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                     <FormField name="otherContactNo" control={form.control} render={({ field }) => (
                         <FormItem>
                             <FormLabel>Other Contact No</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
+                            <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -483,7 +483,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                     <FormField name="residentialAddress" control={form.control} render={({ field }) => (
                         <FormItem>
                             <FormLabel>Residential Address</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
+                            <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />

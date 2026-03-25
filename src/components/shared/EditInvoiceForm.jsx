@@ -413,7 +413,7 @@ const EditInvoiceForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Disbursal Date <span className="text-red-500">*</span></FormLabel>
-                                    <Input type="date" {...field} />
+                                    <Input type="date" {...field} readOnly className="bg-gray-50" />
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -445,7 +445,7 @@ const EditInvoiceForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Disbursal Amount <span className="text-red-500">*</span></FormLabel>
-                                    <Input {...field} />
+                                    <Input {...field} readOnly className="bg-gray-50" />
                                     <FormMessage />
                                 </FormItem>
                             )}

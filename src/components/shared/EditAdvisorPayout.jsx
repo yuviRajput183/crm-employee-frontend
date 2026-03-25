@@ -419,7 +419,7 @@ const EditAdvisorPayoutForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Disbursal Amount <span className="text-red-500">*</span></FormLabel>
-                                    <Input {...field} type="number" />
+                                    <Input {...field} type="number" readOnly className="bg-gray-50" />
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -432,7 +432,7 @@ const EditAdvisorPayoutForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Disbursal Date <span className="text-red-500">*</span></FormLabel>
-                                    <Input type="date" {...field} />
+                                    <Input type="date" {...field} readOnly className="bg-gray-50" />
                                     <FormMessage />
                                 </FormItem>
                             )}

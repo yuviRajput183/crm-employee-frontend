@@ -25,6 +25,7 @@ import { apiFetchLeadDetails, apiFetchDraftDetails, apiListAllocatedTo } from '@
 import { apiGetCitiesByStateName } from '@/services/city.api';
 import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
+import { numberToWords } from '@/lib/helpers/number-to-words';
 import { useLead } from '@/lib/hooks/useLead';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 // import others from '@/assets/images/others.png';
@@ -351,6 +352,10 @@ const EditOthersForm = () => {
             if (data.loanFeedback) fd.append('feedback', data.loanFeedback);
             if (data.remarks) fd.append('remarks', data.remarks);
             if (data.bankerId) fd.append('bankerId', data.bankerId);
+            }
+
+            if (data.disbursalDate) {
+                fd.append('disbursalDate', data.disbursalDate);
 
             const res = await mutateAsync({ leadId, payload: fd });
             if (res?.data?.success) {
@@ -358,7 +363,7 @@ const EditOthersForm = () => {
                 if (returnPath) {
                     navigate(returnPath);
                 } else {
-                    navigate("/admin/my_leads");
+                    navigate("/admin/new_leads");
                 }
             }
         } catch (error) {
@@ -440,6 +445,7 @@ const EditOthersForm = () => {
                 allocateTo: lead?.allocatedTo?._id || "",
                 loanFeedback: lead?.loanFeedback ?? "",
                 remarks: lead?.remarks ?? "",
+                
             });
             setSelectedAdvisor(lead?.advisorId?._id);
         }
@@ -520,6 +526,11 @@ const EditOthersForm = () => {
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
+                                {field.value && !isNaN(Number(field.value)) && (
+                                    <p className="text-sm text-green-600 font-medium mt-1">
+                                        {numberToWords(field.value)}
+                                    </p>
+                                )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -549,7 +560,7 @@ const EditOthersForm = () => {
                                 <FormItem>
                                     <FormLabel>Mobile No <span className="text-red-500">*</span></FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -596,7 +607,7 @@ const EditOthersForm = () => {
                                 <FormItem>
                                     <FormLabel>PAN No</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -685,7 +696,7 @@ const EditOthersForm = () => {
                                 <FormItem>
                                     <FormLabel>Other Contact No</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -750,7 +761,7 @@ const EditOthersForm = () => {
                                 <FormItem>
                                     <FormLabel>Residential Address</FormLabel>
                                     <FormControl>
-                                        <Input  {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -1045,7 +1056,7 @@ const EditOthersForm = () => {
                                 <FormItem>
                                     <FormLabel>Official Number</FormLabel>
                                     <FormControl>
-                                        <Input  {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -1061,7 +1072,7 @@ const EditOthersForm = () => {
                                 <FormItem>
                                     <FormLabel>Car Name</FormLabel>
                                     <FormControl>
-                                        <Input  {...field} />
+                                        <Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -1147,7 +1158,21 @@ const EditOthersForm = () => {
                             const role = profile?.role?.toLowerCase();
                             if (role === "advisor") return null;
                         } catch (e) { }
-                        return <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>;
+                        return (
+                            <div className="flex gap-4">
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={() => {
+                                        const rp = searchParams.get('returnPath');
+                                        if (rp) navigate(rp);
+                                        else navigate(-1);
+                                    }} 
+                                    className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
+                                >BACK</Button>
+                                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                            </div>
+                        );
                     })()}
 
 
