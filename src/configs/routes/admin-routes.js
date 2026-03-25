@@ -360,5 +360,10 @@ export const adminRoutes = [
         path: "performance_report",
         name: "Performance Report",
         component: lazy(() => import('@/components/shared/PerformanceReport'))
+    },
+    {
+        path: "lead_download",
+        name: "Lead Download",
+        component: lazy(() => import('@/components/shared/LeadDownload'))
     }
 ]

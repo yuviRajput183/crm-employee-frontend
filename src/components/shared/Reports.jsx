@@ -50,7 +50,12 @@ const Reports = () => {
                 >
                     PERFORMANCE REPORT
                 </Button>
-                <Button className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg">LEAD DOWNLOAD</Button>
+                <Button 
+                    className=" bg-blue-900 hover:bg-blue-400 opacity-85 h-[55px] text-lg"
+                    onClick={() => navigate('/admin/lead_download')}
+                >
+                    LEAD DOWNLOAD
+                </Button>
             </div>
 
 
