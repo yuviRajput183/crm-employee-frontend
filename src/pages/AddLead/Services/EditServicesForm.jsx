@@ -342,7 +342,6 @@ const EditServicesForm = () => {
                 residentialAddress: lead?.residentialAddress || '',
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                cityName: lead?.cityName || '',
                 pinCode: lead?.pinCode?.toString() || '',
 
                 nomineeName: lead?.nomineeName || '',
@@ -368,7 +367,7 @@ const EditServicesForm = () => {
                 allocateTo: lead?.allocatedTo?._id || "",
                 loanFeedback: lead?.loanFeedback ?? "",
                 remarks: lead?.remarks ?? "",
-                
+
             });
 
             setSelectedAdvisor(lead?.advisorId?._id);
@@ -737,18 +736,18 @@ const EditServicesForm = () => {
                     })()}
 
                     <div className="flex gap-4">
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    onClick={() => {
-                                        const rp = searchParams.get('returnPath');
-                                        if (rp) navigate(rp);
-                                        else navigate(-1);
-                                    }} 
-                                    className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
-                                >BACK</Button>
-                                <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
-                            </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                const rp = searchParams.get('returnPath');
+                                if (rp) navigate(rp);
+                                else navigate(-1);
+                            }}
+                            className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
+                        >BACK</Button>
+                        <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">SAVE</Button>
+                    </div>
 
 
                 </form>
