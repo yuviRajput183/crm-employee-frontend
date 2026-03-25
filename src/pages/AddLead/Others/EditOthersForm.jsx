@@ -352,10 +352,10 @@ const EditOthersForm = () => {
             if (data.loanFeedback) fd.append('feedback', data.loanFeedback);
             if (data.remarks) fd.append('remarks', data.remarks);
             if (data.bankerId) fd.append('bankerId', data.bankerId);
-            }
 
             if (data.disbursalDate) {
                 fd.append('disbursalDate', data.disbursalDate);
+            }
 
             const res = await mutateAsync({ leadId, payload: fd });
             if (res?.data?.success) {
