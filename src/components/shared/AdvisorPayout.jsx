@@ -20,7 +20,7 @@ import { apiListAdvisorPayouts } from '@/services/advisorPayout.api';
 import { Alert } from '../ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useAdvisorPayout } from '@/lib/hooks/useAdvisorPayout';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 
 
 const filterSchema = z.object({
@@ -34,12 +34,14 @@ const filterSchema = z.object({
 const AdvisorPayout = () => {
 
     const [showFilter, setShowFilter] = useState(false);
-    const [filterParams, setFilterParams] = useState({});
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filterParams = Object.fromEntries(searchParams.entries());
     const [leads, setLeads] = useState([]);
     const [payoutData, setPayoutData] = useState([]);
 
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     // fetching new leads on component mount and on filtering
     const {
@@ -66,44 +68,40 @@ const AdvisorPayout = () => {
 
 
 
-    // Update leads when query data changes
+    // Update leads and payout data when query data changes
     useEffect(() => {
-        console.log("inside use effect .....");
-        if (queryData?.data?.data?.advisorPayouts?.length > 0) {
-            setLeads(queryData.data.data.advisorPayouts);
+        const data = queryData?.data?.data;
+        const advisorPayouts = data?.advisorPayouts || [];
+        const totals = data?.totals || {};
 
-            const totals = queryData.data.data.totals || {};
-            setPayoutData([
-                {
-                    label: "Gross Amount",
-                    value: totals.grossAmount?.toLocaleString("en-IN") ?? "0",
-                    color: "bg-red-500",
-                    iconColor: "text-red-500"
-                },
-                {
-                    label: "Total Payout",
-                    value: totals.totalPayoutAmount?.toLocaleString("en-IN") ?? "0",
-                    color: "bg-blue-500",
-                    iconColor: "text-blue-500"
-                },
-                {
-                    label: "TDS Amount",
-                    value: totals.totalTdsAmount?.toLocaleString("en-IN") ?? "0",
-                    color: "bg-teal-400",
-                    iconColor: "text-teal-400"
-                },
-                {
-                    label: "GST Amount",
-                    value: totals.totalGstAmount?.toLocaleString("en-IN") ?? "0",
-                    color: "bg-amber-400",
-                    iconColor: "text-amber-400"
-                }
-            ]);
+        setLeads(advisorPayouts);
 
-        } else if (queryData?.data?.data) {
-            // Handle case where advisorPayouts might be empty or structured differently
-            setLeads([]);
-        }
+        setPayoutData([
+            {
+                label: "Gross Amount",
+                value: totals.grossAmount?.toLocaleString("en-IN") ?? "0",
+                color: "bg-red-500",
+                iconColor: "text-red-500"
+            },
+            {
+                label: "Total Payout",
+                value: totals.totalPayoutAmount?.toLocaleString("en-IN") ?? "0",
+                color: "bg-blue-500",
+                iconColor: "text-blue-500"
+            },
+            {
+                label: "TDS Amount",
+                value: totals.totalTdsAmount?.toLocaleString("en-IN") ?? "0",
+                color: "bg-teal-400",
+                iconColor: "text-teal-400"
+            },
+            {
+                label: "GST Amount",
+                value: totals.totalGstAmount?.toLocaleString("en-IN") ?? "0",
+                color: "bg-amber-400",
+                iconColor: "text-amber-400"
+            }
+        ]);
     }, [queryData]);
 
 
@@ -112,11 +110,11 @@ const AdvisorPayout = () => {
     const form = useForm({
         resolver: zodResolver(filterSchema),
         defaultValues: {
-            loanServiceType: '', // Fixed: was 'productType', should match schema
-            advisorName: '',
-            clientName: '',
-            fromDate: '',
-            toDate: '',
+            loanServiceType: filterParams.loanServiceType || '',
+            advisorName: filterParams.advisorName || '',
+            clientName: filterParams.clientName || '',
+            fromDate: filterParams.fromDate || '',
+            toDate: filterParams.toDate || '',
         },
     })
 
@@ -127,10 +125,9 @@ const AdvisorPayout = () => {
             Object.entries(values).filter(([, val]) => val !== '' && val !== undefined)
         );
 
-        // Only update filterParams - this will trigger the query automatically
-        setFilterParams(cleanParams);
+        // Update search params in URL - this will automatically trigger useQuery
+        setSearchParams(cleanParams);
         setShowFilter(false);
-        // Remove refetch() call - it's causing duplicate API calls
     }
 
 
@@ -221,37 +218,45 @@ const AdvisorPayout = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {leads.map((lead, index) => (
-                                <TableRow key={lead?._id} className={index % 2 === 0 ? "bg-gray-100" : ""}>
-                                    <TableCell>{lead?.leadId?.leadNo}</TableCell>
-                                    <TableCell>{lead?.leadId?.productType}</TableCell>
-                                    <TableCell>{lead?.advisorId?.name}</TableCell>
-                                    <TableCell>{lead?.leadId?.clientName}</TableCell>
-                                    <TableCell>{lead?.disbursalAmount}</TableCell>
-                                    <TableCell>{lead?.disbursalDate?.split('T')[0]}</TableCell>
-                                    <TableCell>{lead.payoutPercent}</TableCell>
-                                    <TableCell>{lead.payoutAmount}</TableCell>
-                                    <TableCell>{lead.tdsPercent}</TableCell>
-                                    <TableCell>{lead.tdsAmount}</TableCell>
-                                    <TableCell>{lead.gstApplicable ? "Applicable" : "Not Applicable"}</TableCell>
-                                    <TableCell>{lead.invoiceDate?.split('T')[0]}</TableCell>
-                                    <TableCell>{lead.invoiceNo}</TableCell>
-                                    <TableCell>{lead.gstPercent}</TableCell>
-                                    <TableCell>{lead.gstAmount}</TableCell>
-                                    <TableCell>{lead.netPayableAmount}</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            onClick={() => navigate(`/admin/edit_advisor_payout/${lead?._id}`)}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs">Edit</Button>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button
-                                            loading={isLoading}
-                                            onClick={() => handleDelete(lead?._id)}
-                                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs">Delete</Button>
+                            {leads.length > 0 ? (
+                                leads.map((lead, index) => (
+                                    <TableRow key={lead?._id} className={index % 2 === 0 ? "bg-gray-100" : ""}>
+                                        <TableCell>{lead?.leadId?.leadNo}</TableCell>
+                                        <TableCell>{lead?.leadId?.productType}</TableCell>
+                                        <TableCell>{lead?.advisorId?.name}</TableCell>
+                                        <TableCell>{lead?.leadId?.clientName}</TableCell>
+                                        <TableCell>{lead?.disbursalAmount}</TableCell>
+                                        <TableCell>{lead?.disbursalDate?.split('T')[0]}</TableCell>
+                                        <TableCell>{lead.payoutPercent}</TableCell>
+                                        <TableCell>{lead.payoutAmount}</TableCell>
+                                        <TableCell>{lead.tdsPercent}</TableCell>
+                                        <TableCell>{lead.tdsAmount}</TableCell>
+                                        <TableCell>{lead.gstApplicable ? "Applicable" : "Not Applicable"}</TableCell>
+                                        <TableCell>{lead.invoiceDate?.split('T')[0]}</TableCell>
+                                        <TableCell>{lead.invoiceNo}</TableCell>
+                                        <TableCell>{lead.gstPercent}</TableCell>
+                                        <TableCell>{lead.gstAmount}</TableCell>
+                                        <TableCell>{lead.netPayableAmount}</TableCell>
+                                        <TableCell>
+                                            <Button
+                                                onClick={() => navigate(`/admin/edit_advisor_payout/${lead?._id}?returnPath=${encodeURIComponent(location.pathname + location.search)}`)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs">Edit</Button>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                loading={isLoading}
+                                                onClick={() => handleDelete(lead?._id)}
+                                                className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs">Delete</Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={18} className="text-center py-8 text-gray-500">
+                                        No payouts found
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </div>

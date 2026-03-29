@@ -27,7 +27,7 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 import { apiFetchPayableDetails } from '@/services/payables.api';
 import { apiListAdvisor } from '@/services/advisor.api';
 import { usePayables } from '@/lib/hooks/usePayables';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 // Zod schema for edit payables form
 const editPayablesFormSchema = z.object({
@@ -70,6 +70,7 @@ const EditPayablesForm = () => {
     // Removed dynamic logic states
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     // query to fetch the payable detail on component mount
     const {
@@ -169,7 +170,12 @@ const EditPayablesForm = () => {
             console.log("Payable updated successfully ....");
 
             if (res?.data?.success) {
-                navigate('../payable_payout');
+                const returnPath = searchParams.get('returnPath');
+                if (returnPath) {
+                    navigate(returnPath);
+                } else {
+                    navigate('../payable_payout');
+                }
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
@@ -359,7 +365,7 @@ const EditPayablesForm = () => {
                                                     field.onChange(value);
                                                     // Calculate balance
                                                     const balance = payableGstAmount - numValue;
-                                                    form.setValue('balancePayableAmount', balance.toString());
+                                                    form.setValue('balancePayableAmount', String(Math.round(balance)));
                                                 } else {
                                                     // Set to max allowed value
                                                     field.onChange(payableGstAmount.toString());
@@ -531,7 +537,14 @@ const EditPayablesForm = () => {
                             {isLoading ? 'SAVING...' : 'SAVE'}
                         </Button>
                         <Button
-                            onClick={() => navigate('../payable_payout')}
+                            onClick={() => {
+                                const returnPath = searchParams.get('returnPath');
+                                if (returnPath) {
+                                    navigate(returnPath);
+                                } else {
+                                    navigate('../payable_payout');
+                                }
+                            }}
                             type="button"
                             variant="outline"
                             className="bg-gray-500 text-white"

@@ -260,7 +260,7 @@ const AddReceivables = ({ onClose }) => {
             fieldOnChange(inputValue);
             // Calculate and update Balance Receivable Amount
             const balance = gstAmount - numericValue;
-            form.setValue('balanceReceivableAmount', String(balance.toFixed(2)));
+            form.setValue('balanceReceivableAmount', String(Math.round(balance)));
         } else {
             // If input exceeds max, set to max value
             fieldOnChange(String(gstAmount));
@@ -438,7 +438,7 @@ const AddReceivables = ({ onClose }) => {
                                 <FormLabel>Received Amount <span className="text-red-500">*</span></FormLabel>
                                 <Input
                                     type="number"
-                                    step="0.01"
+                                    step="1"
                                     min="0"
                                     max={maxReceivableAmount}
                                     {...field}

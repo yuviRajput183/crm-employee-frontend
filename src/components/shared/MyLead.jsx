@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import EditLeadAdvisor from './EditLeadAdvisor';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 const statusKeyMap = {
     "Loan Disbursed": "disbursed",
@@ -95,8 +95,9 @@ const editProductPathMap = {
 const MyLead = () => {
 
     const [showFilter, setShowFilter] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filterParams = Object.fromEntries(searchParams.entries());
     const [myLeadsData, setMyLeadsData] = useState([]);
-    const [filterParams, setFilterParams] = useState({});
     const [leads, setLeads] = useState([]);
     const [stats, setStats] = useState(null);
     const [total, setTotal] = useState(null);
@@ -130,28 +131,24 @@ const MyLead = () => {
     });
 
     useEffect(() => {
-        if (myLeadsData?.leads) {
-            setLeads(myLeadsData.leads);
-        }
-        if (myLeadsData?.stats) {
-            setStats(myLeadsData?.stats);
-        }
-        if (myLeadsData?.total) {
-            setTotal(myLeadsData?.total);
-        }
+        // Always update leads, stats, and total based on API response
+        // This ensures empty responses correctly clear/reset the data
+        setLeads(myLeadsData?.leads || []);
+        setStats(myLeadsData?.stats || null);
+        setTotal(myLeadsData?.total ?? 0);
     }, [myLeadsData]);
 
 
     const form = useForm({
         resolver: zodResolver(filterSchema),
         defaultValues: {
-            productType: '',
-            advisorName: '',
-            clientName: '',
-            feedback: '',
-            allocatedTo: '',
-            fromDate: '',
-            toDate: '',
+            productType: filterParams.productType || '',
+            advisorName: filterParams.advisorName || '',
+            clientName: filterParams.clientName || '',
+            feedback: filterParams.feedback || '',
+            allocatedTo: filterParams.allocatedTo || '',
+            fromDate: filterParams.fromDate || '',
+            toDate: filterParams.toDate || '',
         },
     })
 
@@ -164,14 +161,12 @@ const MyLead = () => {
         console.log("submitting values for filter>>", values);
 
         const cleanParams = Object.fromEntries(
-            Object.entries(values).filter(([, val]) => val !== '')
+            Object.entries(values).filter(([, val]) => val !== '' && val !== undefined)
         );
 
-        // update local state for queryKey + pass to API
-        setFilterParams(cleanParams);
-
+        // Update search params in URL - this will automatically trigger useQuery
+        setSearchParams(cleanParams);
         setShowFilter(false);
-
     }
 
 
@@ -203,20 +198,20 @@ const MyLead = () => {
                     {!showFilter && <div className="w-full grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-4 shadow mt-4 border border-gray-100 rounded-md ">
 
 
-                        {total && <div className="p-4 flex flex-col gap-2 bg-white ">
+                        {(total !== null && total !== undefined) && <div className="p-4 flex flex-col gap-2 bg-white ">
                             <h2 className="font-semibold text-gray-700">Total Leads</h2>
                             <div className="flex items-center gap-2">
                                 <span className="text-gray-800 font-medium text-lg">{total}</span>
                             </div>
                             {total !== undefined && (
                                 <Slider
-                                    defaultValue={[parseFloat(total)]}
+                                    value={[100]}
                                     max={100}
                                     step={1}
                                     disabled
                                     className="mt-2"
                                     style={{
-                                        background: `linear-gradient(to right, #3b82f6 ${total}%, #e5e7eb ${total}%)`,
+                                        background: `linear-gradient(to right, #3b82f6 100%, #e5e7eb 0%)`,
                                         height: "6px",
                                         borderRadius: "9999px",
                                     }}
@@ -237,13 +232,13 @@ const MyLead = () => {
                                 </div>
                                 {value?.percentage !== undefined && (
                                     <Slider
-                                        defaultValue={[parseFloat(value?.percentage)]}
+                                        value={[parseFloat(value?.percentage)]}
                                         max={100}
                                         step={1}
                                         disabled
                                         className="mt-2"
                                         style={{
-                                            background: `linear-gradient(to right, ${sliderColors[statusKeyMap[key]]} ${value.percentage}%, #e5e7eb ${value.percentage}%)`,
+                                            background: `linear-gradient(to right, ${sliderColors[statusKeyMap[key]]} ${parseFloat(value.percentage)}%, #e5e7eb ${parseFloat(value.percentage)}%)`,
                                             height: "6px",
                                             borderRadius: "9999px",
                                         }}
@@ -292,7 +287,7 @@ const MyLead = () => {
                                         <TableCell>{lead?.history[lead?.history?.length - 1].feedback}</TableCell>
                                         <TableCell>
                                             <Button
-                                                onClick={() => navigate(`${getRoleBasedPrefix()}/${editProductPathMap[lead.productType]}/${lead?._id}?returnPath=${location.pathname}`)}
+                                                onClick={() => navigate(`${getRoleBasedPrefix()}/${editProductPathMap[lead.productType]}/${lead?._id}?returnPath=${encodeURIComponent(location.pathname + location.search)}`)}
                                                 variant="default"
                                                 size="sm"
                                                 className="bg-blue-600 hover:bg-blue-700 text-white"

@@ -26,7 +26,7 @@ import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { apiFetchReceivableDetails, apiFetchReceivableBankerDetails, apiGetInvoiceMasterByLeadId } from '@/services/receivables.api';
 import { useReceivables } from '@/lib/hooks/useReceivables';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 // Zod schema for edit receivables form
 const editReceivablesFormSchema = z.object({
@@ -69,6 +69,7 @@ const EditReceivablesForm = () => {
     const [invoiceMasterData, setInvoiceMasterData] = useState(null);
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     // query to fetch the receivable detail on component mount
     const {
@@ -165,7 +166,12 @@ const EditReceivablesForm = () => {
             console.log("Receivable updated successfully ....");
 
             if (res?.data?.success) {
-                navigate('/admin/receivables_payout');
+                const returnPath = searchParams.get('returnPath');
+                if (returnPath) {
+                    navigate(returnPath);
+                } else {
+                    navigate('/admin/receivables_payout');
+                }
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
@@ -267,12 +273,11 @@ const EditReceivablesForm = () => {
         const numericValue = parseFloat(inputValue) || 0;
         const receivableAmount = parseFloat(form.getValues('receivableGstAmount')) || 0;
 
-        // Validate that received amount is not greater than max receivable amount
         if (numericValue <= receivableAmount) {
             fieldOnChange(inputValue);
             // Calculate and update Balance Receivable Amount
             const balance = receivableAmount - numericValue;
-            form.setValue('balanceReceivableAmount', String(balance.toFixed(2)));
+            form.setValue('balanceReceivableAmount', String(Math.round(balance)));
         } else {
             // If input exceeds max, set to max value
             fieldOnChange(String(receivableAmount));
@@ -415,7 +420,7 @@ const EditReceivablesForm = () => {
                                     <FormLabel>Received Amount <span className="text-red-500">*</span></FormLabel>
                                     <Input
                                         type="number"
-                                        step="0.01"
+                                        step="1"
                                         min="0"
                                         max={maxReceivableAmount}
                                         {...field}
@@ -587,7 +592,14 @@ const EditReceivablesForm = () => {
                             {isLoading ? 'SAVING...' : 'SAVE'}
                         </Button>
                         <Button
-                            onClick={() => navigate('/admin/receivables_payout')}
+                            onClick={() => {
+                                const returnPath = searchParams.get('returnPath');
+                                if (returnPath) {
+                                    navigate(returnPath);
+                                } else {
+                                    navigate('/admin/receivables_payout');
+                                }
+                            }}
                             type="button"
                             variant="outline"
                             className="bg-gray-500 text-white"

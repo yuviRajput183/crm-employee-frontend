@@ -485,7 +485,7 @@ const AddPayables = ({ onClose }) => {
                                                 field.onChange(value);
                                                 // Calculate balance
                                                 const balance = payableGstAmount - numValue;
-                                                form.setValue('balancePayableAmount', balance.toString());
+                                                form.setValue('balancePayableAmount', String(Math.round(balance)));
                                             } else {
                                                 // Set to max allowed value
                                                 field.onChange(payableGstAmount.toString());

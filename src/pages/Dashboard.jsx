@@ -126,7 +126,7 @@ const Dashboard = () => {
     }, [sliderData]);
 
     const [leadStatusData, setLeadStatusData] = useState([
-        { label: "Total Leads", count: 0, colorKey: "total" },
+        { label: "Total Leads", count: 0, percent: 100, colorKey: "total" },
         { label: "Under Process", count: 0, percent: 0, colorKey: "process" },
         { label: "Approved", count: 0, percent: 0, colorKey: "approved" },
         { label: "Disbursed", count: 0, percent: 0, colorKey: "disbursed" },
@@ -176,10 +176,10 @@ const Dashboard = () => {
 
             // Update lead status data based on actual API response
             setLeadStatusData([
-                { label: "Total Leads", count: stats.totalLeads || 0, colorKey: "total" },
-                { label: "Under Process", count: 0, percent: parseFloat(stats.percentageUnderProcess) || 0, colorKey: "process" },
-                { label: "Approved", count: 0, percent: parseFloat(stats.percentageApproved) || 0, colorKey: "approved" },
-                { label: "Disbursed", count: 0, percent: parseFloat(stats.percentageDisbursed) || 0, colorKey: "disbursed" },
+                { label: "Total Leads", count: stats.totalLeads || 0, percent: 100, colorKey: "total" },
+                { label: "Under Process", count: stats.underProcessCount || 0, percent: parseFloat(stats.percentageUnderProcess) || 0, colorKey: "process" },
+                { label: "Approved", count: stats.approvedCount || 0, percent: parseFloat(stats.percentageApproved) || 0, colorKey: "approved" },
+                { label: "Disbursed", count: stats.disbursedCount || 0, percent: parseFloat(stats.percentageDisbursed) || 0, colorKey: "disbursed" },
             ]);
 
             // Update disbursal data based on actual API response
@@ -222,7 +222,7 @@ const Dashboard = () => {
                             </span>}
                         </div>
                         <Slider
-                            defaultValue={[item.percent]}
+                            value={[item.percent || 0]}
                             max={100}
                             step={1}
                             disabled

@@ -169,7 +169,7 @@ export default function AdvisorInvoicesFilter({ form, showFilter, handleFilter }
                 {/* Customer Name */}
                 <FormField
                     control={form.control}
-                    name="customerName"
+                    name="clientName"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Customer Name</FormLabel>
@@ -224,9 +224,20 @@ export default function AdvisorInvoicesFilter({ form, showFilter, handleFilter }
                     )}
                 />
 
-                {/* Show Button */}
-                <div className="  mt-2 flex items-end justify-end">
-                    <Button type="submit" className=" w-full">
+                {/* Buttons */}
+                <div className="mt-2 flex items-end justify-end gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            form.reset();
+                            handleFilter({});
+                        }}
+                        className="w-full"
+                    >
+                        RESET
+                    </Button>
+                    <Button type="submit" className="w-full">
                         SHOW
                     </Button>
                 </div>

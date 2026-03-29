@@ -144,9 +144,20 @@ export default function MyPerformanceFilter({ form, showFilter, handleFilter }) 
                     )}
                 />
 
-                {/* Show Button */}
-                <div className="flex items-end">
-                    <Button type="submit" className="w-full bg-blue-800 hover:bg-blue-900">
+                {/* Buttons */}
+                <div className="flex items-end gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            form.reset();
+                            handleFilter({});
+                        }}
+                        className="w-full"
+                    >
+                        RESET
+                    </Button>
+                    <Button type="submit" className="w-full bg-blue-800 hover:bg-blue-900 text-white">
                         SHOW
                     </Button>
                 </div>

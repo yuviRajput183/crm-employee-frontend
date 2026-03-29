@@ -28,7 +28,7 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 import { apiFetchInvoiceBankerDetails, apiFetchInvoiceDetails } from '@/services/invoices.api';
 import { apiListProcessed } from '@/services/processed.api';
 import { useInvoice } from '@/lib/hooks/useInvoice';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 
 
@@ -78,6 +78,7 @@ const EditInvoiceForm = () => {
     const [processedByUsers, setProcessedByUsers] = useState([]);
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     // query to  fetch the invoice detail on component mount
     const {
@@ -159,22 +160,22 @@ const EditInvoiceForm = () => {
         const gstPercent = parseFloat(form.getValues('gstPercentage')) || 0;
 
         // Calculate Payout Amount
-        const payoutAmount = (disbursalAmount * payoutPercent) / 100;
+        const payoutAmount = Math.round((disbursalAmount * payoutPercent) / 100);
 
         // Calculate TDS Amount (on payout amount)
-        const tdsAmount = (payoutAmount * tdsPercent) / 100;
+        const tdsAmount = Math.round((payoutAmount * tdsPercent) / 100);
 
         // Calculate GST Amount (on payout amount)
-        const gstAmount = (payoutAmount * gstPercent) / 100;
+        const gstAmount = Math.round((payoutAmount * gstPercent) / 100);
 
         // Calculate Net Receivable Amount = Payout Amount - TDS Amount + GST Amount
         const netReceivableAmount = payoutAmount - tdsAmount + gstAmount;
 
         // Update form values
-        form.setValue('payoutAmount', payoutAmount.toFixed(2));
-        form.setValue('tdsAmount', tdsAmount.toFixed(2));
-        form.setValue('gstAmount', gstAmount.toFixed(2));
-        form.setValue('netReceivableAmount', netReceivableAmount.toFixed(2));
+        form.setValue('payoutAmount', payoutAmount.toString());
+        form.setValue('tdsAmount', tdsAmount.toString());
+        form.setValue('gstAmount', gstAmount.toString());
+        form.setValue('netReceivableAmount', netReceivableAmount.toString());
     };
 
     // Watch for changes in calculation fields
@@ -230,7 +231,12 @@ const EditInvoiceForm = () => {
 
             if (res?.data?.success) {
                 //write
-                navigate('/admin/invoices');
+                const returnPath = searchParams.get('returnPath');
+                if (returnPath) {
+                    navigate(returnPath);
+                } else {
+                    navigate('/admin/invoices');
+                }
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
@@ -683,7 +689,14 @@ const EditInvoiceForm = () => {
                             {isLoading ? 'SAVING...' : 'SAVE'}
                         </Button>
                         <Button
-                            onClick={() => navigate('/admin/invoices')}
+                            onClick={() => {
+                                const returnPath = searchParams.get('returnPath');
+                                if (returnPath) {
+                                    navigate(returnPath);
+                                } else {
+                                    navigate('/admin/invoices');
+                                }
+                            }}
                             type="button"
                             variant="outline"
                             className="bg-gray-500 text-white"

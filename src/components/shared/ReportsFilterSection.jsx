@@ -156,7 +156,18 @@ export default function ReportsFilterSection({ form, showFilter, handleFilter, h
                     )}
                 />
 
-                <div className="flex items-end">
+                <div className="flex items-end gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            form.reset();
+                            handleFilter({});
+                        }}
+                        className="h-9 text-xs"
+                    >
+                        RESET
+                    </Button>
                     <Button type="submit" className="w-full bg-[#337ab7] hover:bg-[#286090] text-white font-bold h-9">
                         SHOW
                     </Button>

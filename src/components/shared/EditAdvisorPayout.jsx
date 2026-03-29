@@ -27,7 +27,7 @@ import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { apiListProcessed } from '@/services/processed.api';
 import { apiListAdvisor } from '@/services/advisor.api';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { apiFetchPayoutDetails } from '@/services/payout.api';
 import { useAdvisorPayout } from '@/lib/hooks/useAdvisorPayout';
 
@@ -81,6 +81,7 @@ const EditAdvisorPayoutForm = () => {
     const [advisors, setAdvisors] = useState([]);
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     // query to  fetch the advisor payout detail on component mount
     const {
@@ -142,22 +143,22 @@ const EditAdvisorPayoutForm = () => {
         const gstPercent = parseFloat(form.getValues('gstPercent')) || 0;
 
         // Calculate Payout Amount
-        const payoutAmount = (disbursalAmount * payoutPercent) / 100;
+        const payoutAmount = Math.round((disbursalAmount * payoutPercent) / 100);
 
         // Calculate TDS Amount (on payout amount)
-        const tdsAmount = (payoutAmount * tdsPercent) / 100;
+        const tdsAmount = Math.round((payoutAmount * tdsPercent) / 100);
 
         // Calculate GST Amount (on payout amount)
-        const gstAmount = (payoutAmount * gstPercent) / 100;
+        const gstAmount = Math.round((payoutAmount * gstPercent) / 100);
 
         // Calculate Net Payable Amount = Payout Amount - TDS Amount + GST Amount
         const netPayableAmount = payoutAmount - tdsAmount + gstAmount;
 
         // Update form values
-        form.setValue('payoutAmount', payoutAmount.toFixed(2));
-        form.setValue('tdsAmount', tdsAmount.toFixed(2));
-        form.setValue('gstAmount', gstAmount.toFixed(2));
-        form.setValue('netPayableAmount', netPayableAmount.toFixed(2));
+        form.setValue('payoutAmount', payoutAmount.toString());
+        form.setValue('tdsAmount', tdsAmount.toString());
+        form.setValue('gstAmount', gstAmount.toString());
+        form.setValue('netPayableAmount', netPayableAmount.toString());
     };
 
     // Watch for changes in calculation fields
@@ -231,7 +232,12 @@ const EditAdvisorPayoutForm = () => {
             console.log("Advisor Payout updated successfully ....");
 
             if (res?.data?.success) {
-                navigate('/admin/advisor_payout');
+                const returnPath = searchParams.get('returnPath');
+                if (returnPath) {
+                    navigate(returnPath);
+                } else {
+                    navigate('/admin/advisor_payout');
+                }
             }
         } catch (error) {
             console.error('handleSubmit error:', error);
@@ -731,7 +737,14 @@ const EditAdvisorPayoutForm = () => {
                             {isLoading ? 'SAVING...' : 'SAVE'}
                         </Button>
                         <Button
-                            onClick={() => navigate('/admin/advisor_payout')}
+                            onClick={() => {
+                                const returnPath = searchParams.get('returnPath');
+                                if (returnPath) {
+                                    navigate(returnPath);
+                                } else {
+                                    navigate('/admin/advisor_payout');
+                                }
+                            }}
                             type="button"
                             variant="outline"
                             className="bg-gray-500 text-white"

@@ -11,7 +11,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useQuery } from '@tanstack/react-query';
 import { apiListPayables } from '@/services/payables.api';
@@ -35,11 +35,13 @@ const filterSchema = z.object({
 const Payables = () => {
 
     const [showFilter, setShowFilter] = useState(false);
-    const [filterParams, setFilterParams] = useState({});
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filterParams = Object.fromEntries(searchParams.entries());
     const [leads, setLeads] = useState([]);
     const [showAddPayable, setShowAddPayable] = useState(false);
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     // fetching payables on component mount and on filtering
     const {
@@ -50,7 +52,12 @@ const Payables = () => {
     } = useQuery({
         queryKey: ['payables', filterParams],
         queryFn: async () => {
-            const res = await apiListPayables(filterParams);
+            const mappedParams = { ...filterParams };
+            if (mappedParams.loanServiceType) {
+                mappedParams.productType = mappedParams.loanServiceType;
+                delete mappedParams.loanServiceType;
+            }
+            const res = await apiListPayables(mappedParams);
             console.log("📦 queryFn response of list payables:", res);
             return res;
         },
@@ -77,11 +84,11 @@ const Payables = () => {
     const form = useForm({
         resolver: zodResolver(filterSchema),
         defaultValues: {
-            loanServiceType: '',
-            advisorName: '',
-            clientName: '',
-            fromDate: '',
-            toDate: '',
+            loanServiceType: filterParams.loanServiceType || '',
+            advisorName: filterParams.advisorName || '',
+            clientName: filterParams.clientName || '',
+            fromDate: filterParams.fromDate || '',
+            toDate: filterParams.toDate || '',
         },
     })
 
@@ -93,17 +100,8 @@ const Payables = () => {
             Object.entries(values).filter(([, val]) => val !== '' && val !== undefined)
         );
 
-
-        //  Convert loanServiceType to productType
-        const mappedParams = {
-            ...cleanParams,
-            ...(cleanParams.loanServiceType && { productType: cleanParams.loanServiceType })
-        };
-
-        // Remove loanServiceType so API only receives productType
-        delete mappedParams.loanServiceType;
-
-        setFilterParams(mappedParams);
+        // Update search params in URL - this will automatically trigger useQuery
+        setSearchParams(cleanParams);
         setShowFilter(false);
     };
 
@@ -174,41 +172,49 @@ const Payables = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {leads.map((item, index) => (
-                                <TableRow
-                                    key={item?._id}
-                                    className={index % 2 === 0 ? "bg-gray-100" : ""}
-                                >
-                                    <TableCell>{item?.leadId?.leadNo}</TableCell>
-                                    <TableCell>{item?.leadId?.productType}</TableCell>
-                                    <TableCell>{item?.leadId?.clientName}</TableCell>
-                                    <TableCell>{item?.advisorId?.name}</TableCell>
-                                    <TableCell>{item?.paymentAgainst}</TableCell>
-                                    <TableCell>{item?.paidDate?.split("T")[0]}</TableCell>
-                                    <TableCell>{item?.paidAmount}</TableCell>
-                                    <TableCell>{item?.refNo || "-"}</TableCell>
-                                    <TableCell>{item?.remarks || "-"}</TableCell>
+                            {leads.length > 0 ? (
+                                leads.map((item, index) => (
+                                    <TableRow
+                                        key={item?._id}
+                                        className={index % 2 === 0 ? "bg-gray-100" : ""}
+                                    >
+                                        <TableCell>{item?.leadId?.leadNo}</TableCell>
+                                        <TableCell>{item?.leadId?.productType}</TableCell>
+                                        <TableCell>{item?.leadId?.clientName}</TableCell>
+                                        <TableCell>{item?.advisorId?.name}</TableCell>
+                                        <TableCell>{item?.paymentAgainst}</TableCell>
+                                        <TableCell>{item?.paidDate?.split("T")[0]}</TableCell>
+                                        <TableCell>{item?.paidAmount}</TableCell>
+                                        <TableCell>{item?.refNo || "-"}</TableCell>
+                                        <TableCell>{item?.remarks || "-"}</TableCell>
 
-                                    <TableCell>
-                                        <Button
-                                            onClick={() => navigate(`/admin/edit_payable/${item?._id}`)}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs"
-                                        >
-                                            Edit
-                                        </Button>
-                                    </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                onClick={() => navigate(`/admin/edit_payable/${item?._id}?returnPath=${encodeURIComponent(location.pathname + location.search)}`)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs"
+                                            >
+                                                Edit
+                                            </Button>
+                                        </TableCell>
 
-                                    <TableCell>
-                                        <Button
-                                            isLoading={isLoading}
-                                            onClick={() => handleDelete(item?._id)}
-                                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
-                                        >
-                                            Delete
-                                        </Button>
+                                        <TableCell>
+                                            <Button
+                                                isLoading={isLoading}
+                                                onClick={() => handleDelete(item?._id)}
+                                                className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
+                                            >
+                                                Delete
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
+                                        No payables found
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </div>

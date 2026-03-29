@@ -116,22 +116,22 @@ const AddAdvisorPayout = ({ onClose }) => {
         const gstPercent = parseFloat(form.getValues('gstPercent')) || 0;
 
         // Calculate Payout Amount
-        const payoutAmount = (disbursalAmount * payoutPercent) / 100;
+        const payoutAmount = Math.round((disbursalAmount * payoutPercent) / 100);
 
         // Calculate TDS Amount (on payout amount)
-        const tdsAmount = (payoutAmount * tdsPercent) / 100;
+        const tdsAmount = Math.round((payoutAmount * tdsPercent) / 100);
 
         // Calculate GST Amount (on payout amount)
-        const gstAmount = (payoutAmount * gstPercent) / 100;
+        const gstAmount = Math.round((payoutAmount * gstPercent) / 100);
 
         // Calculate Net Payable Amount = Payout Amount - TDS Amount + GST Amount
         const netPayableAmount = payoutAmount - tdsAmount + gstAmount;
 
         // Update form values
-        form.setValue('payoutAmount', payoutAmount.toFixed(2));
-        form.setValue('tdsAmount', tdsAmount.toFixed(2));
-        form.setValue('gstAmount', gstAmount.toFixed(2));
-        form.setValue('netPayableAmount', netPayableAmount.toFixed(2));
+        form.setValue('payoutAmount', payoutAmount.toString());
+        form.setValue('tdsAmount', tdsAmount.toString());
+        form.setValue('gstAmount', gstAmount.toString());
+        form.setValue('netPayableAmount', netPayableAmount.toString());
     };
 
     // Watch for changes in calculation fields

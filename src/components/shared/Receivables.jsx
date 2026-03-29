@@ -11,7 +11,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useQuery } from '@tanstack/react-query';
 import { apiListReceivables } from '@/services/receivables.api';
@@ -37,11 +37,13 @@ const filterSchema = z.object({
 const Receivables = () => {
 
     const [showFilter, setShowFilter] = useState(false);
-    const [filterParams, setFilterParams] = useState({});
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filterParams = Object.fromEntries(searchParams.entries());
     const [leads, setLeads] = useState([]);
     const [showAddAdvisorPayout, setShowAddAdvisorPayout] = useState(false);
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     // fetching new leads on component mount and on filtering
     const {
@@ -50,9 +52,14 @@ const Receivables = () => {
         data: queryData,
         refetch
     } = useQuery({
-        queryKey: ['advisor-payouts', filterParams], // Changed queryKey name for clarity
+        queryKey: ['receivables', filterParams], // Changed queryKey name for clarity
         queryFn: async () => {
-            const res = await apiListReceivables(filterParams);
+            const mappedParams = { ...filterParams };
+            if (mappedParams.loanServiceType) {
+                mappedParams.productType = mappedParams.loanServiceType;
+                delete mappedParams.loanServiceType;
+            }
+            const res = await apiListReceivables(mappedParams);
             console.log("📦 queryFn response of list advisor payouts:", res);
             return res;
         },
@@ -79,11 +86,11 @@ const Receivables = () => {
     const form = useForm({
         resolver: zodResolver(filterSchema),
         defaultValues: {
-            loanServiceType: '', // Fixed: was 'productType', should match schema
-            advisorName: '',
-            clientName: '',
-            fromDate: '',
-            toDate: '',
+            loanServiceType: filterParams.loanServiceType || '',
+            advisorName: filterParams.advisorName || '',
+            clientName: filterParams.clientName || '',
+            fromDate: filterParams.fromDate || '',
+            toDate: filterParams.toDate || '',
         },
     })
 
@@ -95,17 +102,8 @@ const Receivables = () => {
             Object.entries(values).filter(([, val]) => val !== '' && val !== undefined)
         );
 
-
-        //  Convert loanServiceType to productType
-        const mappedParams = {
-            ...cleanParams,
-            ...(cleanParams.loanServiceType && { productType: cleanParams.loanServiceType })
-        };
-
-        // Remove loanServiceType so API only receives productType
-        delete mappedParams.loanServiceType;
-
-        setFilterParams(mappedParams);
+        // Update search params in URL - this will automatically trigger useQuery
+        setSearchParams(cleanParams);
         setShowFilter(false);
     };
 
@@ -176,41 +174,49 @@ const Receivables = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {leads.map((item, index) => (
-                                <TableRow
-                                    key={item?._id}
-                                    className={index % 2 === 0 ? "bg-gray-100" : ""}
-                                >
-                                    <TableCell>{item?.leadId?.leadNo}</TableCell>
-                                    <TableCell>{item?.leadId?.productType}</TableCell>
-                                    <TableCell>{item?.leadId?.clientName}</TableCell>
-                                    <TableCell>{item?.leadId?.advisorId?.name}</TableCell>
-                                    <TableCell>{item?.paymentAgainst}</TableCell>
-                                    <TableCell>{item?.receivedDate?.split("T")[0]}</TableCell>
-                                    <TableCell>{item?.receivedAmount}</TableCell>
-                                    <TableCell>{item?.refNo || "-"}</TableCell>
-                                    <TableCell>{item?.remarks || "-"}</TableCell>
+                            {leads.length > 0 ? (
+                                leads.map((item, index) => (
+                                    <TableRow
+                                        key={item?._id}
+                                        className={index % 2 === 0 ? "bg-gray-100" : ""}
+                                    >
+                                        <TableCell>{item?.leadId?.leadNo}</TableCell>
+                                        <TableCell>{item?.leadId?.productType}</TableCell>
+                                        <TableCell>{item?.leadId?.clientName}</TableCell>
+                                        <TableCell>{item?.leadId?.advisorId?.name}</TableCell>
+                                        <TableCell>{item?.paymentAgainst}</TableCell>
+                                        <TableCell>{item?.receivedDate?.split("T")[0]}</TableCell>
+                                        <TableCell>{item?.receivedAmount}</TableCell>
+                                        <TableCell>{item?.refNo || "-"}</TableCell>
+                                        <TableCell>{item?.remarks || "-"}</TableCell>
 
-                                    <TableCell>
-                                        <Button
-                                            onClick={() => navigate(`/admin/edit_receivable/${item?._id}`)}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs"
-                                        >
-                                            Edit
-                                        </Button>
-                                    </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                onClick={() => navigate(`/admin/edit_receivable/${item?._id}?returnPath=${encodeURIComponent(location.pathname + location.search)}`)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs"
+                                            >
+                                                Edit
+                                            </Button>
+                                        </TableCell>
 
-                                    <TableCell>
-                                        <Button
-                                            isLoading={isLoading}
-                                            onClick={() => handleDelete(item?._id)}
-                                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
-                                        >
-                                            Delete
-                                        </Button>
+                                        <TableCell>
+                                            <Button
+                                                isLoading={isLoading}
+                                                onClick={() => handleDelete(item?._id)}
+                                                className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs"
+                                            >
+                                                Delete
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
+                                        No receivables found
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </div>
