@@ -147,6 +147,20 @@ const GSTPayableReport = () => {
                                 <TableCell colSpan={17} className="text-center py-10 text-gray-500">No payable records found.</TableCell>
                             </TableRow>
                         )}
+                        {reportData?.totals && reportData?.data?.length > 0 && (
+                            <TableRow className="bg-[#f39c12] hover:bg-[#e67e22] transition-colors border-b">
+                                <TableCell className="text-xs py-2 border-r font-bold text-white text-center" colSpan={4}>Total</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.disbursalAmt}</TableCell>
+                                <TableCell className="text-xs py-2 border-r text-white" colSpan={5}></TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.billAmt}</TableCell>
+                                <TableCell className="text-xs py-2 border-r text-white"></TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.gstAmt}</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.paidAmt}</TableCell>
+                                <TableCell className="text-xs py-2 border-r text-white"></TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.pendingAmt}</TableCell>
+                                <TableCell className="text-xs py-2 text-white"></TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </div>
