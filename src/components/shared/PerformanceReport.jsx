@@ -146,6 +146,22 @@ const PerformanceReport = () => {
                                 <TableCell colSpan={19} className="text-center py-10 text-gray-500">No performance records found.</TableCell>
                             </TableRow>
                         )}
+                        {reportData?.totals && reportData?.data?.length > 0 && (
+                            <TableRow className="bg-[#f39c12] hover:bg-[#e67e22] transition-colors border-b">
+                                <TableCell className="text-xs py-2 border-r font-bold text-white text-center" colSpan={4}>Total</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.disbursalAmt}</TableCell>
+                                <TableCell className="text-xs py-2 border-r text-white" colSpan={5}></TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.grossRecd}</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.grossPaid}</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.grossProfit}</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.tdsPaid}</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.tdsDeducted}</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.netRecd}</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.netPaid}</TableCell>
+                                <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.cashProfit}</TableCell>
+                                <TableCell className="text-xs py-2 text-white"></TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </div>
