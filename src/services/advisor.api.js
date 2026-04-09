@@ -32,6 +32,20 @@ export const apiListAdvisor = async () => {
     );
 }
 
+export const apiGetAdvisorsForDropdown = async () => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/advisors/get-advisors-for-dropdown`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}
+
 export const apiAdvisorWithoutCred = async () => {
     const token = localStorage.getItem('token');
     return await axios.get(

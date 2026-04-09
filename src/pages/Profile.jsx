@@ -28,7 +28,7 @@ import { UserRound } from 'lucide-react';
 
 const profileFormSchema = z.object({
     employeeName: z.string().min(1, 'Required'),
-    mobileNo: z.string().min(1, 'Required'),
+    mobileNo: z.string().length(10, 'Mobile number must be exactly 10 digits').min(1, 'Required'),
     department: z.string().optional(),
     designation: z.string().optional(),
     reportingOfficer: z.string().optional(),

@@ -41,7 +41,7 @@ const indianStates = [
 const formSchema = z.object({
     advisorName: z.string().min(1, 'Required'),
     companyName: z.string().optional(),
-    mobileNo: z.string().min(10, 'Required'),
+    mobileNo: z.string().length(10, 'Mobile number must be exactly 10 digits').min(10, 'Required'),
     altContactNo: z.string().optional(),
     email: z.string().email(),
     address: z.string().optional(),
@@ -366,7 +366,7 @@ const AddAdvisor = () => {
                         <FormField name="mobileNo" control={form.control} render={({ field }) => (
                             <FormItem className=" flex flex-col gap-1">
                                 <FormLabel>Mobile No <span className=' text-red-500'>*</span></FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -374,7 +374,7 @@ const AddAdvisor = () => {
                         <FormField name="altContactNo" control={form.control} render={({ field }) => (
                             <FormItem className=" flex flex-col gap-1">
                                 <FormLabel>Alternative Contact No</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} maxLength={10} onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); }} /></FormControl>
                             </FormItem>
                         )} />
 

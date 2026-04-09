@@ -7,8 +7,19 @@ export const apiAddLead = async (payload) => {
     const token = localStorage.getItem('token');
     console.log("payload in frontend>>", payload);
 
+    let isAdvisor = false;
+    try {
+        const profileStr = localStorage.getItem("profile");
+        if (profileStr) {
+            isAdvisor = JSON.parse(profileStr)?.role?.toLowerCase() === "advisor";
+        }
+    } catch (e) {
+        console.error("Error parsing profile in apiAddLead", e);
+    }
+    const endpoint = isAdvisor ? '/leads/add-advisor-lead' : '/leads/add-lead';
+
     return await axios.post(
-        `${baseURL}/leads/add-lead`,
+        `${baseURL}${endpoint}`,
         payload,
         {
             headers: {

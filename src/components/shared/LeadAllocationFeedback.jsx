@@ -40,15 +40,14 @@ const getUserRole = () => {
     }
 };
 
-const LeadAllocationFeedback = ({ form, leadId, disabled, prefilledBankerDetails }) => {
+const LeadAllocationFeedback = ({ form, leadId, disabled, prefilledBankerDetails, isAllocated = true }) => {
 
 
     const [feedback, setFeedback] = useState(form.getValues('loanFeedback') || "");
 
-    // Check if user is an advisor
+    // Check if user is an admin
     const role = getUserRole();
-    const isAdvisor = role === "advisor";
-    const canAllocate = !isAdvisor; // Admin and other roles can allocate/reallocate
+    const canAllocate = role === "admin"; // Only admin can allocate/reallocate
 
     // Watch for changes in loanFeedback to keep state in sync
     useEffect(() => {
@@ -110,7 +109,7 @@ const LeadAllocationFeedback = ({ form, leadId, disabled, prefilledBankerDetails
                     name="allocateTo"
                     render={({ field }) => (
                         <FormItem className="max-w-xl flex items-center justify-between gap-2">
-                            <FormLabel>Reallocate To (Optional)</FormLabel>
+                            <FormLabel>{isAllocated ? 'Reallocate To (Optional)' : 'Allocate To'}</FormLabel>
                             <FormControl>
                                 <Select
                                     value={field.value}
@@ -133,66 +132,69 @@ const LeadAllocationFeedback = ({ form, leadId, disabled, prefilledBankerDetails
             )}
 
             {/* Loan Feedback */}
-            <div className="mt-4">
-                <FormField
-                    control={form.control}
-                    name="loanFeedback"
-                    render={({ field }) => (
-                        <FormItem className=" max-w-xl flex items-center justify-between gap-2">
-                            <FormLabel>Loan Feedback (Optional)</FormLabel>
-                            <FormControl>
-                                <Select
-                                    value={field.value}
-                                    onValueChange={(v) => {
-                                        field.onChange(v || null);
-                                        setFeedback(v);
-                                    }}
-                                    disabled={disabled}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {feedbackOptions.map((opt) => (
-                                            <SelectItem key={opt} value={opt}>
-                                                {opt}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
+            {isAllocated && (
+                <div className="mt-4">
+                    <FormField
+                        control={form.control}
+                        name="loanFeedback"
+                        render={({ field }) => (
+                            <FormItem className=" max-w-xl flex items-center justify-between gap-2">
+                                <FormLabel>Loan Feedback (Optional)</FormLabel>
+                                <FormControl>
+                                    <Select
+                                        value={field.value}
+                                        onValueChange={(v) => {
+                                            field.onChange(v || null);
+                                            setFeedback(v);
+                                        }}
+                                        disabled={disabled}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {feedbackOptions.map((opt) => (
+                                                <SelectItem key={opt} value={opt}>
+                                                    {opt}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+            )}
 
 
-            {feedback === "Loan Disbursed" && <BankerDetails form={form} leadId={leadId} prefilledBankerDetails={prefilledBankerDetails} />}
+            {isAllocated && feedback === "Loan Disbursed" && <BankerDetails form={form} leadId={leadId} prefilledBankerDetails={prefilledBankerDetails} />}
 
 
             {/* Remarks */}
-            <div className="mt-4">
-                <FormField
-                    control={form.control}
-                    name="remarks"
-                    render={({ field }) => (
-                        <FormItem className="max-w-xl flex items-center justify-between gap-2">
-                            <FormLabel>Remarks (If Any)</FormLabel>
-                            <FormControl>
-                                <Textarea
-                                    placeholder="Add any notes..."
-                                    rows={4}
-                                    className="max-w-3xl"
-                                    {...field}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-
+            {isAllocated && (
+                <div className="mt-4">
+                    <FormField
+                        control={form.control}
+                        name="remarks"
+                        render={({ field }) => (
+                            <FormItem className="max-w-xl flex items-center justify-between gap-2">
+                                <FormLabel>Remarks (If Any)</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        placeholder="Add any notes..."
+                                        rows={4}
+                                        className="max-w-3xl"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+            )}
 
         </div>
     );

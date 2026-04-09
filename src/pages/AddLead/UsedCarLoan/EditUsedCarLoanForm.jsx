@@ -161,8 +161,24 @@ const usedCarLoanSchema = z.object({
     allocateTo: z.string().optional(),
     loanFeedback: z.string().nullable().optional(),
     remarks: z.string().nullable().optional(),
+    bankStateName: z.string().optional(),
+    bankCityName: z.string().optional(),
+    bankName: z.string().optional(),
     bankerId: z.string().optional(),
+    bankerDesignation: z.string().optional(),
+    bankerMobileNo: z.string().optional(),
+    bankerEmailId: z.string().optional(),
+    lanApplicationNo: z.string().optional(),
     disbursalDate: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.loanFeedback === 'Loan Disbursed') {
+        if (!data.bankStateName) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['bankStateName'], message: 'State Name is required' });
+        if (!data.bankCityName) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['bankCityName'], message: 'City Name is required' });
+        if (!data.bankName) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['bankName'], message: 'Bank Name is required' });
+        if (!data.bankerId) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['bankerId'], message: 'Banker Name is required' });
+        if (!data.lanApplicationNo) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['lanApplicationNo'], message: 'Lan no/Application No is required' });
+        if (!data.disbursalDate) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['disbursalDate'], message: 'Disbursal Date is required' });
+    }
 });
 
 
@@ -265,6 +281,14 @@ const EditUsedCarLoanForm = () => {
             uploadFile: null,
             filePassword: '',
             allocateTo: "",
+            bankStateName: "",
+            bankCityName: "",
+            bankName: "",
+            bankerId: "",
+            bankerDesignation: "",
+            bankerMobileNo: "",
+            bankerEmailId: "",
+            lanApplicationNo: "",
             loanFeedback: null,
             remarks: '',
         },
@@ -281,7 +305,19 @@ const EditUsedCarLoanForm = () => {
 
             // Required fixed fields
             fd.append('productType', 'Used Car Loan');
-            fd.append('advisorId', selectedAdvisor);
+                        // Get correct advisorId based on role
+            const profileStr = localStorage.getItem("profile");
+            let finalAdvisorId = selectedAdvisor;
+            if (profileStr) {
+                const profile = JSON.parse(profileStr);
+                if (profile?.role?.toLowerCase() === "advisor") {
+                    finalAdvisorId = profile._id || profile.id || profile.advisorId || selectedAdvisor;
+                }
+            }
+            if(typeof finalAdvisorId === 'object' && finalAdvisorId !== null) {
+               finalAdvisorId = finalAdvisorId._id || finalAdvisorId.id || finalAdvisorId.value || '';
+            }
+            fd.append('advisorId', finalAdvisorId);
             fd.append('loanRequirementAmount', data.loanRequirementAmount);
             fd.append('clientName', data.clientName);
             fd.append('mobileNo', data.mobileNo);
@@ -424,7 +460,15 @@ const EditUsedCarLoanForm = () => {
                 if (returnPath) {
                     navigate(returnPath);
                 } else {
+                const profileStr = localStorage.getItem("profile");
+                const role = profileStr ? JSON.parse(profileStr)?.role?.toLowerCase() : "admin";
+                if (role === "advisor") {
+                    navigate("/advisor/my_leads");
+                } else if (role === "employee") {
+                    navigate("/employee/new_leads");
+                } else {
                     navigate("/admin/new_leads");
+                }
                 }
             }
 
@@ -550,6 +594,15 @@ const EditUsedCarLoanForm = () => {
                 attachmentType: '',
                 uploadFile: null,
                 filePassword: '',
+                bankStateName: lead?.bankerId?.city?.stateName || '',
+                bankCityName: lead?.bankerId?.city?.cityName || '',
+                bankName: lead?.bankerId?.bank?.name || '',
+                bankerId: lead?.bankerId?._id || "",
+                bankerDesignation: lead?.bankerId?.designation || "",
+                bankerMobileNo: lead?.bankerId?.mobile || "",
+                bankerEmailId: lead?.bankerId?.email || "",
+                lanApplicationNo: lead?.lanApplicationNo || '',
+                disbursalDate: lead?.disbursalDate ? lead.disbursalDate.split('T')[0] : '',
                 allocateTo: lead?.allocatedTo?._id || "",
                 loanFeedback: lead?.loanFeedback ?? "",
                 remarks: lead?.remarks ?? "",
@@ -1257,7 +1310,7 @@ const EditUsedCarLoanForm = () => {
                                 form={form}
                                 leadId={leadId}
                                 prefilledBankerDetails={leadData?.data?.data?.bankerId}
-                            />
+                             isAllocated={!!leadData?.data?.data?.allocatedTo} />
                         );
                     })()}
 

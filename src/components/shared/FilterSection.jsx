@@ -37,12 +37,22 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
     console.log("selected advisor details in filter >>", selectedAdvisor);
 
 
+    // get isAdmin
+    const profileStr = localStorage.getItem("profile");
+    let isAdmin = false;
+    try {
+        if (profileStr) {
+            isAdmin = JSON.parse(profileStr)?.role?.toLowerCase() === "admin";
+        }
+    } catch (e) { }
+
     // query to  fetch all the alocatedTo users on component mount
     const {
         isError: isListAllocatedToError,
         error: listAllocatedToError,
     } = useQuery({
-        queryKey: [''],
+        queryKey: ['allocatedToUsersFilter'],
+        enabled: isAdmin,
         queryFn: async () => {
             const res = await apiListAllocatedTo();
             console.log("📦 queryFn response of list allocated To users:", res);
@@ -259,25 +269,27 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
 
 
                 {/* Allocated To */}
-                <FormField
-                    control={form.control}
-                    name="allocatedTo"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Allocated To</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {allocatedToUsers?.map((allocate) => (
-                                        <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormItem>
-                    )}
-                />
+                {isAdmin && (
+                    <FormField
+                        control={form.control}
+                        name="allocatedTo"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Allocated To</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {allocatedToUsers?.map((allocate) => (
+                                            <SelectItem key={allocate?._id} value={allocate?._id}>{allocate?.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )}
+                    />
+                )}
 
                 {/* From Date */}
                 <FormField

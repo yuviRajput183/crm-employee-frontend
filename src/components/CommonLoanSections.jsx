@@ -49,6 +49,17 @@ const isAdvisorUser = () => {
     }
 };
 
+// Helper function to check if logged-in user is an admin
+const isAdminUser = () => {
+    try {
+        const profile = JSON.parse(localStorage.getItem("profile"));
+        return profile?.role?.toLowerCase() === "admin";
+    } catch (error) {
+        console.error("Error parsing profile from localStorage:", error);
+        return false;
+    }
+};
+
 // Helper function to get logged-in user's ID
 const getLoggedInUserId = () => {
     try {
@@ -65,6 +76,7 @@ const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange, existingD
     console.log("isEdit>>>", isEdit);
 
     const isAdvisor = isAdvisorUser();
+    const isAdmin = isAdminUser();
     const [allocatedToUsers, setAllocatedToUsers] = useState([]);
     const [uploadedDocuments, setUploadedDocuments] = useState([]);
     const fileInputRef = useRef(null);
@@ -164,7 +176,7 @@ const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange, existingD
         error: listAllocatedToError,
     } = useQuery({
         queryKey: ['allocatedToUsers'],
-        enabled: !isAdvisor, // Only fetch when user is not an advisor
+        enabled: isAdmin, // Only fetch when user is an admin
         queryFn: async () => {
             const res = await apiListAllocatedTo();
             console.log("📦 queryFn response of list allocated To users:", res);
@@ -509,7 +521,7 @@ const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange, existingD
             )}
 
 
-            {!isEdit && !isAdvisor && <>
+            {!isEdit && isAdmin && <>
                 <div className=' p-2 bg-[#67C8FF] rounded-md shadow'>
                     <h1 className=' font-semibold'>Allocate To</h1>
                 </div>

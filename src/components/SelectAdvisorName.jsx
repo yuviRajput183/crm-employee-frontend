@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Alert } from "./ui/alert";
 import { getErrorMessage } from "@/lib/helpers/get-message";
-import { apiListAdvisor } from "@/services/advisor.api";
+import { apiGetAdvisorsForDropdown } from "@/services/advisor.api";
 import { useQuery } from "@tanstack/react-query";
 
 
@@ -24,7 +24,7 @@ const SelectAdvisorName = ({ selectedAdvisor, setSelectedAdvisor }) => {
     } = useQuery({
         queryKey: ['departments'],
         queryFn: async () => {
-            const res = await apiListAdvisor();
+            const res = await apiGetAdvisorsForDropdown();
             console.log("📦 queryFn response of list advisor:", res);
             setAdvisors(res?.data?.data?.advisors || []);
             return res;

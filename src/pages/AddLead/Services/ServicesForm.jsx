@@ -66,7 +66,7 @@ const servicesSchema = z.object({
     description: z.string().optional(),
     amount: z.string().min(1, "Amount is Required"),
     clientName: z.string().min(1, "Client Name is required"),
-    mobileNo: z.string().min(10, "Mobile No must be at least 10 digits").max(10, "Mobile No must be at most 10 digits"),
+    mobileNo: z.string().optional(),
 
 
     emailId: z.string().optional().refine(val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
@@ -163,7 +163,19 @@ const ServicesForm = ({ selectedAdvisor }) => {
 
             // Required fixed fields
             fd.append('productType', 'Services');
-            fd.append('advisorId', selectedAdvisor);
+                        // Get correct advisorId based on role
+            const profileStr = localStorage.getItem("profile");
+            let finalAdvisorId = selectedAdvisor;
+            if (profileStr) {
+                const profile = JSON.parse(profileStr);
+                if (profile?.role?.toLowerCase() === "advisor") {
+                    finalAdvisorId = profile._id || profile.id || profile.advisorId || selectedAdvisor;
+                }
+            }
+            if(typeof finalAdvisorId === 'object' && finalAdvisorId !== null) {
+               finalAdvisorId = finalAdvisorId._id || finalAdvisorId.id || finalAdvisorId.value || '';
+            }
+            fd.append('advisorId', finalAdvisorId);
             fd.append('servicesType', data.servicesType);
             if (data.description) fd.append("description", data.description);
             fd.append('amount', data.amount);
@@ -202,7 +214,15 @@ const ServicesForm = ({ selectedAdvisor }) => {
 
             form.reset(); // clear form
             if (res?.data?.success) {
-                navigate("/admin/new_leads");
+                const profileStr = localStorage.getItem("profile");
+                const role = profileStr ? JSON.parse(profileStr)?.role?.toLowerCase() : "admin";
+                if (role === "advisor") {
+                    navigate("/advisor/my_leads");
+                } else if (role === "employee") {
+                    navigate("/employee/new_leads");
+                } else {
+                    navigate("/admin/new_leads");
+                }
             }
 
 
@@ -242,7 +262,15 @@ const ServicesForm = ({ selectedAdvisor }) => {
             form.reset();
             if (res?.data?.success) {
                 alert('Draft saved successfully!');
-                navigate("/advisor/my_leads");
+                const profileStr = localStorage.getItem("profile");
+                const role = profileStr ? JSON.parse(profileStr)?.role?.toLowerCase() : "admin";
+                if (role === "advisor") {
+                    navigate("/advisor/drafts");
+                } else if (role === "employee") {
+                    navigate("/employee/drafts");
+                } else {
+                    navigate("/admin/drafts");
+                }
             }
         } catch (error) {
             console.error('handleSaveAsDraft error:', error);

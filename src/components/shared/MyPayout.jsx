@@ -104,40 +104,67 @@ const MyPayout = () => {
     // Update leads and payoutData when query data changes
     useEffect(() => {
         console.log("inside use effect .....");
-        if (queryData?.data?.data?.advisorPayouts?.length > 0) {
-            setLeads(queryData.data.data.advisorPayouts);
+        if (queryData?.data?.data?.payables?.length > 0) {
+            setLeads(queryData.data.data.payables);
 
-            const totals = queryData.data.data.totals || {};
+            const stats = queryData.data.data.stats || {};
             setPayoutData([
                 {
                     label: "Total Disbursal",
-                    value: totals.totalDisbursalAmount?.toLocaleString("en-IN") ?? "0",
+                    value: stats.totalDisbursal?.toLocaleString("en-IN") ?? "0",
                     color: "bg-red-500",
                     iconColor: "text-red-500"
                 },
                 {
                     label: "Total Payout",
-                    value: totals.totalPayoutAmount?.toLocaleString("en-IN") ?? "0",
+                    value: stats.totalPayout?.toLocaleString("en-IN") ?? "0",
                     color: "bg-blue-500",
                     iconColor: "text-blue-500"
                 },
                 {
                     label: "Paid Amount",
-                    value: totals.paidAmount?.toLocaleString("en-IN") ?? "0",
+                    value: stats.paidAmount?.toLocaleString("en-IN") ?? "0",
                     color: "bg-teal-400",
                     iconColor: "text-teal-400"
                 },
                 {
                     label: "Pending Amount",
-                    value: totals.pendingAmount?.toLocaleString("en-IN") ?? "0",
+                    value: stats.pendingAmount?.toLocaleString("en-IN") ?? "0",
                     color: "bg-amber-400",
                     iconColor: "text-amber-400"
                 }
             ]);
 
         } else if (queryData?.data?.data) {
-            // Handle case where advisorPayouts might be empty
+            // Handle case where payables might be empty
             setLeads([]);
+            const stats = queryData.data.data.stats || {};
+            setPayoutData([
+                {
+                    label: "Total Disbursal",
+                    value: stats.totalDisbursal?.toLocaleString("en-IN") ?? "0",
+                    color: "bg-red-500",
+                    iconColor: "text-red-500"
+                },
+                {
+                    label: "Total Payout",
+                    value: stats.totalPayout?.toLocaleString("en-IN") ?? "0",
+                    color: "bg-blue-500",
+                    iconColor: "text-blue-500"
+                },
+                {
+                    label: "Paid Amount",
+                    value: stats.paidAmount?.toLocaleString("en-IN") ?? "0",
+                    color: "bg-teal-400",
+                    iconColor: "text-teal-400"
+                },
+                {
+                    label: "Pending Amount",
+                    value: stats.pendingAmount?.toLocaleString("en-IN") ?? "0",
+                    color: "bg-amber-400",
+                    iconColor: "text-amber-400"
+                }
+            ]);
         }
     }, [queryData]);
 
@@ -303,17 +330,17 @@ const MyPayout = () => {
                                 <TableCell>{lead?.leadId?.leadNo || '-'}</TableCell>
                                 <TableCell>{lead?.leadId?.productType || '-'}</TableCell>
                                 <TableCell>{lead?.leadId?.clientName || '-'}</TableCell>
-                                <TableCell>{lead?.disbursalAmount || '-'}</TableCell>
-                                <TableCell>{lead?.disbursalDate?.split('T')[0] || '-'}</TableCell>
-                                <TableCell>{lead?.payoutPercent || '-'}</TableCell>
-                                <TableCell>{lead?.payoutAmount || '-'}</TableCell>
-                                <TableCell>{lead?.tdsPercent || '-'}</TableCell>
-                                <TableCell>{lead?.tdsAmount || '-'}</TableCell>
-                                <TableCell>{lead?.gstApplicable ? "Applicable" : "Not Applicable"}</TableCell>
-                                <TableCell>{lead?.invoiceDate?.split('T')[0] || '-'}</TableCell>
-                                <TableCell>{lead?.invoiceNo || '-'}</TableCell>
-                                <TableCell>{lead?.gstPercent || '-'}</TableCell>
-                                <TableCell>{lead?.gstAmount || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.disbursalAmount || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.disbursalDate?.split('T')[0] || lead?.leadId?.disbursalDate?.split('T')[0] || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.payoutPercent || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.payoutAmount || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.tdsPercent || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.tdsAmount || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.gstApplicable ? "Applicable" : "Not Applicable"}</TableCell>
+                                <TableCell>{lead?.payoutId?.invoiceDate?.split('T')[0] || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.invoiceNo || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.gstPercent || '-'}</TableCell>
+                                <TableCell>{lead?.payoutId?.gstAmount || '-'}</TableCell>
                                 <TableCell>{lead?.paidAmount || '-'}</TableCell>
                                 <TableCell>
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${lead?.status === 'Paid' ? 'bg-green-100 text-green-800' :

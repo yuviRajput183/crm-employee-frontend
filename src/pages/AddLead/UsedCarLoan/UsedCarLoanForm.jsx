@@ -254,7 +254,19 @@ const UsedCarLoanForm = ({ selectedAdvisor }) => {
 
             // Required fixed fields
             fd.append('productType', 'Used Car Loan');
-            fd.append('advisorId', selectedAdvisor);
+                        // Get correct advisorId based on role
+            const profileStr = localStorage.getItem("profile");
+            let finalAdvisorId = selectedAdvisor;
+            if (profileStr) {
+                const profile = JSON.parse(profileStr);
+                if (profile?.role?.toLowerCase() === "advisor") {
+                    finalAdvisorId = profile._id || profile.id || profile.advisorId || selectedAdvisor;
+                }
+            }
+            if(typeof finalAdvisorId === 'object' && finalAdvisorId !== null) {
+               finalAdvisorId = finalAdvisorId._id || finalAdvisorId.id || finalAdvisorId.value || '';
+            }
+            fd.append('advisorId', finalAdvisorId);
             fd.append('loanRequirementAmount', data.loanRequirementAmount);
             fd.append('clientName', data.clientName);
             fd.append('mobileNo', data.mobileNo);
@@ -367,7 +379,15 @@ const UsedCarLoanForm = ({ selectedAdvisor }) => {
             form.reset(); // clear form
             setUploadedDocuments([]); // clear uploaded documents
             if (res?.data?.success) {
-                navigate("/admin/new_leads");
+                const profileStr = localStorage.getItem("profile");
+                const role = profileStr ? JSON.parse(profileStr)?.role?.toLowerCase() : "admin";
+                if (role === "advisor") {
+                    navigate("/advisor/my_leads");
+                } else if (role === "employee") {
+                    navigate("/employee/new_leads");
+                } else {
+                    navigate("/admin/new_leads");
+                }
             }
 
 
@@ -452,7 +472,15 @@ const UsedCarLoanForm = ({ selectedAdvisor }) => {
             form.reset();
             if (res?.data?.success) {
                 alert('Draft saved successfully!');
-                navigate("/advisor/my_leads");
+                const profileStr = localStorage.getItem("profile");
+                const role = profileStr ? JSON.parse(profileStr)?.role?.toLowerCase() : "admin";
+                if (role === "advisor") {
+                    navigate("/advisor/drafts");
+                } else if (role === "employee") {
+                    navigate("/employee/drafts");
+                } else {
+                    navigate("/admin/drafts");
+                }
             }
         } catch (error) {
             console.error('handleSaveAsDraft error:', error);
