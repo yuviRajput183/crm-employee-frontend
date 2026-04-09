@@ -37,7 +37,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 const formSchema = z.object({
     employeeName: z.string().min(1, 'Required'),
-    mobileNo: z.string().min(10, 'Enter valid mobile number'),
+    mobileNo: z.string().length(10, 'Mobile number must be exactly 10 digits'),
     department: z.string().min(1, 'Required'),
     designation: z.string().min(1, 'Required'),
     reportingOfficer: z.string(),

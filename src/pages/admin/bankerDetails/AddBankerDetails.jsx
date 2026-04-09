@@ -36,7 +36,7 @@ const formSchema = z.object({
     bank: z.string().min(1, "Bank is required"),
     designation: z.string().min(1, "Designation is required"),
     bankerName: z.string().min(1, "Banker name is required"),
-    mobile: z.string().min(10, "Enter valid mobile no"),
+    mobile: z.string().length(10, 'Mobile number must be exactly 10 digits').min(10, "Enter valid mobile no"),
     email: z.string().email("Enter valid email").optional(),
 });
 

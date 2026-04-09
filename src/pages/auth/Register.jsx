@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 const registerSchema = z
     .object({
         advisorName: z.string().min(1, { message: 'Advisor Name is required' }),
-        mobile: z.string().min(10, { message: 'Mobile No is required' }),
+        mobile: z.string().length(10, 'Mobile number must be exactly 10 digits').min(10, { message: 'Mobile No is required' }),
         email: z.string().email({ message: 'Invalid email' }),
         password: z.string().min(6, { message: 'Password is required' }),
         confirmPassword: z.string().min(6, { message: 'Confirm your password' }),

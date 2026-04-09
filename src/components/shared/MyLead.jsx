@@ -106,6 +106,7 @@ const MyLead = () => {
 
     const navigate = useNavigate();
     const location = useLocation();
+    const role = JSON.parse(localStorage.getItem("profile") || "{}")?.role?.toLowerCase();
 
     // fetching my leads on component mount and on filtering
     const {
@@ -267,7 +268,7 @@ const MyLead = () => {
                                     <TableHead className="text-white">Allocated To</TableHead>
                                     <TableHead className="text-white">Feedback</TableHead>
                                     <TableHead className="text-white">View</TableHead>
-                                    <TableHead className="text-white">DSA</TableHead>
+                                    {role === 'admin' && <TableHead className="text-white">DSA</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody className=" ">
@@ -295,19 +296,21 @@ const MyLead = () => {
                                                 View
                                             </Button>
                                         </TableCell>
-                                        <TableCell>
-                                            <Button
-                                                onClick={() => {
-                                                    setSelectedLead(lead);
-                                                    setShowEditAdvisor(true);
-                                                }}
-                                                variant="secondary"
-                                                size="sm"
-                                                className="bg-[#3f3849] hover:bg-[#2e2a35] text-white"
-                                            >
-                                                Change
-                                            </Button>
-                                        </TableCell>
+                                        {role === 'admin' && (
+                                            <TableCell>
+                                                <Button
+                                                    onClick={() => {
+                                                        setSelectedLead(lead);
+                                                        setShowEditAdvisor(true);
+                                                    }}
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    className="bg-[#3f3849] hover:bg-[#2e2a35] text-white"
+                                                >
+                                                    Change
+                                                </Button>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))}
                             </TableBody>
