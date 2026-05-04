@@ -592,7 +592,6 @@ const EditLoanAgainstPropertyForm = () => {
                 lanApplicationNo: lead?.lanApplicationNo || '',
                 disbursalDate: lead?.disbursalDate ? lead.disbursalDate.split('T')[0] : '',
                 allocateTo: lead?.allocatedTo?._id || "", 
-                disbursalDate: lead?.disbursalDate ? lead.disbursalDate.split("T")[0] : "",
                 loanFeedback: lead?.loanFeedback ?? null,
                 remarks: lead?.remarks ?? null,
             });
