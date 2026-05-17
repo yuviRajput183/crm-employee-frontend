@@ -1301,18 +1301,16 @@ const EditBusinessLoanForm = () => {
                         } catch (e) { }
                         return (
                             <div className="flex gap-4">
-                                {searchParams.get('returnPath')?.includes('new_leads') && (
-                                    <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        onClick={() => {
-                                            const rp = searchParams.get('returnPath');
-                                            if (rp) navigate(rp);
-                                            else navigate(-1);
-                                        }} 
-                                        className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
-                                    >BACK</Button>
-                                )}
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={() => {
+                                        const rp = searchParams.get('returnPath');
+                                        if (rp) navigate(rp);
+                                        else navigate(-1);
+                                    }} 
+                                    className="border-gray-400 text-gray-700 mt-4 px-6 bg-white hover:bg-gray-100"
+                                >BACK</Button>
                                 <Button loading={isLoading} type="submit" className="bg-blue-800 text-white mt-4 ">UPDATE</Button>
                             </div>
                         );

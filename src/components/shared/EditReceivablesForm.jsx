@@ -189,14 +189,14 @@ const EditReceivablesForm = () => {
             // API: balanceAmount -> Form: balanceReceivableAmount (Balance Receivable Amount)
             form.reset({
                 leadId: `${receivable?.leadId?.leadNo} - ${receivable?.leadId?.clientName}`,
-                receivableAmount: receivable?.receivedAmount?.toString() || '',  // Received Amount
+                receivableAmount: receivable?.receivedAmount != null ? Math.round(Number(receivable.receivedAmount)).toString() : '',  // Received Amount
                 receivedDate: receivable?.receivedDate?.split('T')[0] || '',
                 loanServiceType: receivable?.leadId?.productType || '',
                 customerName: receivable?.leadId?.clientName || '',
                 advisorName: receivable?.advisorDisplayName || receivable?.leadId?.advisorId?.name || '',
                 paymentAgainst: receivable?.paymentAgainst || '',
-                receivableGstAmount: receivable?.receivableAmount?.toString() || '',  // Receivable/GST Amount
-                balanceReceivableAmount: receivable?.balanceAmount?.toString() || '',  // Balance Amount
+                receivableGstAmount: receivable?.receivableAmount != null ? Math.round(Number(receivable.receivableAmount)).toString() : '',  // Receivable/GST Amount
+                balanceReceivableAmount: receivable?.balanceAmount != null ? Math.round(Number(receivable.balanceAmount)).toString() : '',  // Balance Amount
                 refNo: receivable?.refNo || '',
                 remarks: receivable?.remarks || '',
                 bankName: receivable?.bankerDetails?.bank?.name || '',
@@ -217,55 +217,11 @@ const EditReceivablesForm = () => {
 
             // Set initial max receivable amount from existing data (receivableAmount from API)
             const maxAmount = parseFloat(receivable?.receivableAmount) || 0;
-            setMaxReceivableAmount(maxAmount);
+            setMaxReceivableAmount(Math.round(maxAmount));
         }
     }, [receivableData, form]);
 
-    // Query to fetch invoice master details when Payment Against is changed
-    const {
-        isLoading: isInvoiceMasterLoading,
-        isError: isInvoiceMasterError,
-        error: invoiceMasterError,
-    } = useQuery({
-        queryKey: ['invoice-master-by-lead-edit', leadId, selectedPaymentAgainst],
-        enabled: !!leadId && !!selectedPaymentAgainst,
-        queryFn: async () => {
-            const res = await apiGetInvoiceMasterByLeadId(leadId);
-            console.log("📦 Invoice master response (edit):", res);
-            setInvoiceMasterData(res?.data?.data || null);
-            return res;
-        },
-        refetchOnWindowFocus: false,
-        onError: (err) => {
-            console.error("Error fetching invoice master:", err);
-        }
-    });
 
-    // Effect to populate form fields when invoice master data is received
-    useEffect(() => {
-        if (invoiceMasterData && selectedPaymentAgainst) {
-            // Map Receivable/GST Amount based on payment against selection
-            const gstAmount = invoiceMasterData?.remainingGstAmount || 0;
-            const receivableAmount = invoiceMasterData?.remainingReceivableAmount || 0;
-
-            // Set Receivable/GST Amount field to remainingGstAmount
-            form.setValue('receivableGstAmount', String(gstAmount));
-            setMaxReceivableAmount(gstAmount);
-
-            // Set Balance Receivable Amount to remainingReceivableAmount initially
-            form.setValue('balanceReceivableAmount', String(receivableAmount));
-
-            // Map Received Date to createdAt from API response
-            if (invoiceMasterData?.createdAt) {
-                const createdAtDate = new Date(invoiceMasterData.createdAt);
-                const formattedDate = createdAtDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-                form.setValue('receivedDate', formattedDate);
-            }
-
-            // Reset received amount when payment against changes
-            form.setValue('receivableAmount', '');
-        }
-    }, [invoiceMasterData, selectedPaymentAgainst, form]);
 
     // Handler for Received Amount change with validation
     const handleReceivedAmountChange = (e, fieldOnChange) => {
@@ -381,9 +337,10 @@ const EditReceivablesForm = () => {
                                             setSelectedPaymentAgainst(value);
                                         }}
                                         value={field.value}
+                                        disabled
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="bg-gray-50">
                                                 <SelectValue placeholder="Select" />
                                             </SelectTrigger>
                                         </FormControl>
