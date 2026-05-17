@@ -252,7 +252,7 @@ const AdvisorMyLead = () => {
                                     >
                                         <TableCell>{lead.leadNo}</TableCell>
                                         <TableCell>{lead.productType}</TableCell>
-                                        <TableCell>{lead?.amount || "100"}</TableCell>
+                                        <TableCell>{lead?.loanRequirementAmount || lead?.insuranceAmount || lead?.amount}</TableCell>
                                         <TableCell>{lead.clientName}</TableCell>
                                         <TableCell>{lead.mobileNo}</TableCell>
                                         <TableCell>{lead.createdAt.split('T')[0]}</TableCell>
