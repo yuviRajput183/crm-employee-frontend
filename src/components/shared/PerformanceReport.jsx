@@ -115,32 +115,37 @@ const PerformanceReport = () => {
                                 <TableCell colSpan={19} className="text-center py-10">Loading report data...</TableCell>
                             </TableRow>
                         ) : reportData?.data?.length > 0 ? (
-                            reportData.data.map((row, index) => (
-                                <TableRow
-                                    key={index}
-                                    className={`${index % 2 === 0 ? "bg-[#f1f5f4]" : "bg-white"} hover:bg-gray-100 transition-colors border-b`}
-                                >
-                                    <TableCell className="text-xs py-2 border-r">{row.leadNo}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.disbursalDate ? new Date(row.disbursalDate).toLocaleDateString('en-GB') : '-'}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r font-medium text-[#1e4d46]">{row.clientName}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.product}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.disbursalAmt}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r text-blue-700">{row.advisor}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.bank}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.banker}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.disbursalMonth}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.employee}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r font-bold">{row.grossRecd}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.grossPaid}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r text-green-700 font-bold">{row.grossProfit}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.tdsPaid}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.tdsDeducted}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r font-bold">{row.netRecd}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r">{row.netPaid}</TableCell>
-                                    <TableCell className="text-xs py-2 border-r text-blue-800 font-bold">{row.cashProfit}</TableCell>
-                                    <TableCell className="text-xs py-2">{row.processedBy}</TableCell>
-                                </TableRow>
-                            ))
+                            (() => {
+                                const uniqueReportData = reportData.data.filter((v, i, a) => 
+                                    a.findIndex(v2 => v2.leadNo === v.leadNo && v2.disbursalAmt === v.disbursalAmt) === i
+                                );
+                                return uniqueReportData.map((row, index) => (
+                                    <TableRow
+                                        key={index}
+                                        className={`${index % 2 === 0 ? "bg-[#f1f5f4]" : "bg-white"} hover:bg-gray-100 transition-colors border-b`}
+                                    >
+                                        <TableCell className="text-xs py-2 border-r">{row.leadNo}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.disbursalDate ? new Date(row.disbursalDate).toLocaleDateString('en-GB') : '-'}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r font-medium text-[#1e4d46]">{row.clientName}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.product}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.disbursalAmt}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r text-blue-700">{row.advisor}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.bank}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.banker}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.disbursalMonth}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.employee}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r font-bold">{row.grossRecd}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.grossPaid}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r text-green-700 font-bold">{row.grossProfit}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.tdsPaid}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.tdsDeducted}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r font-bold">{row.netRecd}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r">{row.netPaid}</TableCell>
+                                        <TableCell className="text-xs py-2 border-r text-blue-800 font-bold">{row.cashProfit}</TableCell>
+                                        <TableCell className="text-xs py-2">{row.processedBy}</TableCell>
+                                    </TableRow>
+                                ))
+                            })()
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={19} className="text-center py-10 text-gray-500">No performance records found.</TableCell>

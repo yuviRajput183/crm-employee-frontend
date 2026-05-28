@@ -491,7 +491,13 @@ const CommonLoanSections = ({ form, isEdit = false, onDocumentsChange, existingD
                             </tr>
                         </thead>
                         <tbody>
-                            {uploadedDocuments.map((doc) => (
+                            {uploadedDocuments.filter((doc, index, self) => 
+                                index === self.findIndex((t) => (
+                                    t.attachmentType === doc.attachmentType &&
+                                    t.password === doc.password &&
+                                    (t.fileName === doc.fileName || t.fileUrl === doc.fileUrl)
+                                ))
+                            ).map((doc) => (
                                 <tr key={doc.id} className="border-b border-gray-200">
                                     <td className="p-2">{doc.attachmentType}</td>
                                     <td className="p-2">{doc.password || '-'}</td>
