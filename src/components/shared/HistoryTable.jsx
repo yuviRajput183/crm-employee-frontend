@@ -1,4 +1,5 @@
 import React from 'react'
+import { formatDate } from "@/lib/utils";
 import {
     Table,
     TableHeader,
@@ -31,20 +32,33 @@ const HistoryTable = ({ data = [] }) => {
                         </TableRow>
                     </TableHeader>
                     <TableBody className=" ">
-                        {data.map((history, index) => (
-                            <TableRow
-                                key={index}
-                                className={index % 2 === 0 ? "bg-gray-100" : ""}
-                            >
-                                <TableCell>{history.feedback}</TableCell>
-                                <TableCell>{history.commentBy}</TableCell>
-                                <TableCell>{history.commentDate}</TableCell>
-                                <TableCell>{history.remarks}</TableCell>
-                                <TableCell>{history.replyDate}</TableCell>
-                                <TableCell>{history.advisorReply}</TableCell>
-
-                            </TableRow>
-                        ))}
+                        {(() => {
+                            const uniqueData = data.filter((item, index, self) => 
+                                index === self.findIndex((t) => (
+                                    t.feedback === item.feedback &&
+                                    t.commentBy === item.commentBy &&
+                                    t.commentDate === item.commentDate &&
+                                    t.remarks === item.remarks &&
+                                    t.replyDate === item.replyDate &&
+                                    t.advisorReply === item.advisorReply
+                                ))
+                            ).reverse();
+                            
+                            return uniqueData.map((history, index) => (
+                                <TableRow
+                                    key={index}
+                                    className={index % 2 === 0 ? "bg-gray-100" : ""}
+                                >
+                                    <TableCell>{history.feedback}</TableCell>
+                                    <TableCell>{history.commentBy}</TableCell>
+                                    <TableCell>{formatDate(history.commentDate)}</TableCell>
+                                    <TableCell>{history.remarks}</TableCell>
+                                    <TableCell>{formatDate(history.replyDate)}</TableCell>
+                                    <TableCell>{history.advisorReply}</TableCell>
+    
+                                </TableRow>
+                            ))
+                        })()}
                     </TableBody>
                 </Table>
             </div>

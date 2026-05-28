@@ -146,7 +146,7 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
                             <div
                                 key={menu.id}
                                 onClick={() => toggleMenu(menu.id)}
-                                className={`flex gap-2 items-center p-4 text-gray-100 hover:bg-black border-b-1 border-white ${openMenus[menu.id] ? 'bg-black' : 'bg-gray-800'}`}
+                                className={`flex gap-2 items-center p-4 text-gray-100 hover:bg-black border-b border-gray-700 bg-gray-800`}
                             >
                                 {menu.icon}
                                 <h1>{menu.title}</h1>
