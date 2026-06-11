@@ -93,9 +93,7 @@ const carLoanSchema = z.object({
         message: "Pin code must be 6 digits",
     }),
 
-    employment: z.enum(["Salaried", "Self Employed"], {
-        required_error: "Employment type is required",
-    }),
+    employment: z.string().optional(),
 
     companyName: z.string().optional(),
     designation: z.string().optional(),
@@ -244,7 +242,7 @@ const EditCarLoanForm = () => {
             stateName: '',
             cityName: '',
             pinCode: '',
-            employment: "Salaried",      // Default value
+            employment: undefined,
             companyName: '',
             designation: '',
             companyAddress: '',
@@ -530,7 +528,7 @@ const EditCarLoanForm = () => {
                 residenceStability: lead?.residentialStability || undefined,
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                pinCode: lead?.pinCode?.toString() || '',
+                pinCode: lead?.pinCode && lead?.pinCode !== 0 ? lead.pinCode.toString() : '',
                 companyName: lead?.companyName || '',
                 designation: lead?.designation || '',
                 companyAddress: lead?.companyAddress || '',
@@ -1016,11 +1014,11 @@ const EditCarLoanForm = () => {
                             name="employment"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Employment <span className="text-red-500">*</span></FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormLabel>Employment</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue value={field.value} />
+                                                <SelectValue placeholder="Select" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>

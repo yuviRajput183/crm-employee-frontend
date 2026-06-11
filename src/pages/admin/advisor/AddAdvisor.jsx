@@ -59,12 +59,13 @@ const formSchema = z.object({
     photograph: z
         .any()
         .refine((file) => {
-            if (!file) return false;
+            if (!file) return true; // Make it optional
             if (typeof file === 'string' && file.length > 0) return true; // Existing photo URL
             return file instanceof File || file?.length > 0; // New File or FileList
         }, {
-            message: 'Photograph is required',
-        }),
+            message: 'Invalid photograph',
+        })
+        .optional(),
 });
 
 

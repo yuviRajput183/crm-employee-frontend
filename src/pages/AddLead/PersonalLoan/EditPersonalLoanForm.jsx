@@ -517,7 +517,7 @@ const EditPersonalLoanForm = () => {
                 residenceStability: lead?.residentialStability || undefined,
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                pinCode: lead?.pinCode?.toString() || '',
+                pinCode: lead?.pinCode && lead?.pinCode !== 0 ? lead.pinCode.toString() : '',
                 companyName: lead?.companyName || '',
                 designation: lead?.designation || '',
                 companyAddress: lead?.companyAddress || '',

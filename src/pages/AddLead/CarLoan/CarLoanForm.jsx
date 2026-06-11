@@ -98,9 +98,7 @@ const carLoanSchema = z.object({
         message: "Pin code must be 6 digits",
     }),
 
-    employment: z.enum(["Salaried", "Self Employed"], {
-        required_error: "Employment type is required",
-    }),
+    employment: z.string().optional(),
 
     companyName: z.string().optional(),
     designation: z.string().optional(),
@@ -199,7 +197,7 @@ const CarLoanForm = ({ selectedAdvisor }) => {
             stateName: '',
             cityName: '',
             pinCode: '',
-            employment: "Salaried",      // Default value
+            employment: undefined,
             companyName: '',
             designation: '',
             companyAddress: '',
@@ -747,7 +745,7 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Residence Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -801,7 +799,7 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Residence Stability</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -857,7 +855,7 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>City Name</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -897,11 +895,11 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                         name="employment"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Employment <span className="text-red-500">*</span></FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormLabel>Employment</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
-                                            <SelectValue value={field.value} />
+                                            <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -978,7 +976,7 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Salary Transfer Mode</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -1001,7 +999,7 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Job Period (Current Company)</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -1025,7 +1023,7 @@ const CarLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Total Job Experience</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />

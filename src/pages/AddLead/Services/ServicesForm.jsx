@@ -355,7 +355,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Services Type<span className="text-red-500">*</span></FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
@@ -440,7 +440,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                     <FormField name="maritalStatus" control={form.control} render={({ field }) => (
                         <FormItem>
                             <FormLabel>Marital Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select" />
                                 </SelectTrigger>
@@ -475,7 +475,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Qualification</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="10th Pass">10th Pass</SelectItem>
@@ -495,7 +495,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Occupation</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="salaried">Salaried</SelectItem>
@@ -555,7 +555,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>City Name</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -623,7 +623,7 @@ const ServicesForm = ({ selectedAdvisor }) => {
                                 render={({ field }) => (
                                     <FormItem className="col-span-1 mt-2">
                                         <FormControl>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select onValueChange={field.onChange} value={field.value}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select" />
                                                 </SelectTrigger>

@@ -377,7 +377,7 @@ const EditInsuranceForm = () => {
                 residentialAddress: lead?.residentialAddress || '',
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                pinCode: lead?.pinCode?.toString() || '',
+                pinCode: lead?.pinCode && lead?.pinCode !== 0 ? lead.pinCode.toString() : '',
 
                 nomineeName: lead?.nomineeName || '',
                 relationWithNominee: lead?.relationWithNominee || '',
