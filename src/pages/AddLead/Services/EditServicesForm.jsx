@@ -386,7 +386,7 @@ const EditServicesForm = () => {
                 residentialAddress: lead?.residentialAddress || '',
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                pinCode: lead?.pinCode?.toString() || '',
+                pinCode: lead?.pinCode && lead?.pinCode !== 0 ? lead.pinCode.toString() : '',
 
                 nomineeName: lead?.nomineeName || '',
                 relationWithNominee: lead?.relationWithNominee || '',
@@ -488,7 +488,7 @@ const EditServicesForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Services Type<span className="text-red-500">*</span></FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
@@ -573,7 +573,7 @@ const EditServicesForm = () => {
                         <FormField name="maritalStatus" control={form.control} render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Marital Status</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
@@ -608,7 +608,7 @@ const EditServicesForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Qualification</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                         <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="10th Pass">10th Pass</SelectItem>
@@ -628,7 +628,7 @@ const EditServicesForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Occupation</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                         <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="salaried">Salaried</SelectItem>

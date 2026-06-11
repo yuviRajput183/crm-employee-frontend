@@ -521,7 +521,7 @@ const EditBusinessLoanForm = () => {
                 residenceStability: lead?.residentialStability || undefined,
                 stateName: lead?.stateName || '',
                 cityName: lead?.cityName || '',
-                pinCode: lead?.pinCode?.toString() || '',
+                pinCode: lead?.pinCode && lead?.pinCode !== 0 ? lead.pinCode.toString() : '',
 
                 businessName: lead?.businessName || '',
                 annualTurnover: lead?.annualTurnover?.toString() || undefined,

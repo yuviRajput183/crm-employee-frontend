@@ -734,7 +734,7 @@ const PersonalLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Residence Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -788,7 +788,7 @@ const PersonalLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Residence Stability</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -844,7 +844,7 @@ const PersonalLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>City Name</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -941,7 +941,7 @@ const PersonalLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Salary Transfer Mode</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -964,7 +964,7 @@ const PersonalLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Job Period (Current Company)</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
@@ -988,7 +988,7 @@ const PersonalLoanForm = ({ selectedAdvisor }) => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Total Job Experience</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
