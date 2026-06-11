@@ -317,9 +317,40 @@ const MyLead = () => {
                         </Table>
                     </div>
 
-                    {/* Add Button */}
-                    <div className="mt-4">
+                    {/* Pagination and Export */}
+                    <div className="mt-4 flex items-center justify-between">
                         <Button className=" bg-blue-500 hover:bg-blue-500">Export</Button>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-600 font-medium">
+                                Page {myLeadsData?.currentPage || 1} of {myLeadsData?.totalPages || 1}
+                            </span>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!myLeadsData?.currentPage || myLeadsData?.currentPage <= 1}
+                                    onClick={() => {
+                                        const newParams = new URLSearchParams(searchParams);
+                                        newParams.set('page', (myLeadsData?.currentPage || 1) - 1);
+                                        setSearchParams(newParams);
+                                    }}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!myLeadsData?.currentPage || myLeadsData?.currentPage >= (myLeadsData?.totalPages || 1)}
+                                    onClick={() => {
+                                        const newParams = new URLSearchParams(searchParams);
+                                        newParams.set('page', (myLeadsData?.currentPage || 1) + 1);
+                                        setSearchParams(newParams);
+                                    }}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </>
             )}
