@@ -105,10 +105,13 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
 
     // this function is called when the parent menu is clicked
     const toggleMenu = (id) => {
-        setOpenMenus((prev) => ({
-            ...prev,
-            [id]: !prev[id]  // flips the current state (open to close, close to open)
-        }));
+        setOpenMenus((prev) => {
+            if (prev[id]) {
+                return {};
+            } else {
+                return { [id]: true };
+            }
+        });
     };
 
 

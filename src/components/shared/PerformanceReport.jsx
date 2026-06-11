@@ -51,6 +51,38 @@ const PerformanceReport = () => {
         setFilterParams(cleanParams);
     };
 
+    const groupedData = React.useMemo(() => {
+        if (!reportData?.data) return [];
+        const grouped = {};
+        reportData.data.forEach(row => {
+            if (!grouped[row.leadNo]) {
+                grouped[row.leadNo] = { ...row };
+                grouped[row.leadNo].grossRecd = Number(row.grossRecd) || 0;
+                grouped[row.leadNo].grossPaid = Number(row.grossPaid) || 0;
+                grouped[row.leadNo].grossProfit = Number(row.grossProfit) || 0;
+                grouped[row.leadNo].tdsPaid = Number(row.tdsPaid) || 0;
+                grouped[row.leadNo].tdsDeducted = Number(row.tdsDeducted) || 0;
+                grouped[row.leadNo].netRecd = Number(row.netRecd) || 0;
+                grouped[row.leadNo].netPaid = Number(row.netPaid) || 0;
+                grouped[row.leadNo].cashProfit = Number(row.cashProfit) || 0;
+            } else {
+                grouped[row.leadNo].grossRecd += Number(row.grossRecd) || 0;
+                grouped[row.leadNo].grossPaid += Number(row.grossPaid) || 0;
+                grouped[row.leadNo].grossProfit += Number(row.grossProfit) || 0;
+                grouped[row.leadNo].tdsPaid += Number(row.tdsPaid) || 0;
+                grouped[row.leadNo].tdsDeducted += Number(row.tdsDeducted) || 0;
+                grouped[row.leadNo].netRecd += Number(row.netRecd) || 0;
+                grouped[row.leadNo].netPaid += Number(row.netPaid) || 0;
+                grouped[row.leadNo].cashProfit += Number(row.cashProfit) || 0;
+            }
+        });
+        return Object.values(grouped).sort((a, b) => {
+            const valA = a.leadNo?.toString() || "";
+            const valB = b.leadNo?.toString() || "";
+            return valB.localeCompare(valA, undefined, { numeric: true });
+        });
+    }, [reportData?.data]);
+
     return (
         <div className=' p-3 bg-white rounded shadow min-h-screen'>
             {/* Heading */}
@@ -114,44 +146,39 @@ const PerformanceReport = () => {
                             <TableRow>
                                 <TableCell colSpan={19} className="text-center py-10">Loading report data...</TableCell>
                             </TableRow>
-                        ) : reportData?.data?.length > 0 ? (
-                            (() => {
-                                const uniqueReportData = reportData.data.filter((v, i, a) => 
-                                    a.findIndex(v2 => v2.leadNo === v.leadNo && v2.disbursalAmt === v.disbursalAmt) === i
-                                );
-                                return uniqueReportData.map((row, index) => (
-                                    <TableRow
-                                        key={index}
-                                        className={`${index % 2 === 0 ? "bg-[#f1f5f4]" : "bg-white"} hover:bg-gray-100 transition-colors border-b`}
-                                    >
-                                        <TableCell className="text-xs py-2 border-r">{row.leadNo}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.disbursalDate ? new Date(row.disbursalDate).toLocaleDateString('en-GB') : '-'}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r font-medium text-[#1e4d46]">{row.clientName}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.product}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.disbursalAmt}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r text-blue-700">{row.advisor}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.bank}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.banker}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.disbursalMonth}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.employee}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r font-bold">{row.grossRecd}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.grossPaid}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r text-green-700 font-bold">{row.grossProfit}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.tdsPaid}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.tdsDeducted}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r font-bold">{row.netRecd}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r">{row.netPaid}</TableCell>
-                                        <TableCell className="text-xs py-2 border-r text-blue-800 font-bold">{row.cashProfit}</TableCell>
-                                        <TableCell className="text-xs py-2">{row.processedBy}</TableCell>
-                                    </TableRow>
-                                ))
-                            })()
+                        ) : groupedData.length > 0 ? (
+                          groupedData.map((row, index) => (
+                                <TableRow
+                                    key={index}
+                                    className={`${index % 2 === 0 ? "bg-[#f1f5f4]" : "bg-white"} hover:bg-gray-100 transition-colors border-b`}
+                                >
+                                    <TableCell className="text-xs py-2 border-r">{row.leadNo}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.disbursalDate ? new Date(row.disbursalDate).toLocaleDateString('en-GB') : '-'}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r font-medium text-[#1e4d46]">{row.clientName}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.product}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.disbursalAmt}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r text-blue-700">{row.advisor}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.bank}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.banker}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.disbursalMonth}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.employee}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r font-bold">{row.grossRecd}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.grossPaid}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r text-green-700 font-bold">{row.grossProfit}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.tdsPaid}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.tdsDeducted}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r font-bold">{row.netRecd}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r">{row.netPaid}</TableCell>
+                                    <TableCell className="text-xs py-2 border-r text-blue-800 font-bold">{row.cashProfit}</TableCell>
+                                    <TableCell className="text-xs py-2">{row.processedBy}</TableCell>
+                                </TableRow>
+                            ))
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={19} className="text-center py-10 text-gray-500">No performance records found.</TableCell>
                             </TableRow>
                         )}
-                        {reportData?.totals && reportData?.data?.length > 0 && (
+                        {reportData?.totals && groupedData.length > 0 && (
                             <TableRow className="bg-[#f39c12] hover:bg-[#e67e22] transition-colors border-b">
                                 <TableCell className="text-xs py-2 border-r font-bold text-white text-center" colSpan={4}>Total</TableCell>
                                 <TableCell className="text-xs py-2 border-r font-bold text-white">{reportData.totals.disbursalAmt}</TableCell>
