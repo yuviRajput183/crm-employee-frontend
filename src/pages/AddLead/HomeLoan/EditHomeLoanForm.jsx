@@ -67,7 +67,7 @@ const homeLoanSchema = z.object({
         message: "Aadhar number must be 12 digits",
     }),
 
-    maritalStatus: z.enum(["Married", "Unmarried"]).optional(),
+    maritalStatus: z.enum(["Married", "Unmarried"]).optional().or(z.literal("")),
     spouseName: z.string().optional(),
     motherName: z.string().optional(),
 
@@ -75,13 +75,13 @@ const homeLoanSchema = z.object({
         message: "Other contact number must be 10 digits",
     }),
 
-    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
+    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional().or(z.literal("")),
 
-    residenceType: z.enum(["owned", "rented", "parental", "company"]).optional(),
+    residenceType: z.enum(["owned", "rented", "parental", "company"]).optional().or(z.literal("")),
     residentialAddress: z.string().optional(),
     residentialAddressTakenFrom: z.string().optional(),
 
-    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional(),
+    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional().or(z.literal("")),
 
     stateName: z.string().optional(),
     cityName: z.string().optional(),
@@ -100,10 +100,10 @@ const homeLoanSchema = z.object({
         message: "Net salary must be a number",
     }),
 
-    salaryTransferMode: z.enum(["account", "cash", "cheque"]).optional(),
+    salaryTransferMode: z.enum(["account", "cash", "cheque"]).optional().or(z.literal("")),
 
-    jobPeriod: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
-    totalExperience: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
+    jobPeriod: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional().or(z.literal("")),
+    totalExperience: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional().or(z.literal("")),
 
     officialEmail: z.string().optional().refine(val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
         message: "Invalid official email",
@@ -113,7 +113,7 @@ const homeLoanSchema = z.object({
         message: "Official number must be 10 digits",
     }),
 
-    propertyType: z.enum(["sale deed", "bba", "gpa", "gpa registered"]).optional(),
+    propertyType: z.enum(["sale deed", "bba", "gpa", "gpa registered"]).optional().or(z.literal("")),
 
     propertyMarketValue: z.string().optional(),
     propertyTotalArea: z.string().optional(),

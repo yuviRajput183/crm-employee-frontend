@@ -77,7 +77,7 @@ const businessLoanSchema = z.object({
         message: "Aadhar number must be 12 digits",
     }),
 
-    maritalStatus: z.enum(["Married", "Unmarried"]).optional(),
+    maritalStatus: z.enum(["Married", "Unmarried"]).optional().or(z.literal("")),
     spouseName: z.string().optional(),
     motherName: z.string().optional(),
 
@@ -85,13 +85,13 @@ const businessLoanSchema = z.object({
         message: "Other contact number must be 10 digits",
     }),
 
-    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
+    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional().or(z.literal("")),
 
-    residenceType: z.enum(["owned", "rented", "parental", "company"]).optional(),
+    residenceType: z.enum(["owned", "rented", "parental", "company"]).optional().or(z.literal("")),
     residentialAddress: z.string().optional(),
     residentialAddressTakenFrom: z.string().optional(),
 
-    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional(),
+    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional().or(z.literal("")),
 
     stateName: z.string().optional(),
     cityName: z.string().optional(),
@@ -111,9 +111,9 @@ const businessLoanSchema = z.object({
     businessAddress: z.string().optional(),
     businessAddressTakenFrom: z.string().optional(),
 
-    businessAge: z.enum(["6 months", "1 Year", "2 Year", "3 Year +"]).optional(),
-    businessType: z.enum(["propritership", "partnership", "private limited"]).optional(),
-    natureOfBusiness: z.enum(["manufacturing", "trading", "service", "retailer"]).optional(),
+    businessAge: z.enum(["6 months", "1 Year", "2 Year", "3 Year +"]).optional().or(z.literal("")),
+    businessType: z.enum(["propritership", "partnership", "private limited"]).optional().or(z.literal("")),
+    natureOfBusiness: z.enum(["manufacturing", "trading", "service", "retailer"]).optional().or(z.literal("")),
     businessRegistration: z.enum([
         "GST",
         "VAT",
@@ -122,14 +122,14 @@ const businessLoanSchema = z.object({
         "MSME",
         "Labour license",
         "MSME certificate",
-    ]).optional(),
+    ]).optional().or(z.literal("")),
 
     noOfEmployees: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
         message: "Must be a number",
     }),
 
-    businessPremises: z.enum(["owned", "rented"]).optional(),
-    itrAvailable: z.enum(["1 year", "2 year", "3 year +"]).optional(),
+    businessPremises: z.enum(["owned", "rented"]).optional().or(z.literal("")),
+    itrAvailable: z.enum(["1 year", "2 year", "3 year +"]).optional().or(z.literal("")),
 
     noOfDependent: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
         message: "Must be a number",
