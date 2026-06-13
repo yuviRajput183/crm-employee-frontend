@@ -87,10 +87,10 @@ const insuranceFormSchema = z.object({
         message: "Other contact number must be 10 digits",
     }),
 
-    maritalStatus: z.enum(["married", "divorced"]).optional(),
-    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
+    maritalStatus: z.enum(["married", "divorced"]).optional().or(z.literal("")),
+    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional().or(z.literal("")),
 
-    occupation: z.enum(["salaried", "self employeed", "professional"]).optional(),
+    occupation: z.enum(["salaried", "self employeed", "professional"]).optional().or(z.literal("")),
 
     residentialAddress: z.string().optional(),
     stateName: z.string().optional(),

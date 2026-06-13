@@ -66,13 +66,13 @@ const servicesSchema = z.object({
     }),
 
 
-    maritalStatus: z.enum(["married", "unmarried"]).optional(),
+    maritalStatus: z.enum(["married", "unmarried"]).optional().or(z.literal("")),
     spouseName: z.string().optional(),
     otherContactNo: z.string().optional().refine(val => !val || /^\d{10}$/.test(val), {
         message: "Other contact number must be 10 digits",
     }),
-    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
-    occupation: z.enum(["salaried", "self employeed", "professional"]).optional(),
+    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional().or(z.literal("")),
+    occupation: z.enum(["salaried", "self employeed", "professional"]).optional().or(z.literal("")),
     runningLoans: z.array(
         z.object({
             loanType: z.string().optional(),

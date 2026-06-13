@@ -70,7 +70,7 @@ const othersSchema = z.object({
         .regex(/^\d{12}$/, "Aadhar number must be 12 digits")
         .optional(),
 
-    maritalStatus: z.enum(["Married", "Unmarried"]).optional(),
+    maritalStatus: z.enum(["Married", "Unmarried"]).optional().or(z.literal("")),
     spouseName: z.string().optional(),
     motherName: z.string().optional(),
     otherContactNo: z
@@ -78,13 +78,13 @@ const othersSchema = z.object({
         .regex(/^\d{10}$/, "Other contact number must be 10 digits")
         .optional(),
 
-    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
+    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional().or(z.literal("")),
 
-    residenceType: z.enum(["owned", "rented", "parental", "company"]).optional(),
+    residenceType: z.enum(["owned", "rented", "parental", "company"]).optional().or(z.literal("")),
     residentialAddress: z.string().optional(),
     residentialAddressTakenFrom: z.string().optional(),
 
-    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional(),
+    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional().or(z.literal("")),
 
     stateName: z.string().optional(),
     cityName: z.string().optional(),
@@ -101,10 +101,10 @@ const othersSchema = z.object({
         .regex(/^\d+$/, "Net salary must be a number")
         .optional(),
 
-    salaryTransferMode: z.enum(["account", "cash", "cheque"]).optional(),
+    salaryTransferMode: z.enum(["account", "cash", "cheque"]).optional().or(z.literal("")),
 
-    jobPeriod: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
-    totalExperience: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
+    jobPeriod: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional().or(z.literal("")),
+    totalExperience: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional().or(z.literal("")),
 
     officialEmail: z.string().email("Invalid official email").optional(),
     officialNumber: z

@@ -74,7 +74,7 @@ const usedCarLoanSchema = z.object({
         message: "Aadhar number must be 12 digits",
     }),
 
-    maritalStatus: z.enum(["Married", "Unmarried"]).optional(),
+    maritalStatus: z.enum(["Married", "Unmarried"]).optional().or(z.literal("")),
     spouseName: z.string().optional(),
     motherName: z.string().optional(),
 
@@ -82,13 +82,13 @@ const usedCarLoanSchema = z.object({
         message: "Other contact number must be 10 digits",
     }),
 
-    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional(),
+    qualification: z.enum(["10th Pass", "12th Pass", "Graduate", "Post Graduate"]).optional().or(z.literal("")),
 
-    residenceType: z.enum(["owned", "rented", "parental", "company"]).optional(),
+    residenceType: z.enum(["owned", "rented", "parental", "company"]).optional().or(z.literal("")),
     residentialAddress: z.string().optional(),
     residentialAddressTakenFrom: z.string().optional(),
 
-    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional(),
+    residenceStability: z.enum(["1Year", "2Years", "3Years"]).optional().or(z.literal("")),
 
 
     stateName: z.string().optional(),
@@ -108,10 +108,10 @@ const usedCarLoanSchema = z.object({
         message: "Net salary must be a number",
     }),
 
-    salaryTransferMode: z.enum(["account", "cash", "cheque"]).optional(),
+    salaryTransferMode: z.enum(["account", "cash", "cheque"]).optional().or(z.literal("")),
 
-    jobPeriod: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
-    totalExperience: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional(),
+    jobPeriod: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional().or(z.literal("")),
+    totalExperience: z.enum(["6Months", "1Year", "2Years", "3Years+"]).optional().or(z.literal("")),
 
     officialEmail: z.string().optional().refine(val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
         message: "Invalid official email",
@@ -124,7 +124,7 @@ const usedCarLoanSchema = z.object({
 
     carName: z.string().optional(),
     manufacturingYear: z.string().optional(),
-    fuelType: z.enum(["petrol", "deisel"]).optional(),
+    fuelType: z.enum(["petrol", "deisel"]).optional().or(z.literal("")),
 
     dependents: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
         message: "Dependents must be a number",
