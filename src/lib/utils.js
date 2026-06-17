@@ -7,6 +7,11 @@ export function cn(...inputs) {
 
 export function formatDate(dateInput) {
   if (!dateInput) return "";
+
+  // If the date is already formatted as "DD/MM/YYYY-HH:MM AM|PM", return it directly
+  if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4}-\d{2}:\d{2} (AM|PM)$/i.test(dateInput.trim())) {
+    return dateInput.trim();
+  }
   
   const date = new Date(dateInput);
   if (isNaN(date.getTime())) return "Invalid Date";
