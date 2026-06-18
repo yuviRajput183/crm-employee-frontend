@@ -427,6 +427,9 @@ const EditCarLoanForm = () => {
             if (data.bankerId) {
                 fd.append('bankerId', data.bankerId);
             }
+            if (data.lanApplicationNo) {
+                fd.append('lanApplicationNo', data.lanApplicationNo);
+            }
 
             if (data.disbursalDate) {
                 fd.append('disbursalDate', data.disbursalDate);
