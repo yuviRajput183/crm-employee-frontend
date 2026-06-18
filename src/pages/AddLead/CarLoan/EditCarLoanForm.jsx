@@ -1272,7 +1272,7 @@ const EditCarLoanForm = () => {
                                 form={form}
                                 leadId={leadId}
                                 prefilledBankerDetails={leadData?.data?.data?.bankerId}
-                             isAllocated={!!leadData?.data?.data?.allocatedTo} />
+                             isAllocated={!!leadData?.data?.data?.allocatedTo} history={history} />
                         );
                     })()}
 

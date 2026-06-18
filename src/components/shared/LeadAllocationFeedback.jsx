@@ -40,10 +40,12 @@ const getUserRole = () => {
     }
 };
 
-const LeadAllocationFeedback = ({ form, leadId, disabled, prefilledBankerDetails, isAllocated = true }) => {
-
+const LeadAllocationFeedback = ({ form, leadId, disabled, prefilledBankerDetails, isAllocated = true, history = [] }) => {
 
     const [feedback, setFeedback] = useState(form.getValues('loanFeedback') || "");
+
+    const latestFeedback = history?.length > 0 ? history[history.length - 1].feedback : null;
+    const showBankerDetails = feedback === "Loan Disbursed" || latestFeedback === "Loan Disbursed";
 
     // Check if user is an admin
     const role = getUserRole();
@@ -169,7 +171,7 @@ const LeadAllocationFeedback = ({ form, leadId, disabled, prefilledBankerDetails
             )}
 
 
-            {isAllocated && feedback === "Loan Disbursed" && <BankerDetails form={form} leadId={leadId} prefilledBankerDetails={prefilledBankerDetails} />}
+            {isAllocated && showBankerDetails && <BankerDetails form={form} leadId={leadId} prefilledBankerDetails={prefilledBankerDetails} />}
 
 
             {/* Remarks */}
