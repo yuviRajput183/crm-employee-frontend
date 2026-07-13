@@ -17,7 +17,7 @@ import {
     SelectItem,
 } from '@/components/ui/select'
 import { useQuery } from '@tanstack/react-query'
-import { apiListAdvisor } from '@/services/advisor.api'
+import { apiGetAdvisorsForDropdown } from '@/services/advisor.api'
 import { getErrorMessage } from '@/lib/helpers/get-message'
 import { Alert } from '../ui/alert'
 import { apiCustomerByAdvisorId, apiListAllocatedTo } from '@/services/lead.api'
@@ -77,7 +77,7 @@ export default function FilterSection({ form, showFilter, handleFilter }) {
     } = useQuery({
         queryKey: ['departments'],
         queryFn: async () => {
-            const res = await apiListAdvisor();
+            const res = await apiGetAdvisorsForDropdown();
             console.log("📦 queryFn response of list advisor:", res);
             setAdvisors(res?.data?.data?.advisors || []);
             return res;
