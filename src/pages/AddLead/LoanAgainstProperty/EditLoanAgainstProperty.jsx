@@ -157,8 +157,8 @@ const loanAgainstPropertySchema = z.object({
     filePassword: z.string().optional(),
     allocateTo: z.string().optional(), 
                 
-    loanFeedback: z.string().optional(),
-    remarks: z.string().optional(),
+    loanFeedback: z.string().nullable().optional(),
+    remarks: z.string().nullable().optional(),
     bankStateName: z.string().optional(),
     bankCityName: z.string().optional(),
     bankName: z.string().optional(),
