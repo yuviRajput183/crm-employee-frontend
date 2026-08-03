@@ -263,7 +263,7 @@ const AddAdvisorPayout = ({ onClose }) => {
             form.setValue('customerName', lead?.clientName || '');
             // form.setValue('advisorName', lead?.advisorId?.name || '');
             form.setValue('finalPayout', lead?.finalPayout || false);
-            form.setValue('disbursalAmount', lead?.loanRequirementAmount?.toString() || '');
+            form.setValue('disbursalAmount', (lead?.loanRequirementAmount || lead?.insuranceAmount)?.toString() || '');
             form.setValue('disbursalDate', lead?.disbursalDate ? lead.disbursalDate.split('T')[0] : '');
 
             // Fill banker details (non-editable)
