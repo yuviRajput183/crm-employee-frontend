@@ -126,7 +126,7 @@ const EditInvoiceForm = () => {
         defaultValues: {
             leadId: "",
             invoiceNo: "",
-            disbursalAmount: "100",
+            disbursalAmount: "",
             payoutPercent: "",
             disbursalDate: "",
             invoiceDate: "",

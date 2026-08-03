@@ -85,7 +85,7 @@ const AddInvoiceForm = ({ onClose }) => {
         defaultValues: {
             leadId: "",
             invoiceNo: "",
-            disbursalAmount: "100",
+            disbursalAmount: "",
             payoutPercent: "",
             disbursalDate: "",
             invoiceDate: "",
