@@ -135,3 +135,18 @@ export const apiUpdateAdvisorCredentials = async (payload) => {
         }
     );
 }
+
+export const apiVerifyPan = async (panNo) => {
+    const token = localStorage.getItem('token');
+    return await axios.post(
+        `${baseURL}/advisors/verify-pan`,
+        { pan_number: panNo },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+        }
+    );
+}

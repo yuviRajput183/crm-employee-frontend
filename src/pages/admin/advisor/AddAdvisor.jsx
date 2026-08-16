@@ -26,7 +26,7 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 import { useAdvisor } from '@/lib/hooks/useAdvisor';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert } from '@/components/ui/alert';
-import { apiFetchAdvisorDetails } from '@/services/advisor.api';
+import { apiFetchAdvisorDetails, apiVerifyPan } from '@/services/advisor.api';
 import { apiGetCitiesByStateName } from '@/services/city.api';
 
 const indianStates = [
@@ -82,6 +82,45 @@ const AddAdvisor = () => {
     const [savedReportingOfficer, setSavedReportingOfficer] = useState(null); // Store the advisor's reporting officer from API
     const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
     const fileInputRef = React.useRef(null);
+    const [isVerifyingPan, setIsVerifyingPan] = useState(false);
+
+    const handleVerifyPan = async () => {
+        const panNo = form.getValues('panNo');
+        if (!panNo) {
+            alert('Please enter a PAN number first');
+            return;
+        }
+        setIsVerifyingPan(true);
+        try {
+            const res = await apiVerifyPan(panNo);
+            // res.data is the SuccessResponse { success, message, data: surepassResponse }
+            const backendData = res.data;
+            const surepassResponse = backendData?.data;
+            const surepassData = surepassResponse?.data;
+            
+            let fullName = '';
+            
+            if (surepassData?.full_name) {
+                fullName = surepassData.full_name;
+            } else if (surepassData?.name) {
+                fullName = surepassData.name;
+            }
+
+            if (fullName) {
+                form.setValue('advisorName', fullName);
+            }
+            
+            // Format the full data nicely
+            const details = surepassData ? JSON.stringify(surepassData, null, 2) : JSON.stringify(surepassResponse, null, 2);
+            alert(`PAN Verified successfully!\n\n${details}`);
+
+        } catch (error) {
+            console.error('Error verifying PAN:', error);
+            alert('Failed to verify PAN');
+        } finally {
+            setIsVerifyingPan(false);
+        }
+    };
 
 
     const navigate = useNavigate();
@@ -491,7 +530,17 @@ const AddAdvisor = () => {
                         <FormField name="panNo" control={form.control} render={({ field }) => (
                             <FormItem className=" flex flex-col gap-1">
                                 <FormLabel>PAN No</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                              { /*  <div className="flex gap-2 items-center"> */}
+                                    <FormControl><Input {...field} /></FormControl>
+                                 { /*   <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        onClick={handleVerifyPan}
+                                        disabled={isVerifyingPan}
+                                    >
+                                        {isVerifyingPan ? 'Verifying...' : 'Verify'}
+                                    </Button>
+                                </div> */}
                             </FormItem>
                         )} />
 

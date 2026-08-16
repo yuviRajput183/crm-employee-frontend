@@ -87,6 +87,36 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/admin/city/ListCity'))
     },
     {
+        path: "add_location",
+        name: "Add Location",
+        component: lazy(() => import('@/pages/admin/location/AddLocation'))
+    },
+    {
+        path: "list_location",
+        name: "List Location",
+        component: lazy(() => import('@/pages/admin/location/ListLocation'))
+    },
+    {
+        path: "edit_location/:id",
+        name: "Edit Location",
+        component: lazy(() => import('@/pages/admin/location/AddLocation'))
+    },
+    {
+        path: "add_service_provider",
+        name: "Add Service Provider",
+        component: lazy(() => import('@/pages/admin/serviceProvider/AddServiceProvider'))
+    },
+    {
+        path: "list_service_provider",
+        name: "List Service Provider",
+        component: lazy(() => import('@/pages/admin/serviceProvider/ListServiceProvider'))
+    },
+    {
+        path: "edit_service_provider/:id",
+        name: "Edit Service Provider",
+        component: lazy(() => import('@/pages/admin/serviceProvider/AddServiceProvider'))
+    },
+    {
         path: "add_bank",
         name: "Add Bank",
         component: lazy(() => import('@/pages/admin/bank/AddBank'))

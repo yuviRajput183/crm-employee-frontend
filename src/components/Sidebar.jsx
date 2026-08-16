@@ -69,6 +69,18 @@ const masterMenuList = [
         ]
     },
     {
+        id: 7.5, title: "Location", icon: <ShieldHalf />, subList: [
+            { id: 1, title: "Add Location", path: "/admin/add_location", icon: <Landmark /> },
+            { id: 2, title: "List Location", path: "/admin/list_location", icon: <Landmark /> },
+        ]
+    },
+    {
+        id: 7.6, title: "Service Provider", icon: <ShieldHalf />, subList: [
+            { id: 1, title: "Add Service Provider", path: "/admin/add_service_provider", icon: <Landmark /> },
+            { id: 2, title: "List Service Provider", path: "/admin/list_service_provider", icon: <Landmark /> },
+        ]
+    },
+    {
         id: 8, title: "Bank Master", icon: <ShieldHalf />, subList: [
             { id: 1, title: "Add Bank", path: "/admin/add_bank", icon: <Landmark /> },
             { id: 2, title: "List Bank", path: "/admin/list_bank", icon: <Landmark /> },
