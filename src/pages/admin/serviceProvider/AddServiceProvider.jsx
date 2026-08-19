@@ -20,6 +20,7 @@ import { getErrorMessage } from '@/lib/helpers/get-message';
 import { Alert } from '@/components/ui/alert';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetchServiceProviderDetails } from '@/services/serviceProvider.api';
+import { apiListLocation } from '@/services/location.api';
 
 const typeOptions = ["Proprietorship", "Partnership", "Private Limited", "Limited"];
 
@@ -42,7 +43,8 @@ const formSchema = z.object({
     stateCode: z.string().optional(),
     gstin: z.string().optional(),
     code: z.string().optional(),
-    billingFormat: z.string().optional(),
+    billingFormat: z.any().optional(),
+    location: z.string().min(1, "Location is required"),
 });
 
 const AddServiceProvider = () => {
@@ -64,8 +66,15 @@ const AddServiceProvider = () => {
             gstin: "",
             code: "",
             billingFormat: "",
+            location: "",
         },
     });
+
+    const { data: locationsData } = useQuery({
+        queryKey: ['locations'],
+        queryFn: apiListLocation,
+    });
+    const locations = locationsData?.data?.data || [];
 
     const {
         data: providerData,
@@ -90,16 +99,28 @@ const AddServiceProvider = () => {
             form.setValue('gstin', data.gstin || '');
             form.setValue('code', data.code || '');
             form.setValue('billingFormat', data.billingFormat || '');
+            form.setValue('location', data.location || '');
         }
     }, [providerData, form]);
 
     const onSubmit = async (data) => {
         try {
+            const formData = new FormData();
+            Object.keys(data).forEach((key) => {
+                if (key === 'billingFormat') {
+                    if (data[key] instanceof File) {
+                        formData.append(key, data[key]);
+                    }
+                } else if (data[key] !== undefined && data[key] !== null) {
+                    formData.append(key, data[key]);
+                }
+            });
+
             if (serviceProviderId) {
-                await mutateAsync({ formData: data, serviceProviderId });
+                await mutateAsync({ formData, serviceProviderId });
                 alert("Service Provider updated successfully!");
             } else {
-                await mutateAsync(data);
+                await mutateAsync(formData);
                 alert("Service Provider added successfully!");
             }
             navigate("/admin/list_service_provider");
@@ -275,12 +296,42 @@ const AddServiceProvider = () => {
                         <FormField
                             control={form.control}
                             name="billingFormat"
+                            render={({ field: { value, onChange, ...fieldProps } }) => (
+                                <FormItem className="flex flex-col gap-1">
+                                    <FormLabel>Billing Format (PDF/Excel)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...fieldProps}
+                                            type="file"
+                                            accept=".pdf, .xls, .xlsx"
+                                            onChange={(e) => onChange(e.target.files?.[0])}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="location"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col gap-1">
-                                    <FormLabel>Billing Format</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
+                                    <FormLabel>Location <span className='text-red-500'>*</span></FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {locations.map((loc) => (
+                                                <SelectItem key={loc._id} value={loc._id}>
+                                                    {loc.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}

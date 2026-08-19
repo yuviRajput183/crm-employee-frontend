@@ -86,17 +86,11 @@ const ListLocation = () => {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex gap-2 text-sm text-blue-600">
-                                                {loc.stamp && (
-                                                    <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/stamps/${loc.stamp}`} target="_blank" rel="noreferrer">
-                                                        Stamp
+                                                {loc.stampAndSign ? (
+                                                    <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/stamps/${loc.stampAndSign}`} target="_blank" rel="noreferrer">
+                                                        Stamp & Sign
                                                     </a>
-                                                )}
-                                                {loc.signature && (
-                                                    <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/signatures/${loc.signature}`} target="_blank" rel="noreferrer">
-                                                        Sign
-                                                    </a>
-                                                )}
-                                                {!loc.stamp && !loc.signature && (
+                                                ) : (
                                                     <span className="text-gray-400">None</span>
                                                 )}
                                             </div>

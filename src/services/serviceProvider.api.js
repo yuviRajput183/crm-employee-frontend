@@ -9,7 +9,7 @@ export const apiAddServiceProvider = async (formData) => {
         formData,
         {
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'multipart/form-data',
                 'Authorization': `Bearer ${token}`
             },
             withCredentials: true
@@ -52,7 +52,7 @@ export const apiUpdateServiceProvider = async ({ formData, serviceProviderId }) 
         formData,
         {
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'multipart/form-data',
                 'Authorization': `Bearer ${token}`
             },
             withCredentials: true

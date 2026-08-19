@@ -67,6 +67,26 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/admin/department/ListDepartment'))
     },
     {
+        path: "add_product",
+        name: "Add Product",
+        component: lazy(() => import('@/pages/admin/product/AddProduct'))
+    },
+    {
+        path: "list_product",
+        name: "List Product",
+        component: lazy(() => import('@/pages/admin/product/ListProduct'))
+    },
+    {
+        path: "add_sub_product",
+        name: "Add Sub Product",
+        component: lazy(() => import('@/pages/admin/product/AddSubProduct'))
+    },
+    {
+        path: "list_sub_product",
+        name: "List Sub Product",
+        component: lazy(() => import('@/pages/admin/product/ListSubProduct'))
+    },
+    {
         path: "add_designation",
         name: "Add Designation",
         component: lazy(() => import('@/pages/admin/designation/AddDesignation'))
@@ -115,6 +135,41 @@ export const adminRoutes = [
         path: "edit_service_provider/:id",
         name: "Edit Service Provider",
         component: lazy(() => import('@/pages/admin/serviceProvider/AddServiceProvider'))
+    },
+    {
+        path: "add_channel_partner_verification",
+        name: "Verify Channel Partner",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerVerification'))
+    },
+    {
+        path: "add_channel_partner",
+        name: "Add Channel Partner",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartner'))
+    },
+    {
+        path: "add_channel_partner_business",
+        name: "Business Verification",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerBusiness'))
+    },
+    {
+        path: "add_channel_partner_bank",
+        name: "Bank Account Verification",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerBank'))
+    },
+    {
+        path: "add_channel_partner_documents",
+        name: "Document Upload",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerDocuments'))
+    },
+    {
+        path: "list_channel_partner",
+        name: "List Channel Partner",
+        component: lazy(() => import('@/pages/admin/channelPartner/ListChannelPartner'))
+    },
+    {
+        path: "review_channel_partner/:id",
+        name: "Review Channel Partner",
+        component: lazy(() => import('@/pages/admin/channelPartner/ReviewChannelPartner'))
     },
     {
         path: "add_bank",

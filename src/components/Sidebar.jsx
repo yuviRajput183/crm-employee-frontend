@@ -12,16 +12,24 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 
 const sidebarMenuList = [
-    { id: 1, title: "Dashboard", path: "/admin/dashboard", icon: <Monitor /> },
-    { id: 2, title: "Add Lead", path: "/admin/add_lead", icon: <NotebookPen /> },
-    { id: 3, title: "New Lead", path: "/admin/new_leads", icon: <LayoutDashboard /> },
-    { id: 4, title: "My Lead", path: "/admin/my_leads", icon: <ChartNoAxesCombined /> },
-    { id: 5, title: "Advisor Payout", path: "/admin/advisor_payout", icon: <NotebookPen /> },
-    { id: 6, title: "Invoices", path: "/admin/invoices", icon: <NotebookPen /> },
-    { id: 7, title: "Receivables", path: "/admin/receivables_payout", icon: <NotebookPen /> },
-    { id: 8, title: "Payables", path: "/admin/payable_payout", icon: <NotebookPen /> },
-    { id: 9, title: "Delete Attachments", path: "/admin/delete_attachments", icon: <ChartNoAxesCombined /> },
-    { id: 10, title: "Reports", path: "/admin/reports", icon: <NotebookPen /> },
+    { id: 1, title: "Dashboard", path: "/admin/dashboard", icon: <Monitor />, subList: [] },
+    {
+        id: 2, title: "Sales", icon: <NotebookPen />, subList: [
+            { id: 21, title: "Add Lead", path: "/admin/add_lead", icon: <NotebookPen /> },
+            { id: 22, title: "New Lead", path: "/admin/new_leads", icon: <LayoutDashboard /> },
+            { id: 23, title: "My Lead", path: "/admin/my_leads", icon: <ChartNoAxesCombined /> },
+        ]
+    },
+    {
+        id: 3, title: "Accounts", icon: <BriefcaseBusiness />, subList: [
+            { id: 31, title: "Advisor Payout", path: "/admin/advisor_payout", icon: <NotebookPen /> },
+            { id: 32, title: "Invoices", path: "/admin/invoices", icon: <NotebookPen /> },
+            { id: 33, title: "Receivables", path: "/admin/receivables_payout", icon: <NotebookPen /> },
+            { id: 34, title: "Payables", path: "/admin/payable_payout", icon: <NotebookPen /> },
+        ]
+    },
+    { id: 9, title: "Delete Attachments", path: "/admin/delete_attachments", icon: <ChartNoAxesCombined />, subList: [] },
+    { id: 10, title: "Reports", path: "/admin/reports", icon: <NotebookPen />, subList: [] },
 ]
 
 // sidebar menu for admin only
@@ -57,6 +65,18 @@ const masterMenuList = [
         ]
     },
     {
+        id: 5.5, title: "Product", icon: <LaptopMinimal />, subList: [
+            { id: 1, title: "Add Product", path: "/admin/add_product", icon: <LaptopMinimal /> },
+            { id: 2, title: "List Product", path: "/admin/list_product", icon: <LaptopMinimal /> },
+        ]
+    },
+    {
+        id: 5.6, title: "Sub Product", icon: <LaptopMinimal />, subList: [
+            { id: 1, title: "Add Sub Product", path: "/admin/add_sub_product", icon: <LaptopMinimal /> },
+            { id: 2, title: "List Sub Product", path: "/admin/list_sub_product", icon: <LaptopMinimal /> },
+        ]
+    },
+    {
         id: 6, title: "Designation", icon: <LaptopMinimal />, subList: [
             { id: 1, title: "Add Designation", path: "/admin/add_designation", icon: <LaptopMinimal /> },
             { id: 2, title: "List Designation", path: "/admin/list_designation", icon: <LaptopMinimal /> },
@@ -78,6 +98,12 @@ const masterMenuList = [
         id: 7.6, title: "Service Provider", icon: <ShieldHalf />, subList: [
             { id: 1, title: "Add Service Provider", path: "/admin/add_service_provider", icon: <Landmark /> },
             { id: 2, title: "List Service Provider", path: "/admin/list_service_provider", icon: <Landmark /> },
+        ]
+    },
+    {
+        id: 7.7, title: "Channel Partner", icon: <ShieldHalf />, subList: [
+            { id: 1, title: "Add Channel Partner", path: "/admin/add_channel_partner_verification", icon: <Landmark /> },
+            { id: 2, title: "List Channel Partner", path: "/admin/list_channel_partner", icon: <Landmark /> },
         ]
     },
     {
@@ -138,18 +164,40 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
 
             <div>
                 {!isMasterOpen && sidebarMenuList.map((menu) => (
-                    <div
-                        key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
-                        onClick={() => { onMenuClick(); navigate(menu.path) }}
-                    >
-                        {menu.icon}
-                        <h1>{menu.title}</h1>
-                    </div>
+                    menu.subList && menu.subList.length > 0 ? (
+                        <div key={menu.id}>
+                            <div
+                                onClick={() => toggleMenu(menu.id)}
+                                className={`flex gap-2 items-center p-4 text-gray-100 hover:bg-black border-b border-gray-700 bg-gray-800`}
+                            >
+                                {menu.icon}
+                                <h1>{menu.title}</h1>
+                                <span className=' ml-auto text-xs'>▼</span>
+                            </div>
+                            {openMenus[menu.id] && menu.subList.map((sub) => (
+                                <div
+                                    key={sub.id} className={`pl-5 text-[12px] flex gap-2 items-center p-3 text-white hover:bg-black ${location.pathname === sub.path ? 'bg-black' : 'bg-gray-800'}`}
+                                    onClick={() => { onMenuClick(); navigate(sub.path) }}
+                                >
+                                    {sub.icon}
+                                    <h3>{sub.title}</h3>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div
+                            key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
+                            onClick={() => { onMenuClick(); navigate(menu.path) }}
+                        >
+                            {menu.icon}
+                            <h1>{menu.title}</h1>
+                        </div>
+                    )
                 ))}
 
                 {isMasterOpen && masterMenuList.filter((menu) => {
-                    // Hide these 3 menus if not owner (i.e., admin)
-                    if (!isOwner && ["Department", "Designation", "City", "Company Profile", "Backup Database"].includes(menu.title)) {
+                    // Hide these menus if not owner (i.e., admin)
+                    if (!isOwner && ["Department", "Product", "Sub Product", "Designation", "City", "Company Profile", "Backup Database"].includes(menu.title)) {
                         return false;
                     }
                     return true;

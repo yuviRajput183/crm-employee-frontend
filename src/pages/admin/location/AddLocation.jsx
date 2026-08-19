@@ -53,8 +53,7 @@ const AddLocation = () => {
 
     const { mutateAsync, isLoading, isError, error } = locationId ? updateLocation : addLocation;
 
-    const [stampFile, setStampFile] = useState(null);
-    const [signFile, setSignFile] = useState(null);
+    const [stampAndSignFile, setStampAndSignFile] = useState(null);
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -107,11 +106,8 @@ const AddLocation = () => {
             formData.append(key, data[key] || "");
         });
 
-        if (stampFile) {
-            formData.append("stamp", stampFile);
-        }
-        if (signFile) {
-            formData.append("sign", signFile);
+        if (stampAndSignFile) {
+            formData.append("stampAndSign", stampAndSignFile);
         }
 
         try {
@@ -343,58 +339,28 @@ const AddLocation = () => {
                         />
                     </div>
 
-                    <h1 className="text-red-600 font-semibold py-4 border-b-2 border-black">Documents (Stamp & Signature)</h1>
+                    <h1 className="text-red-600 font-semibold py-4 border-b-2 border-black">Document (Stamp & Signature)</h1>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border-b-2 pb-2 border-black mt-4">
                         <FormItem className="flex flex-col gap-1">
-                            <FormLabel>Stamp</FormLabel>
+                            <FormLabel>Stamp & Signature</FormLabel>
                             <FormControl>
                                 <div>
                                     <Input
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) => setStampFile(e.target.files?.[0] || null)}
+                                        onChange={(e) => setStampAndSignFile(e.target.files?.[0] || null)}
                                     />
-                                    {locationData?.data?.data?.stamp && !stampFile && (
+                                    {locationData?.data?.data?.stampAndSign && !stampAndSignFile && (
                                         <div className="mt-2">
-                                            <p className="text-sm font-bold text-gray-500 mb-1">Current Stamp:</p>
+                                            <p className="text-sm font-bold text-gray-500 mb-1">Current Document:</p>
                                             <a
-                                                href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/stamps/${locationData.data.data.stamp}`}
+                                                href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/stamps/${locationData.data.data.stampAndSign}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
                                                 <img
-                                                    src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/stamps/${locationData.data.data.stamp}`}
-                                                    alt="Current Stamp"
-                                                    className="mt-2 border rounded w-[150px] h-[150px] object-contain"
-                                                    onError={(e) => { e.target.style.display = 'none'; }}
-                                                />
-                                            </a>
-                                        </div>
-                                    )}
-                                </div>
-                            </FormControl>
-                        </FormItem>
-
-                        <FormItem className="flex flex-col gap-1">
-                            <FormLabel>Signature</FormLabel>
-                            <FormControl>
-                                <div>
-                                    <Input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => setSignFile(e.target.files?.[0] || null)}
-                                    />
-                                    {locationData?.data?.data?.signature && !signFile && (
-                                        <div className="mt-2">
-                                            <p className="text-sm font-bold text-gray-500 mb-1">Current Signature:</p>
-                                            <a
-                                                href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/signatures/${locationData.data.data.signature}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                <img
-                                                    src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/signatures/${locationData.data.data.signature}`}
-                                                    alt="Current Signature"
+                                                    src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/stamps/${locationData.data.data.stampAndSign}`}
+                                                    alt="Current Stamp & Signature"
                                                     className="mt-2 border rounded w-[150px] h-[150px] object-contain"
                                                     onError={(e) => { e.target.style.display = 'none'; }}
                                                 />

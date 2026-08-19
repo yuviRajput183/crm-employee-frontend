@@ -48,6 +48,7 @@ const ListServiceProvider = () => {
                                 <TableHead className="text-white">Legal Name</TableHead>
                                 <TableHead className="text-white">Type</TableHead>
                                 <TableHead className="text-white">State</TableHead>
+                                <TableHead className="text-white">Location</TableHead>
                                 <TableHead className="text-white">GSTIN</TableHead>
                                 <TableHead className="text-white">Code</TableHead>
                                 <TableHead className="text-white">Billing Format</TableHead>
@@ -70,9 +71,16 @@ const ListServiceProvider = () => {
                                             {prov.state}
                                             {prov.stateCode && ` (${prov.stateCode})`}
                                         </TableCell>
+                                        <TableCell>{prov.location?.name || "N/A"}</TableCell>
                                         <TableCell>{prov.gstin || "N/A"}</TableCell>
                                         <TableCell>{prov.code || "N/A"}</TableCell>
-                                        <TableCell>{prov.billingFormat || "N/A"}</TableCell>
+                                        <TableCell>
+                                            {prov.billingFormat ? (
+                                                <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '')}/${prov.billingFormat}`} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                                                    View Document
+                                                </a>
+                                            ) : "N/A"}
+                                        </TableCell>
                                         <TableCell>
                                             <Button
                                                 onClick={() => navigate(`/admin/edit_service_provider/${prov?._id}`)}
@@ -85,7 +93,7 @@ const ListServiceProvider = () => {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center">No Service Providers found</TableCell>
+                                    <TableCell colSpan={9} className="text-center">No Service Providers found</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
