@@ -450,5 +450,35 @@ export const adminRoutes = [
         path: "lead_download",
         name: "Lead Download",
         component: lazy(() => import('@/components/shared/LeadDownload'))
+    },
+    {
+        path: "account_add_lead",
+        name: "Add Account Lead",
+        component: lazy(() => import('@/pages/admin/accounts/AddAccountLead'))
+    },
+    {
+        path: "account_in_progress_leads",
+        name: "In Progress Account Leads",
+        component: lazy(() => import('@/pages/admin/accounts/InProgressAccountLeads'))
+    },
+    {
+        path: "account_closed_leads",
+        name: "Closed Account Leads",
+        component: lazy(() => import('@/pages/admin/accounts/ClosedAccountLeads'))
+    },
+    {
+        path: "account_edit_lead/:id",
+        name: "Edit Account Lead",
+        component: lazy(() => import('@/pages/admin/accounts/EditAccountLead'))
+    },
+    {
+        path: "lead_stages/:id",
+        name: "Lead Stages",
+        component: lazy(() => import('@/pages/admin/accounts/LeadStages'))
+    },
+    {
+        path: "case_search",
+        name: "Case Search",
+        component: lazy(() => import('@/pages/admin/caseSearch/CaseSearch'))
     }
 ]

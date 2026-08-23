@@ -22,6 +22,9 @@ const sidebarMenuList = [
     },
     {
         id: 3, title: "Accounts", icon: <BriefcaseBusiness />, subList: [
+            { id: 35, title: "Add New Lead", path: "/admin/account_add_lead", icon: <NotebookPen /> },
+            { id: 36, title: "In Progress Leads", path: "/admin/account_in_progress_leads", icon: <NotebookPen /> },
+            { id: 37, title: "Closed Leads", path: "/admin/account_closed_leads", icon: <NotebookPen /> },
             { id: 31, title: "Advisor Payout", path: "/admin/advisor_payout", icon: <NotebookPen /> },
             { id: 32, title: "Invoices", path: "/admin/invoices", icon: <NotebookPen /> },
             { id: 33, title: "Receivables", path: "/admin/receivables_payout", icon: <NotebookPen /> },

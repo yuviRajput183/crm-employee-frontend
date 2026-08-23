@@ -146,5 +146,10 @@ export const employeeRoutes = [
         path: "change_password",
         name: "Change Password",
         component: lazy(() => import('@/pages/ChangePassword'))
+    },
+    {
+        path: "case_search",
+        name: "Case Search",
+        component: lazy(() => import('@/pages/admin/caseSearch/CaseSearch'))
     }
 ]
