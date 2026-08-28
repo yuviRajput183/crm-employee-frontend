@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert } from '@/components/ui/alert';
+import ChannelPartnerStepper from './components/ChannelPartnerStepper';
 
 const AddChannelPartnerBank = () => {
     const location = useLocation();
@@ -28,31 +29,39 @@ const AddChannelPartnerBank = () => {
         setError('');
         setIsVerifying(true);
         
-        // Mock verification
+        // Dummy penny drop verification
         setTimeout(() => {
+            setIsVerifying(false);
             if (accountNo.length >= 8 && ifsc.length === 11) {
                 setIsVerified(true);
             } else {
-                setError('Invalid bank details. (Hint: Account > 8 digits, IFSC = 11 chars)');
+                setError('Verification failed. Invalid Account No or IFSC.');
             }
-            setIsVerifying(false);
         }, 1500);
     };
 
     const handleProceed = () => {
         if (isVerified) {
-            navigate('/admin/add_channel_partner_documents', { 
-                state: { ...previousState, accountNo, ifsc } 
-            });
+            navigate('/admin/add_channel_partner_documents', { state: { ...previousState, accountNo, ifsc } });
         }
     };
 
     return (
-        <div className="p-4 bg-white rounded shadow max-w-3xl mx-auto mt-6">
-            <h1 className="text-2xl font-bold border-b pb-2 mb-4">Bank Account Verification</h1>
-            <p className="text-gray-600 mb-6">Please provide the bank details for payouts. We will verify the account via penny drop.</p>
+        <div className="px-6 py-6 bg-white rounded shadow min-h-screen">
+            <div className="flex gap-2 items-center pb-4 border-b-2 mb-6">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600">
+                    CP
+                </div>
+                <h1 className="text-2xl font-bold">Add Channel Partner</h1>
+            </div>
 
-            <div className="border p-4 rounded bg-gray-50 mb-6">
+            <ChannelPartnerStepper currentStage={5} />
+
+            <div className="mt-16 bg-gray-50 p-6 rounded shadow border max-w-4xl mx-auto">
+                <h2 className="text-xl font-semibold mb-2">Bank Account Verification</h2>
+                <p className="text-gray-600 mb-6">Please provide the bank details for payouts. We will verify the account via penny drop.</p>
+
+                <div className="border p-4 rounded bg-white mb-6 shadow-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium">Account Number <span className="text-red-500">*</span></label>
@@ -91,8 +100,8 @@ const AddChannelPartnerBank = () => {
                 {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
                 {isVerified && <Alert className="bg-green-100 text-green-800 border-green-300 py-2 mt-4">✓ Bank account verified successfully (Name Matched: TEST USER)</Alert>}
             </div>
-
-            <div className="flex justify-end">
+            
+            <div className="mt-8 flex justify-end">
                 <Button 
                     onClick={handleProceed} 
                     disabled={!isVerified}
@@ -100,6 +109,7 @@ const AddChannelPartnerBank = () => {
                 >
                     Proceed to Document Upload
                 </Button>
+            </div>
             </div>
         </div>
     );

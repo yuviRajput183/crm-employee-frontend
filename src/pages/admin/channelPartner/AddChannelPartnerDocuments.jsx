@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import ChannelPartnerStepper from './components/ChannelPartnerStepper';
 
 const AddChannelPartnerDocuments = () => {
     const location = useLocation();
@@ -44,7 +45,7 @@ const AddChannelPartnerDocuments = () => {
 
     const handleMockRejection = () => {
         setStatus('REJECTED');
-        setRejectionComment('The PAN card image is blurry. Please upload a clearer image.');
+        setRejectionComment('PAN image is blurry, please re-upload.');
     };
 
     const handleFinish = () => {
@@ -55,9 +56,19 @@ const AddChannelPartnerDocuments = () => {
     const isLocked = status === 'SUBMITTED';
 
     return (
-        <div className="p-4 bg-white rounded shadow max-w-4xl mx-auto mt-6">
+        <div className="px-6 py-6 bg-white rounded shadow min-h-screen">
+            <div className="flex gap-2 items-center pb-4 border-b-2 mb-6">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600">
+                    CP
+                </div>
+                <h1 className="text-2xl font-bold">Add Channel Partner</h1>
+            </div>
+
+            <ChannelPartnerStepper currentStage={6} />
+
+            <div className="mt-16 bg-gray-50 p-6 rounded shadow border max-w-4xl mx-auto">
             <div className="flex justify-between items-center border-b pb-2 mb-4">
-                <h1 className="text-2xl font-bold">Document Upload</h1>
+                <h2 className="text-xl font-bold">Document Upload</h2>
                 
                 {/* Developer testing toggle */}
                 {status === 'SUBMITTED' && (
@@ -148,6 +159,7 @@ const AddChannelPartnerDocuments = () => {
                         {status === 'REJECTED' ? 'Resubmit Documents' : 'Submit All Documents'}
                     </Button>
                 )}
+            </div>
             </div>
         </div>
     );

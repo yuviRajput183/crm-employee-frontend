@@ -49,7 +49,14 @@ const LeadStages = () => {
     stateName: '',
     cityId: '',
     bankerId: '',
-    confirmationReceived: ''
+    confirmationReceived: '',
+    invoiceType: '',
+    calculationSameAsReported: '',
+    roundOffDifference: '',
+    calculatedCPPercent: 0,
+    calculatedCPAmount: 0,
+    calculatedSelfPercent: 0,
+    calculatedSelfAmount: 0
   });
 
   const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
@@ -99,6 +106,11 @@ const LeadStages = () => {
           // Pre-fill Stage 4 default values from the lead model
           updated.reportedPayoutPercentage = fetchedLead.reportedPayoutPercentage || '';
           updated.totalPayoutAmount = fetchedLead.totalPayoutAmount || '';
+
+          // Stage 5 auto-selections
+          if (["CASE_FOUND", "Ready to report", "Invoiced"].includes(fetchedLead.status)) {
+            updated.invoiceType = "Standard";
+          }
           
           return updated;
         });
@@ -503,7 +515,184 @@ const LeadStages = () => {
           </form>
         )}
 
-        {currentStage > 4 && (
+        {currentStage === 5 && (
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!formData.invoiceType || !formData.calculationSameAsReported) {
+              alert("Please complete the required fields");
+              return;
+            }
+            if (formData.calculationSameAsReported === "No" && !formData.roundOffDifference) {
+              alert("Please select if there is a round-off difference");
+              return;
+            }
+            
+            try {
+              const token = localStorage.getItem('token');
+              const res = await axios.post(`${baseURL}/lead-stages/${id}/sp-invoice/submit`, {
+                invoiceType: formData.invoiceType,
+                calculationSameAsReported: formData.calculationSameAsReported === "Yes",
+                roundOffDifference: formData.roundOffDifference === "Yes",
+                calculationFile: formData.calculationFile, // populated after upload
+                reported: {
+                  channelPartnerPercentage: lead?.reportedPayoutPercentage || 0,
+                  channelPartnerAmount: lead?.totalPayoutAmount || 0,
+                  selfPercentage: lead?.selfPercentage || 0,
+                  selfAmount: lead?.selfAmount || 0
+                },
+                calculated: {
+                  channelPartnerPercentage: formData.calculatedCPPercent,
+                  channelPartnerAmount: formData.calculatedCPAmount,
+                  selfPercentage: formData.calculatedSelfPercent,
+                  selfAmount: formData.calculatedSelfAmount
+                }
+              }, { headers: { Authorization: `Bearer ${token}` } });
+              
+              if (res.data.success) {
+                alert(res.data.data.status === "Recovery Required" ? "Recovery Request created!" : "SP Invoice saved successfully!");
+                fetchLeadDetails();
+              }
+            } catch (error) {
+              console.error(error);
+              alert(error.response?.data?.message || "Error saving SP Invoice");
+            }
+          }} className="space-y-6">
+            <h2 className="text-xl font-semibold mb-4">SP Invoices</h2>
+            
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Invoice Type</label>
+              <Select 
+                value={formData.invoiceType} 
+                onValueChange={(val) => setFormData(prev => ({ ...prev, invoiceType: val }))}
+              >
+                  <SelectTrigger className="w-full bg-white">
+                      <SelectValue placeholder="Select Option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="Standard">Standard</SelectItem>
+                      <SelectItem value="On Confirmation" disabled={!lead?.confirmationStageId || lead?.confirmationStageId?.confirmationReceived !== 'Yes'}>On Confirmation</SelectItem>
+                  </SelectContent>
+              </Select>
+              {(!lead?.confirmationStageId || lead?.confirmationStageId?.confirmationReceived !== 'Yes') && (
+                <p className="text-xs text-red-500 mt-1">On Confirmation invoice cannot be raised because confirmation has not been received.</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1 border p-4 rounded bg-gray-50">
+              <label className="text-sm font-medium">Upload Calculation Received (.xlsx, .xls)</label>
+              <input type="file" accept=".xlsx,.xls" onChange={async (e) => {
+                 const file = e.target.files[0];
+                 if (!file) return;
+                 const formDataUpload = new FormData();
+                 formDataUpload.append("excel", file);
+                 try {
+                   const token = localStorage.getItem('token');
+                   const res = await axios.post(`${baseURL}/lead-stages/${id}/sp-invoice/calculate`, formDataUpload, {
+                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                   });
+                   if (res.data.success) {
+                      const calc = res.data.data.calculated;
+                      setFormData(prev => ({
+                        ...prev,
+                        calculationFile: { fileName: res.data.data.fileName, filePath: res.data.data.filePath },
+                        calculatedCPPercent: calc.channelPartnerPercentage,
+                        calculatedCPAmount: calc.channelPartnerAmount,
+                        calculatedSelfPercent: calc.selfPercentage,
+                        calculatedSelfAmount: calc.selfAmount
+                      }));
+                      alert("Calculation loaded successfully");
+                   }
+                 } catch (err) {
+                   alert("Invalid calculation file. Please upload the correct calculation format.");
+                 }
+              }} className="mt-2" />
+            </div>
+
+            {formData.calculationFile && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Calculation Comparison</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border p-4 rounded">
+                    <h4 className="font-medium mb-2">REPORTED</h4>
+                    <p className="text-sm text-gray-600">CP %: {lead?.reportedPayoutPercentage || 0}</p>
+                    <p className="text-sm text-gray-600">CP Amount: ₹{lead?.totalPayoutAmount || 0}</p>
+                    <p className="text-sm text-gray-600">Self %: {lead?.selfPercentage || 0}</p>
+                    <p className="text-sm text-gray-600">Self Amount: ₹{lead?.selfAmount || 0}</p>
+                  </div>
+                  <div className="border p-4 rounded">
+                    <h4 className="font-medium mb-2">CALCULATED</h4>
+                    <div className="flex flex-col gap-2">
+                       <label className="text-xs">CP %</label>
+                       <input type="number" step="0.01" value={formData.calculatedCPPercent} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedCPPercent: e.target.value}))} className="border p-1" />
+                       <label className="text-xs">CP Amount (₹)</label>
+                       <input type="number" value={formData.calculatedCPAmount} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedCPAmount: e.target.value}))} className="border p-1" />
+                       <label className="text-xs">Self %</label>
+                       <input type="number" step="0.01" value={formData.calculatedSelfPercent} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedSelfPercent: e.target.value}))} className="border p-1" />
+                       <label className="text-xs">Self Amount (₹)</label>
+                       <input type="number" value={formData.calculatedSelfAmount} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedSelfAmount: e.target.value}))} className="border p-1" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 mt-4">
+                  <label className="text-sm font-medium">Is calculation same as reported?</label>
+                  <Select 
+                    value={formData.calculationSameAsReported} 
+                    onValueChange={(val) => {
+                      setFormData(prev => {
+                         const updated = { ...prev, calculationSameAsReported: val };
+                         if (val === 'Yes') {
+                            updated.calculatedCPPercent = lead?.reportedPayoutPercentage || 0;
+                            updated.calculatedCPAmount = lead?.totalPayoutAmount || 0;
+                            updated.calculatedSelfPercent = lead?.selfPercentage || 0;
+                            updated.calculatedSelfAmount = lead?.selfAmount || 0;
+                         }
+                         return updated;
+                      });
+                    }}
+                  >
+                      <SelectTrigger className="w-full bg-white">
+                          <SelectValue placeholder="Select Option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-1 mt-4">
+                  <label className="text-sm font-medium">Is there a round off difference?</label>
+                  <Select 
+                    value={formData.roundOffDifference} 
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, roundOffDifference: val }))}
+                  >
+                      <SelectTrigger className="w-full bg-white">
+                          <SelectValue placeholder="Select Option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.calculationSameAsReported === "No" && formData.roundOffDifference === "No" && (
+                   <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded">
+                     <p className="text-sm text-orange-800 font-medium">Warning: Calculation differs and is not a round-off.</p>
+                     <p className="text-xs text-orange-700 mt-1">The system will dynamically check the Advisor Payout status on submission and either update the payout or trigger an Admin Recovery Request.</p>
+                   </div>
+                )}
+                
+                <button type="submit" className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                  Save & Continue
+                </button>
+              </div>
+            )}
+          </form>
+        )}
+
+        {currentStage > 5 && (
           <div className="text-center py-10">
             <h2 className="text-xl text-gray-500 font-medium">Stage {currentStage} is active. Further form implementation pending.</h2>
           </div>

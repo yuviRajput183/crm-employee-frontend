@@ -147,6 +147,11 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartner'))
     },
     {
+        path: "add_channel_partner_aadhaar",
+        name: "Aadhaar Verification",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerAadhaar'))
+    },
+    {
         path: "add_channel_partner_business",
         name: "Business Verification",
         component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerBusiness'))
