@@ -9,7 +9,7 @@ import ChannelPartnerStepper from './components/ChannelPartnerStepper';
 const AddChannelPartnerAadhaar = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { mobile, email, channelPartnerId, pan } = location.state || {};
+    const { mobile, email, channelPartnerId, pan, authPan } = location.state || {};
 
     const [panDetails, setPanDetails] = useState(null);
     const [aadhaarDetails, setAadhaarDetails] = useState(null);
@@ -215,7 +215,7 @@ const AddChannelPartnerAadhaar = () => {
 
             if (res.data && res.data.success) {
                 setIsAadhaarConfirmed(true);
-                navigate('/admin/add_channel_partner_business', { state: { mobile, email, channelPartnerId, pan } });
+                navigate('/admin/add_channel_partner_business', { state: { mobile, email, channelPartnerId, pan, authPan } });
             }
         } catch (err) {
             setError(err?.response?.data?.message || 'Aadhaar confirmation failed. Please try again.');
@@ -421,7 +421,14 @@ const AddChannelPartnerAadhaar = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 flex justify-end">
+                <div className="mt-8 flex justify-between items-center">
+                    <Button 
+                        variant="outline"
+                        onClick={() => navigate('/admin/add_channel_partner', { state: { mobile, email, channelPartnerId, pan, authPan } })}
+                        className="px-8"
+                    >
+                        Back
+                    </Button>
                     <Button 
                         onClick={handleConfirmAndContinue} 
                         disabled={!isAadhaarVerified || isConfirming || isAadhaarConfirmed}

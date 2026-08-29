@@ -42,11 +42,11 @@ export const apiGetVerificationStatus = async (mobile) => {
     return await axios.get(`${baseURL}/otp/channel-partner/status?mobile=${mobile}`);
 };
 
-export const apiVerifyPan = async (channelPartnerId, pan) => {
+export const apiVerifyPan = async (channelPartnerId, pan, isAuthPan = false) => {
     const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/channel-partners/${channelPartnerId}/pan/verify`, 
-        { pan }, 
+        { pan, isAuthPan }, 
         { 
             headers: {
                 'Authorization': `Bearer ${token}`
