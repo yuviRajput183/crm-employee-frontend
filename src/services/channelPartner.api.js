@@ -56,11 +56,24 @@ export const apiVerifyPan = async (channelPartnerId, pan) => {
     );
 };
 
-export const apiVerifyAadhaarAPI = async (channelPartnerId, aadhaarNumber) => {
+export const apiInitAadhaarSDK = async (channelPartnerId) => {
+    const token = localStorage.getItem('token');
+    return await axios.get(
+        `${baseURL}/channel-partners/${channelPartnerId}/aadhaar/init`, 
+        { 
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true 
+        }
+    );
+};
+
+export const apiVerifyAadhaarAPI = async (channelPartnerId, clientId) => {
     const token = localStorage.getItem('token');
     return await axios.post(
         `${baseURL}/channel-partners/${channelPartnerId}/aadhaar/verify`, 
-        { aadhaarNumber }, 
+        { clientId }, 
         { 
             headers: {
                 'Authorization': `Bearer ${token}`

@@ -15,7 +15,7 @@ const AddChannelPartnerBusiness = () => {
         navigate('/admin/add_channel_partner_bank', { state: { mobile, email, pan, aadhaar, channelPartnerId } });
     };
 
-    if (!pan || !aadhaar) {
+    if (!pan) {
         navigate('/admin/add_channel_partner_aadhaar', { state: { mobile, email, channelPartnerId, pan } });
         return null;
     }
