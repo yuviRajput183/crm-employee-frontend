@@ -12,7 +12,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+  const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
 
   const fetchCaseDetails = async () => {
     if (!accountLeadId) return;

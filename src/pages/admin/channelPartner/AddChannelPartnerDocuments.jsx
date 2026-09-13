@@ -11,7 +11,7 @@ const AddChannelPartnerDocuments = () => {
     const navigate = useNavigate();
     const previousState = location.state || {};
     const channelPartnerId = previousState.channelPartnerId;
-    const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3000/api/v1' : window.location.origin + '/api/v1');
 
     const [partnerDetails, setPartnerDetails] = useState(previousState.partnerDetails || {});
     const [docs, setDocs] = useState({});
@@ -315,7 +315,7 @@ const DocUploadRow = ({ title, docKey, required, docs, docState, handleFileChang
                                 </button>
                             )}
                             {docState?.url ? (
-                                <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}${docState.url}`} target="_blank" rel="noreferrer" className="hover:text-blue-500">
+                                <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin)}${docState.url}`} target="_blank" rel="noreferrer" className="hover:text-blue-500">
                                     <Download size={16} />
                                 </a>
                             ) : (
@@ -332,7 +332,7 @@ const DocUploadRow = ({ title, docKey, required, docs, docState, handleFileChang
                     <div className="mt-3 bg-[#fdf2f2] border border-red-200 p-3 rounded text-sm text-red-700">
                         <div className="font-semibold mb-1">Rejection Reason: {remark}</div>
                         {docState?.url && (
-                            <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}${docState.url}`} target="_blank" rel="noreferrer" className="text-gray-600 underline text-xs mt-2 inline-block hover:text-gray-900">
+                            <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin)}${docState.url}`} target="_blank" rel="noreferrer" className="text-gray-600 underline text-xs mt-2 inline-block hover:text-gray-900">
                                 Download Previously Uploaded File
                             </a>
                         )}

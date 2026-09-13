@@ -11,7 +11,7 @@ const AddChannelPartnerAgreement = () => {
     const previousState = location.state || {};
     const channelPartnerId = previousState.channelPartnerId;
     
-    const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3000/api/v1' : window.location.origin + '/api/v1');
 
     useEffect(() => {
         if (!channelPartnerId) {

@@ -83,7 +83,7 @@ const EditAccountLead = () => {
     const fetchDropdowns = async () => {
         try {
             const token = localStorage.getItem('token');
-            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+            const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
             const config = { headers: { Authorization: `Bearer ${token}` }, withCredentials: true };
 
             const [locRes, prodRes, bankRes, spRes] = await Promise.all([
@@ -105,7 +105,7 @@ const EditAccountLead = () => {
     const fetchLeadData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+            const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
             const res = await axios.get(`${baseURL}/account-leads/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -196,7 +196,7 @@ const EditAccountLead = () => {
         if (isReadOnly) return;
         try {
             const token = localStorage.getItem('token');
-            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+            const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
             const res = await axios.put(`${baseURL}/account-leads/${id}`, {
                 ...data,
                 reportedLoanAmount: Number(data.reportedLoanAmount),

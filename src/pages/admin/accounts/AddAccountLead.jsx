@@ -75,7 +75,7 @@ const AddAccountLead = () => {
     const fetchDropdowns = async () => {
         try {
             const token = localStorage.getItem('token');
-            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+            const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
             const config = { headers: { Authorization: `Bearer ${token}` }, withCredentials: true };
 
             const [locRes, prodRes, bankRes, spRes] = await Promise.all([
@@ -122,7 +122,7 @@ const AddAccountLead = () => {
     const onSubmit = async (data) => {
         try {
             const token = localStorage.getItem('token');
-            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+            const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
             const res = await axios.post(`${baseURL}/account-leads/create`, {
                 ...data,
                 reportedLoanAmount: Number(data.reportedLoanAmount),

@@ -18,7 +18,7 @@ const ClosedAccountLeads = () => {
     const fetchLeads = async () => {
         try {
             const token = localStorage.getItem('token');
-            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+            const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
             const res = await axios.get(`${baseURL}/account-leads/closed`, {
                 headers: { Authorization: `Bearer ${token}` }
             });

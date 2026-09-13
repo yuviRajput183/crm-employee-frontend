@@ -354,12 +354,12 @@ const AddLocation = () => {
                                         <div className="mt-2">
                                             <p className="text-sm font-bold text-gray-500 mb-1">Current Document:</p>
                                             <a
-                                                href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/stamps/${locationData.data.data.stampAndSign}`}
+                                                href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin)}/uploads/stamps/${locationData.data.data.stampAndSign}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
                                                 <img
-                                                    src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/uploads/stamps/${locationData.data.data.stampAndSign}`}
+                                                    src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin)}/uploads/stamps/${locationData.data.data.stampAndSign}`}
                                                     alt="Current Stamp & Signature"
                                                     className="mt-2 border rounded w-[150px] h-[150px] object-contain"
                                                     onError={(e) => { e.target.style.display = 'none'; }}

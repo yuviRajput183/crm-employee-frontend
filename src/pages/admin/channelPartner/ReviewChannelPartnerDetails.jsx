@@ -16,7 +16,7 @@ const ReviewChannelPartnerDetails = () => {
     const [status, setStatus] = useState('SUBMITTED');
     const [docStates, setDocStates] = useState({});
     
-    const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3000/api/v1' : window.location.origin + '/api/v1');
 
     useEffect(() => {
         if (!channelPartnerId) {
@@ -200,7 +200,7 @@ const DocReviewRow = ({ title, docKey, docState, onReview }) => {
                         {docState?.url ? docState.url.split('/').pop() : `${title}_Uploaded.pdf`}
                     </span>
                     {docState?.url ? (
-                        <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}${docState.url}`} target="_blank" rel="noreferrer" className="hover:text-blue-500">
+                        <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin)}${docState.url}`} target="_blank" rel="noreferrer" className="hover:text-blue-500">
                             <Download size={16} />
                         </a>
                     ) : (
