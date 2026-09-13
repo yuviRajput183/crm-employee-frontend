@@ -107,6 +107,7 @@ const masterMenuList = [
         id: 7.7, title: "Channel Partner", icon: <ShieldHalf />, subList: [
             { id: 1, title: "Add Channel Partner", path: "/admin/add_channel_partner_verification", icon: <Landmark /> },
             { id: 2, title: "List Channel Partner", path: "/admin/list_channel_partner", icon: <Landmark /> },
+            { id: 3, title: "Review Documents", path: "/admin/review_channel_partner_documents", icon: <Landmark /> },
         ]
     },
     {

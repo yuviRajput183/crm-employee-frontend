@@ -167,9 +167,29 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerDocuments'))
     },
     {
+        path: "add_channel_partner_documents_review",
+        name: "Document Review",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerDocumentsReview'))
+    },
+    {
+        path: "add_channel_partner_agreement",
+        name: "Agreement Generation",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerAgreement'))
+    },
+    {
+        path: "add_channel_partner_code_creation",
+        name: "Code Creation",
+        component: lazy(() => import('@/pages/admin/channelPartner/AddChannelPartnerCodeCreation'))
+    },
+    {
         path: "list_channel_partner",
         name: "List Channel Partner",
         component: lazy(() => import('@/pages/admin/channelPartner/ListChannelPartner'))
+    },
+    {
+        path: "view_channel_partner/:id",
+        name: "View Channel Partner",
+        component: lazy(() => import('@/pages/admin/channelPartner/ViewChannelPartner'))
     },
     {
         path: "review_channel_partner/:id",
@@ -485,5 +505,15 @@ export const adminRoutes = [
         path: "case_search",
         name: "Case Search",
         component: lazy(() => import('@/pages/admin/caseSearch/CaseSearch'))
+    },
+    {
+        path: "review_channel_partner_documents",
+        name: "Review Channel Partner Documents",
+        component: lazy(() => import('@/pages/admin/channelPartner/ReviewChannelPartnerList'))
+    },
+    {
+        path: "review_channel_partner_documents/:id",
+        name: "Review Channel Partner Documents Details",
+        component: lazy(() => import('@/pages/admin/channelPartner/ReviewChannelPartnerDetails'))
     }
 ]

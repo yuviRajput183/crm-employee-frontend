@@ -164,6 +164,11 @@ const AddChannelPartnerAadhaar = () => {
     };
 
     const handleConfirmAndContinue = async () => {
+        if (isAadhaarConfirmed) {
+            navigate('/admin/add_channel_partner_business', { state: { mobile, email, channelPartnerId, pan, authPan } });
+            return;
+        }
+
         if (!userConfirmed) {
             setError("Please confirm that the displayed details are correct before continuing.");
             return;
@@ -431,10 +436,10 @@ const AddChannelPartnerAadhaar = () => {
                     </Button>
                     <Button 
                         onClick={handleConfirmAndContinue} 
-                        disabled={!isAadhaarVerified || isConfirming || isAadhaarConfirmed}
+                        disabled={!isAadhaarVerified || isConfirming}
                         className="bg-green-600 hover:bg-green-700 text-white px-8"
                     >
-                        {isConfirming ? 'Confirming...' : (isAadhaarConfirmed ? 'Confirmed' : 'Confirm & Continue')}
+                        {isConfirming ? 'Confirming...' : (isAadhaarConfirmed ? 'Continue' : 'Confirm & Continue')}
                     </Button>
                 </div>
             </div>
