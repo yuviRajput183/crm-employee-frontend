@@ -82,6 +82,9 @@ const AddChannelPartnerVerification = () => {
         return () => clearInterval(interval);
     }, [mobileExpiryTime, mobileResendTime, emailExpiryTime, emailResendTime]);
 
+    const [currentStage, setCurrentStage] = useState(1);
+    const [partnerDetails, setPartnerDetails] = useState({});
+
     // On mobile input blur (or manual trigger), try fetching status
     const handleMobileBlur = async () => {
         if (!mobile || mobile.length < 10) return;
@@ -93,6 +96,8 @@ const AddChannelPartnerVerification = () => {
                 setIsMobileVerified(data.mobileVerified);
                 setIsEmailVerified(data.emailVerified);
                 if (data.email) setEmail(data.email);
+                if (data.currentStage) setCurrentStage(data.currentStage);
+                setPartnerDetails(data);
 
                 if (data.mobileOtpExpiresAt && !data.mobileVerified) {
                     setMobileExpiryTime(new Date(data.mobileOtpExpiresAt).getTime());
@@ -140,6 +145,8 @@ const AddChannelPartnerVerification = () => {
                 setIsMobileVerified(true);
                 setChannelPartnerId(data.channelPartnerId);
                 if (data.emailVerified) setIsEmailVerified(true);
+                if (data.currentStage) setCurrentStage(data.currentStage);
+                setPartnerDetails(data);
                 setMobileError(data.message);
                 return;
             }
@@ -231,7 +238,30 @@ const AddChannelPartnerVerification = () => {
 
     const handleProceed = () => {
         if (isMobileVerified && isEmailVerified) {
-            navigate('/admin/add_channel_partner', { state: { mobile, email, channelPartnerId } });
+            let nextRoute = '/admin/add_channel_partner';
+            
+            // Note: In backend, currentStage signifies what has been COMPLETED.
+            // 3: Email done -> PAN next
+            // 4: PAN done -> Aadhaar next
+            // 5: Aadhaar done -> Business next
+            // 6: Business done -> Bank next
+            // 7: Bank done -> Docs next
+            // 8: Docs done -> Agreement next
+            
+            switch(currentStage) {
+                case 1: nextRoute = '/admin/add_channel_partner'; break; 
+                case 2: nextRoute = '/admin/add_channel_partner'; break; 
+                case 3: nextRoute = '/admin/add_channel_partner'; break; // PAN is next
+                case 4: nextRoute = '/admin/add_channel_partner_aadhaar'; break; // Aadhaar is next
+                case 5: nextRoute = '/admin/add_channel_partner_business'; break; // Business is next
+                case 6: nextRoute = '/admin/add_channel_partner_bank'; break; // Bank is next
+                case 7: nextRoute = '/admin/add_channel_partner_documents'; break;
+                case 8: nextRoute = '/admin/add_channel_partner_documents_review'; break;
+                case 9: nextRoute = '/admin/add_channel_partner_agreement'; break;
+                case 10: nextRoute = '/admin/add_channel_partner_code_creation'; break;
+                default: nextRoute = '/admin/add_channel_partner'; break;
+            }
+            navigate(nextRoute, { state: { ...partnerDetails, mobile, email, channelPartnerId } });
         }
     };
 
@@ -381,13 +411,20 @@ const AddChannelPartnerVerification = () => {
                     )}
                 </div>
 
-                <div className="mt-8 flex justify-end">
+                <div className="mt-8 pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <Button 
+                        variant="outline"
+                        onClick={() => navigate('/admin/list_channel_partner')}
+                        className="px-8"
+                    >
+                        Back
+                    </Button>
                     <Button 
                         onClick={handleProceed} 
                         disabled={!isMobileVerified || !isEmailVerified}
                         className="bg-green-600 hover:bg-green-700 text-white px-8"
                     >
-                        Proceed to PAN Verification
+                        {currentStage > 1 ? 'Resume Onboarding' : 'Proceed to PAN Verification'}
                     </Button>
                 </div>
             </div>

@@ -22,6 +22,7 @@ const AddChannelPartnerBusiness = () => {
     
     // Form Inputs
     const [registrationType, setRegistrationType] = useState("");
+    // eslint-disable-next-line no-unused-vars
     const [panName, setPanName] = useState("");
     const [udyamNumberInput, setUdyamNumberInput] = useState("");
     const [mobileNumberInput, setMobileNumberInput] = useState("");
@@ -224,7 +225,6 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
     if (loading) return <div className="p-10 text-center">Loading Verification State...</div>;
 
     const { registrationType: regType, udyam, gst } = businessState;
-    const computedFirmName = udyam?.enterpriseName || gst?.legalName || gst?.businessName || panName || applicantName || "[Firm Name]";
     const actualFirmName = udyam?.enterpriseName || gst?.legalName || gst?.businessName;
     const firmNameNode = actualFirmName ? <> of <strong>{actualFirmName}</strong></> : null;
     
@@ -427,11 +427,17 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                             </div>
                                         );
                                     })()}
-                                    {udyam.certificateDocument?.url && (
-                                        <div className="col-span-1 sm:col-span-2 mt-2">
-                                            <strong>Certificate:</strong> <a href={udyam.certificateDocument.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">View/Download Document</a>
-                                        </div>
-                                    )}
+                                    {udyam.certificateDocument?.url && (() => {
+                                        const rootUrl = typeof baseURL !== 'undefined' ? baseURL.replace('/api/v1', '') : '';
+                                        const certUrl = udyam.certificateDocument.url.startsWith('http') 
+                                            ? udyam.certificateDocument.url 
+                                            : `${rootUrl}${udyam.certificateDocument.url}`;
+                                        return (
+                                            <div className="col-span-1 sm:col-span-2 mt-2">
+                                                <strong>Certificate:</strong> <a href={certUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">View/Download Document</a>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         )}
@@ -485,8 +491,10 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                             <option value="">Select GSTIN</option>
                                             {gst.gstins.map(g => {
                                                 const val = typeof g === 'string' ? g : g.gstin;
-                                                const label = typeof g === 'string' ? g : `${g.gstin} (${g.state} - ${g.active_status})`;
-                                                return <option key={val} value={val}>{label}</option>
+                                                const status = typeof g === 'string' ? '' : g.active_status;
+                                                const label = typeof g === 'string' ? g : `${g.gstin} (${g.state} - ${status})`;
+                                                const isInactive = status && status.toLowerCase() === 'inactive';
+                                                return <option key={val} value={val} disabled={isInactive}>{label}</option>
                                             })}
                                         </select>
                                         <Button disabled={actionLoading} onClick={() => verifyGst(gstinInput)}>Verify GST</Button>

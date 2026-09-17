@@ -84,6 +84,16 @@ const AddChannelPartnerAgreement = () => {
                         />
                     </div>
                 )}
+
+                <div className="mt-8 pt-4 border-t border-gray-200">
+                    <Button 
+                        variant="outline"
+                        onClick={() => navigate('/admin/add_channel_partner_documents_review', { state: previousState })}
+                        className="px-8"
+                    >
+                        Back
+                    </Button>
+                </div>
             </div>
         </div>
     );

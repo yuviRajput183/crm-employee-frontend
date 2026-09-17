@@ -105,19 +105,70 @@ const AddChannelPartnerDocuments = () => {
         });
         setDocStates(prev => ({ 
             ...prev, 
-            [docKey]: { ...prev[docKey], status: 'PENDING' } 
+            [docKey]: { ...prev[docKey], status: 'PENDING', url: null } 
         }));
     };
 
 
 
-    const handleSubmit = async () => {
+    const [showSubmitPopup, setShowSubmitPopup] = useState(false);
+
+    const handleSingleSubmit = async (docKey) => {
+        const file = docs[docKey];
+        if (!file) return;
+
+        try {
+            const formData = new FormData();
+            formData.append(docKey, file);
+            formData.append('isFinalSubmit', 'false');
+
+            setDocStates(prev => ({ 
+                ...prev, 
+                [docKey]: { ...prev[docKey], isUploading: true } 
+            }));
+
+            await axios.post(`${baseURL}/channel-partners/${channelPartnerId}/documents`, formData, {
+                headers: { 
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'multipart/form-data'
+                },
+                withCredentials: true
+            });
+
+            // Refetch to get the updated URL from backend
+            const res = await axios.get(`${baseURL}/channel-partners/${channelPartnerId}`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                withCredentials: true
+            });
+            const cp = res.data.data;
+            setPartnerDetails(cp);
+            if (cp.documents && cp.documents.docStates) {
+                setDocStates(cp.documents.docStates);
+            }
+            
+            // Remove from local docs to switch UI back to saved view
+            setDocs(prev => {
+                const newDocs = { ...prev };
+                delete newDocs[docKey];
+                return newDocs;
+            });
+            
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || `Upload failed for document.`);
+            setDocStates(prev => ({ 
+                ...prev, 
+                [docKey]: { ...prev[docKey], isUploading: false } 
+            }));
+        }
+    };
+
+    const handlePreSubmit = () => {
         const requiredDocs = getRequiredDocs();
         
         // Validate all required docs are present (either newly uploaded or previously approved)
         const missing = requiredDocs.filter(doc => {
             const ds = docStates[doc];
-            return !docs[doc] && (!ds || (ds.status !== 'APPROVED' && ds.status !== 'SUBMITTED' && ds.status !== 'UPLOADED'));
+            return !docs[doc] && (!ds || (!ds.url && ds.status !== 'APPROVED' && ds.status !== 'SUBMITTED' && ds.status !== 'UPLOADED'));
         });
         
         if (missing.length > 0) {
@@ -126,6 +177,11 @@ const AddChannelPartnerDocuments = () => {
         }
         
         setError('');
+        setShowSubmitPopup(true);
+    };
+
+    const handleSubmit = async () => {
+        setShowSubmitPopup(false);
         setStatus('SUBMITTING');
         
         try {
@@ -133,6 +189,7 @@ const AddChannelPartnerDocuments = () => {
             Object.keys(docs).forEach(key => {
                 if (docs[key]) formData.append(key, docs[key]);
             });
+            formData.append('isFinalSubmit', 'true');
 
             await axios.post(`${baseURL}/channel-partners/${channelPartnerId}/documents`, formData, {
                 headers: { 
@@ -199,43 +256,50 @@ const AddChannelPartnerDocuments = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <DocUploadRow title="PAN Card" docKey="pan" required={true} docs={docs} docState={docStates['pan']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Upload a clear picture of the PAN card." />
-                            <DocUploadRow title="Cancelled Cheque / Bank Proof" docKey="bankProof" required={true} docs={docs} docState={docStates['bankProof']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Name on cheque must match the registered name." />
+                            <DocUploadRow title="PAN Card" docKey="pan" required={true} docs={docs} docState={docStates['pan']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Upload a clear picture of the PAN card." />
+                            <DocUploadRow title="Cancelled Cheque / Bank Proof" docKey="bankProof" required={true} docs={docs} docState={docStates['bankProof']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Name on cheque must match the registered name." />
                             
                             {hasAuthPan && (
                                 <>
-                                    <DocUploadRow title="Auth Signatory PAN" docKey="authSignPan" required={true} docs={docs} docState={docStates['authSignPan']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="PAN of the authorized signatory." />
-                                    <DocUploadRow title="Auth Signatory Aadhaar" docKey="authSignAadhaar" required={true} docs={docs} docState={docStates['authSignAadhaar']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Aadhaar of the authorized signatory." />
-                                    <DocUploadRow title="Auth Signatory Letter" docKey="authSignLetter" required={true} docs={docs} docState={docStates['authSignLetter']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Download sample format and upload signed copy." hasSample={true} />
+                                    <DocUploadRow title="Auth Signatory PAN" docKey="authSignPan" required={true} docs={docs} docState={docStates['authSignPan']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="PAN of the authorized signatory." />
+                                    <DocUploadRow title="Auth Signatory Aadhaar" docKey="authSignAadhaar" required={true} docs={docs} docState={docStates['authSignAadhaar']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Aadhaar of the authorized signatory." />
+                                    <DocUploadRow title="Auth Signatory Letter" docKey="authSignLetter" required={true} docs={docs} docState={docStates['authSignLetter']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Download sample format and upload signed copy." hasSample={true} />
                                 </>
                             )}
                             {isPerson && (
-                                <DocUploadRow title="Aadhaar Card" docKey="aadhaar" required={true} docs={docs} docState={docStates['aadhaar']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Front and Back merged in one file." />
+                                <DocUploadRow title="Aadhaar Card" docKey="aadhaar" required={true} docs={docs} docState={docStates['aadhaar']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Front and Back merged in one file." />
                             )}
                             {isUdyamRegistered && (
-                                <DocUploadRow title="Udyam Certificate" docKey="udyamCert" required={true} docs={docs} docState={docStates['udyamCert']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Upload all 3 pages." />
+                                <DocUploadRow title="Udyam Certificate" docKey="udyamCert" required={true} docs={docs} docState={docStates['udyamCert']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Upload all 3 pages." />
                             )}
                             {isGstRegistered && (
                                 <>
-                                    <DocUploadRow title="GST Certificate" docKey="gstCert" required={true} docs={docs} docState={docStates['gstCert']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Upload all 3 pages." />
-                                    <DocUploadRow title="E-invoice Applicability Declaration" docKey="eInvoiceDeclaration" required={true} docs={docs} docState={docStates['eInvoiceDeclaration']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Download sample format and upload signed copy." hasSample={true} />
+                                    <DocUploadRow title="GST Certificate" docKey="gstCert" required={true} docs={docs} docState={docStates['gstCert']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Upload all 3 pages." />
+                                    <DocUploadRow title="E-invoice Applicability Declaration" docKey="eInvoiceDeclaration" required={true} docs={docs} docState={docStates['eInvoiceDeclaration']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Download sample format and upload signed copy." hasSample={true} />
                                 </>
                             )}
                             {isCompany && (
                                 <>
-                                    <DocUploadRow title="Certificate of Incorporation" docKey="coi" required={true} docs={docs} docState={docStates['coi']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="COI Document." />
-                                    <DocUploadRow title="Articles of Association" docKey="aoa" required={true} docs={docs} docState={docStates['aoa']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="AOA Document." />
-                                    <DocUploadRow title="Memorandum of Association" docKey="moa" required={true} docs={docs} docState={docStates['moa']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="MOA Document." />
+                                    <DocUploadRow title="Certificate of Incorporation" docKey="coi" required={true} docs={docs} docState={docStates['coi']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="COI Document." />
+                                    <DocUploadRow title="Articles of Association" docKey="aoa" required={true} docs={docs} docState={docStates['aoa']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="AOA Document." />
+                                    <DocUploadRow title="Memorandum of Association" docKey="moa" required={true} docs={docs} docState={docStates['moa']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="MOA Document." />
                                 </>
                             )}
                             {isFirm && (
-                                <DocUploadRow title="Firm Registration Proof" docKey="partnershipDeed" required={true} docs={docs} docState={docStates['partnershipDeed']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} isLocked={isLocked} desc="Partnership Deed / Registration Proof." />
+                                <DocUploadRow title="Firm Registration Proof" docKey="partnershipDeed" required={true} docs={docs} docState={docStates['partnershipDeed']} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} handleSingleSubmit={handleSingleSubmit} isLocked={isLocked} desc="Partnership Deed / Registration Proof." />
                             )}
                         </tbody>
                     </table>
                 </div>
 
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-between items-center mt-4">
+                    <Button 
+                        variant="outline"
+                        onClick={() => navigate('/admin/add_channel_partner_bank', { state: previousState })}
+                        className="px-8 rounded-full"
+                    >
+                        Back
+                    </Button>
                     {(status === 'SUBMITTED' || status === 'APPROVED') ? (
                         <Button 
                             onClick={() => navigate('/admin/add_channel_partner_documents_review', {
@@ -247,7 +311,7 @@ const AddChannelPartnerDocuments = () => {
                         </Button>
                     ) : (
                         <Button 
-                            onClick={handleSubmit} 
+                            onClick={handlePreSubmit} 
                             disabled={isLocked}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-8 rounded-full"
                         >
@@ -256,11 +320,34 @@ const AddChannelPartnerDocuments = () => {
                     )}
                 </div>
             </div>
+
+            {/* Submission Confirmation Popup */}
+            {showSubmitPopup && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+                        <div className="px-6 py-4 border-b">
+                            <h2 className="text-xl font-bold text-gray-800">Confirm Submission</h2>
+                        </div>
+                        <div className="p-6 text-sm text-gray-700">
+                            <p>Are you sure you want to submit these documents?</p>
+                            <p className="mt-2 text-red-600 font-medium">You can't edit documents once they are submitted for review.</p>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
+                            <Button variant="outline" onClick={() => setShowSubmitPopup(false)}>
+                                Cancel
+                            </Button>
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSubmit}>
+                                Confirm & Submit
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
-const DocUploadRow = ({ title, docKey, required, docs, docState, handleFileChange, handleRemoveFile, isLocked, desc, hasSample }) => {
+const DocUploadRow = ({ title, docKey, required, docs, docState, handleFileChange, handleRemoveFile, handleSingleSubmit, isLocked, desc, hasSample }) => {
     const file = docs[docKey];
     const status = docState?.status || 'PENDING';
     const remark = docState?.remark;
@@ -286,7 +373,7 @@ const DocUploadRow = ({ title, docKey, required, docs, docState, handleFileChang
                 <div className="font-medium text-sm mb-2">{title} 1</div>
                 
                 {/* Upload or File Info */}
-                {!file && !isApproved && !isRejected && !isSubmitted ? (
+                {!file && !docState?.url && !isApproved && !isRejected && !isSubmitted ? (
                     <div className="mt-1">
                         {!inputDisabled ? (
                             <label className="cursor-pointer text-blue-600 text-sm font-medium hover:underline flex items-center gap-1">
@@ -310,19 +397,32 @@ const DocUploadRow = ({ title, docKey, required, docs, docState, handleFileChang
                             {file ? file.name : (docState?.url ? docState.url.split('/').pop() : `${title}_Uploaded.pdf`)}
                         </span>
                         <div className="flex items-center gap-3 text-gray-500">
+                            {file && !inputDisabled && (
+                                <Button 
+                                    variant="default"
+                                    size="sm" 
+                                    className="bg-blue-600 hover:bg-blue-700 text-white h-7 px-3 text-xs" 
+                                    onClick={() => handleSingleSubmit(docKey)}
+                                    disabled={docState?.isUploading}
+                                >
+                                    {docState?.isUploading ? 'Submitting...' : 'Submit'}
+                                </Button>
+                            )}
                             {!inputDisabled && (
-                                <button onClick={() => handleRemoveFile(docKey)} className="hover:text-red-500">
+                                <button onClick={() => handleRemoveFile(docKey)} className="hover:text-red-500" disabled={docState?.isUploading}>
                                     <Trash2 size={16} />
                                 </button>
                             )}
-                            {docState?.url ? (
+                            {docState?.url && !file ? (
                                 <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin)}${docState.url}`} target="_blank" rel="noreferrer" className="hover:text-blue-500">
                                     <Download size={16} />
                                 </a>
                             ) : (
-                                <button className="hover:text-blue-500" onClick={(e) => { e.preventDefault(); alert("File URL not available."); }}>
-                                    <Download size={16} />
-                                </button>
+                                !file && (
+                                    <button className="hover:text-blue-500" onClick={(e) => { e.preventDefault(); alert("File URL not available."); }}>
+                                        <Download size={16} />
+                                    </button>
+                                )
                             )}
                         </div>
                     </div>
@@ -354,6 +454,11 @@ const DocUploadRow = ({ title, docKey, required, docs, docState, handleFileChang
                 {isSubmitted && !isApproved && !isRejected && (
                     <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2 py-1 rounded">
                         In Review
+                    </div>
+                )}
+                {!isSubmitted && docState?.url && !isApproved && !isRejected && !file && (
+                    <div className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-1 rounded">
+                        Saved
                     </div>
                 )}
             </td>

@@ -103,7 +103,15 @@ const AddChannelPartnerBank = () => {
             try {
                 let addressDetails = "";
                 if (selectedAddressType === 'gst') addressDetails = partnerDetails.businessDetails?.gst?.address;
-                if (selectedAddressType === 'udyam') addressDetails = partnerDetails.businessDetails?.udyam?.officialAddress;
+                if (selectedAddressType === 'udyam') {
+                    const u = partnerDetails.businessDetails?.udyam?.selectedUnit;
+                    if (u) {
+                        const addressParts = [u.flat, u.building, u.village_town, u.block, u.road, u.city, u.district, u.state, u.pin].filter(part => part && part !== 'null' && part !== '').join(', ');
+                        addressDetails = u.address || u.official_address || addressParts || partnerDetails.businessDetails?.udyam?.officialAddress;
+                    } else {
+                        addressDetails = partnerDetails.businessDetails?.udyam?.officialAddress;
+                    }
+                }
                 if (selectedAddressType === 'aadhaar') addressDetails = partnerDetails.aadhaarDetails?.fullAddress;
 
                 await axios.post(`${baseURL}/channel-partners/${channelPartnerId}/bank/confirm-details`, 
@@ -137,17 +145,16 @@ const AddChannelPartnerBank = () => {
     if (partnerDetails) {
         legalName = partnerDetails.panDetails?.fullName || "";
         
-        if (isIndividual) {
+        authSignName = partnerDetails.authPanDetails?.fullName || partnerDetails.panDetails?.fullName || "NA";
+
+        if (isIndividual || partnerDetails?.businessDetails?.registrationType === "Individual/Sole Prop" || partnerDetails?.businessDetails?.registrationType === "Sole Proprietorship") {
             tradeName = "NA";
-            authSignName = "NA";
         } else if (isUdyam) {
             legalName = partnerDetails.businessDetails?.udyam?.ownerName || legalName;
             tradeName = partnerDetails.businessDetails?.udyam?.enterpriseName || "NA";
-            authSignName = partnerDetails.authPanDetails?.fullName || "NA";
         } else if (isGst) {
             legalName = partnerDetails.businessDetails?.gst?.legalName || legalName;
             tradeName = partnerDetails.businessDetails?.gst?.businessName || "NA";
-            authSignName = partnerDetails.authPanDetails?.fullName || "NA";
         }
         
         // If Udyam didn't provide owner name, maybe GST has legal name
@@ -228,7 +235,14 @@ const AddChannelPartnerBank = () => {
                     )}
                 </div>
                 
-                <div className="mt-8 flex justify-end">
+                <div className="mt-8 pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <Button 
+                        variant="outline"
+                        onClick={() => navigate('/admin/add_channel_partner_business', { state: previousState })}
+                        className="px-8"
+                    >
+                        Back
+                    </Button>
                     <Button 
                         onClick={handleProceed} 
                         disabled={!isVerified}
@@ -275,7 +289,18 @@ const AddChannelPartnerBank = () => {
                                         {!isGst && !isUdyam && <option value="aadhaar">Aadhaar Address</option>}
                                     </select>
                                     {selectedAddressType === 'gst' && <div className="mt-2 text-xs text-gray-600 p-2 bg-gray-50 rounded">{partnerDetails.businessDetails?.gst?.address}</div>}
-                                    {selectedAddressType === 'udyam' && <div className="mt-2 text-xs text-gray-600 p-2 bg-gray-50 rounded">{partnerDetails.businessDetails?.udyam?.officialAddress || "Address from Udyam"}</div>}
+                                    {selectedAddressType === 'udyam' && (
+                                        <div className="mt-2 text-xs text-gray-600 p-2 bg-gray-50 rounded">
+                                            {(() => {
+                                                const u = partnerDetails.businessDetails?.udyam?.selectedUnit;
+                                                if (u) {
+                                                    const addressParts = [u.flat, u.building, u.village_town, u.block, u.road, u.city, u.district, u.state, u.pin].filter(part => part && part !== 'null' && part !== '').join(', ');
+                                                    return u.address || u.official_address || addressParts || partnerDetails.businessDetails?.udyam?.officialAddress || "Address from Udyam";
+                                                }
+                                                return partnerDetails.businessDetails?.udyam?.officialAddress || "Address from Udyam";
+                                            })()}
+                                        </div>
+                                    )}
                                     {selectedAddressType === 'aadhaar' && <div className="mt-2 text-xs text-gray-600 p-2 bg-gray-50 rounded">{partnerDetails.aadhaarDetails?.fullAddress}</div>}
                                 </div>
                             </div>
@@ -301,7 +326,7 @@ const AddChannelPartnerBank = () => {
                                         onChange={(e) => setDeclarationAccepted(e.target.checked)}
                                     />
                                     <span className="text-sm font-medium text-blue-900">
-                                        I, {partnerDetails?.panDetails?.fullName || "[Full Name]"} declare that all the above shown details are true and correct to the best of my knowledge and can be used for generation of connector service agreement.
+                                        I, {partnerDetails?.authPanDetails?.fullName || partnerDetails?.panDetails?.fullName || "[Full Name]"} declare that all the above shown details are true and correct to the best of my knowledge and can be used for generation of connector service agreement.
                                     </span>
                                 </label>
                             </div>

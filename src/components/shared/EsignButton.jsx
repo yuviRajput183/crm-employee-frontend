@@ -115,11 +115,11 @@ const EsignButton = ({ channelPartnerId, onEsignComplete }) => {
                 );
             case "FAILED":
             case "CANCELLED":
+            case "EXPIRED":
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="text-red-500 font-medium">eSign Failed</span>
-                        <Button onClick={handleSign} disabled={isLoading} variant="outline">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        <span className="text-red-500 font-medium">eSign Failed or Expired</span>
+                        <Button onClick={() => { setEsignRequest(null); setError(null); }} disabled={isLoading} variant="outline">
                             Retry eSign
                         </Button>
                     </div>
