@@ -51,12 +51,12 @@ const ReviewChannelPartnerDetails = () => {
     const { businessDetails, authPanDetails } = partnerDetails;
     const regType = businessDetails?.registrationType;
 
-    const isPerson = regType === 'Individual' || regType === 'Sole Proprietorship' || regType === 'HUF';
+    const isPerson = regType === 'Individual' || regType === 'Sole Proprietorship' || regType === 'Individual/Sole Prop' || regType === 'HUF';
     const hasAuthPan = authPanDetails && authPanDetails.fullName;
     const isUdyamRegistered = businessDetails?.udyam?.declarationType === "REGISTERED";
     const isGstRegistered = businessDetails?.gst?.declarationType === "REGISTERED";
     const isCompany = regType === 'Company';
-    const isFirm = regType === 'Firm/LLP';
+    const isFirm = regType === 'Firm/LLP' || regType === 'Partnership/LLP';
 
     const handleReviewAction = async (docKey, actionStatus, remark) => {
         try {

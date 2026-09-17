@@ -135,23 +135,24 @@ const AddChannelPartnerBank = () => {
     const isGst = partnerDetails?.businessDetails?.gst?.declarationType === "REGISTERED";
 
     if (partnerDetails) {
+        legalName = partnerDetails.panDetails?.fullName || "";
+        
         if (isIndividual) {
-            legalName = partnerDetails.panDetails?.fullName || "";
             tradeName = "NA";
             authSignName = "NA";
         } else if (isUdyam) {
-            legalName = partnerDetails.businessDetails?.udyam?.ownerName || "";
+            legalName = partnerDetails.businessDetails?.udyam?.ownerName || legalName;
             tradeName = partnerDetails.businessDetails?.udyam?.enterpriseName || "NA";
             authSignName = partnerDetails.authPanDetails?.fullName || "NA";
         } else if (isGst) {
-            legalName = partnerDetails.businessDetails?.gst?.legalName || "";
+            legalName = partnerDetails.businessDetails?.gst?.legalName || legalName;
             tradeName = partnerDetails.businessDetails?.gst?.businessName || "NA";
             authSignName = partnerDetails.authPanDetails?.fullName || "NA";
         }
         
         // If Udyam didn't provide owner name, maybe GST has legal name
         if (!legalName && isGst) {
-            legalName = partnerDetails.businessDetails?.gst?.legalName || "";
+            legalName = partnerDetails.businessDetails?.gst?.legalName || partnerDetails.panDetails?.fullName || "";
         }
     }
 
@@ -300,7 +301,7 @@ const AddChannelPartnerBank = () => {
                                         onChange={(e) => setDeclarationAccepted(e.target.checked)}
                                     />
                                     <span className="text-sm font-medium text-blue-900">
-                                        I, {legalName || "[Full Name]"} declare that all the above shown details are true and correct to the best of my knowledge and can be used for generation of connector service agreement.
+                                        I, {partnerDetails?.panDetails?.fullName || "[Full Name]"} declare that all the above shown details are true and correct to the best of my knowledge and can be used for generation of connector service agreement.
                                     </span>
                                 </label>
                             </div>

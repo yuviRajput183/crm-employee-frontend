@@ -27,6 +27,8 @@ const AddChannelPartnerAadhaar = () => {
     const [motherName, setMotherName] = useState('');
     const [isMarried, setIsMarried] = useState(null); // 'yes' or 'no'
     const [spouseName, setSpouseName] = useState('');
+    const [careOfRelation, setCareOfRelation] = useState('');
+    const [otherRelation, setOtherRelation] = useState('');
     const [userConfirmed, setUserConfirmed] = useState(false);
     
     const sdkInitialized = useRef(false);
@@ -174,13 +176,18 @@ const AddChannelPartnerAadhaar = () => {
             return;
         }
 
-        const needsCareOf = aadhaarDetails && !aadhaarDetails.careOf;
         const needsFatherName = aadhaarDetails && !aadhaarDetails.fatherName;
         const needsMotherName = aadhaarDetails && !aadhaarDetails.motherName;
 
-        if (needsCareOf && (!careOf || !careOf.trim())) {
-            setError("Please enter Care of.");
-            return;
+        if (aadhaarDetails && aadhaarDetails.careOf) {
+            if (!careOfRelation) {
+                setError("Please select Care of relation.");
+                return;
+            }
+            if (careOfRelation === 'Others' && !otherRelation.trim()) {
+                setError("Please specify the relation in the empty box.");
+                return;
+            }
         }
 
         if (needsFatherName && (!fatherName || !fatherName.trim())) {
@@ -226,6 +233,29 @@ const AddChannelPartnerAadhaar = () => {
             setError(err?.response?.data?.message || 'Aadhaar confirmation failed. Please try again.');
         } finally {
             setIsConfirming(false);
+        }
+    };
+
+    const getCleanCareOf = (careOfStr) => {
+        if (!careOfStr) return '';
+        // Remove prefixes like C/O, S/O, W/O, D/O followed by optional space
+        return careOfStr.replace(/^(c\/o|s\/o|w\/o|d\/o)\s*/i, '').trim();
+    };
+
+    const handleCareOfRelationChange = (val) => {
+        setCareOfRelation(val);
+        const cleanName = getCleanCareOf(aadhaarDetails?.careOf);
+        
+        // Reset to original Aadhaar details if they exist, otherwise clear
+        setFatherName(aadhaarDetails?.fatherName || '');
+        setSpouseName(aadhaarDetails?.spouseName || '');
+        setIsMarried(aadhaarDetails?.isMarried !== undefined ? (aadhaarDetails.isMarried ? 'yes' : 'no') : null);
+
+        if (val === 'Father' && cleanName) {
+            setFatherName(cleanName);
+        } else if (val === 'Husband' && cleanName) {
+            setIsMarried('yes');
+            setSpouseName(cleanName);
         }
     };
 
@@ -297,19 +327,40 @@ const AddChannelPartnerAadhaar = () => {
                                     </div>
 
                                     {/* Care Of Field */}
-                                    <div className="md:col-span-2">
+                                    <div className="md:col-span-2 flex flex-col gap-2">
                                         <span className="text-gray-500 block mb-1">Care of:</span>
-                                        {aadhaarDetails.careOf ? (
-                                            <span className="font-medium">{aadhaarDetails.careOf}</span>
-                                        ) : (
+                                        <div className="flex flex-col md:flex-row gap-4 items-start">
                                             <Input 
-                                                value={careOf}
-                                                onChange={(e) => setCareOf(e.target.value)}
-                                                disabled={isAadhaarConfirmed}
-                                                placeholder="Enter Care of"
-                                                className="max-w-md bg-white"
+                                                value={getCleanCareOf(aadhaarDetails.careOf)}
+                                                disabled={true}
+                                                placeholder={aadhaarDetails.careOf ? "" : "Not available in Aadhaar"}
+                                                className="max-w-md bg-gray-100"
                                             />
-                                        )}
+                                            {aadhaarDetails.careOf && (
+                                                <div className="flex flex-col gap-2 w-full max-w-md">
+                                                    <select 
+                                                        value={careOfRelation}
+                                                        onChange={(e) => handleCareOfRelationChange(e.target.value)}
+                                                        disabled={isAadhaarConfirmed}
+                                                        className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        <option value="">Select Relation</option>
+                                                        <option value="Father">Father</option>
+                                                        <option value="Husband">Husband</option>
+                                                        <option value="Others">Others</option>
+                                                    </select>
+                                                    {careOfRelation === 'Others' && (
+                                                        <Input
+                                                            value={otherRelation}
+                                                            onChange={(e) => setOtherRelation(e.target.value)}
+                                                            disabled={isAadhaarConfirmed}
+                                                            placeholder="Specify relation"
+                                                            className="bg-white"
+                                                        />
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Father Name Field */}

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import ChannelPartnerStepper from './components/ChannelPartnerStepper';
+import { apiGetVerificationStatus } from '@/services/channelPartner.api';
 
 const AddChannelPartnerBusiness = () => {
     const location = useLocation();
@@ -20,8 +22,7 @@ const AddChannelPartnerBusiness = () => {
     
     // Form Inputs
     const [registrationType, setRegistrationType] = useState("");
-    const [firmName, setFirmName] = useState("");
-    const [capacity, setCapacity] = useState("");
+    const [panName, setPanName] = useState("");
     const [udyamNumberInput, setUdyamNumberInput] = useState("");
     const [mobileNumberInput, setMobileNumberInput] = useState("");
     const [udyamClientId, setUdyamClientId] = useState("");
@@ -42,6 +43,8 @@ const AddChannelPartnerBusiness = () => {
         fetchState();
     }, [channelPartnerId]);
 
+
+
 const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3000/api/v1' : window.location.origin + '/api/v1');
 
     const fetchState = async () => {
@@ -53,8 +56,23 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
             });
             setBusinessState(res.data.businessDetails || {});
             setApplicantName(res.data.aadhaar || "Applicant");
+            setPanName(res.data.panName || "");
             if (res.data.businessDetails?.registrationType) {
                 setRegistrationType(res.data.businessDetails.registrationType);
+            } else if (mobile) {
+                // Auto-select based on PAN category
+                try {
+                    const statusRes = await apiGetVerificationStatus(mobile);
+                    const cat = statusRes.data?.panDetails?.category?.toLowerCase();
+                    if (cat) {
+                        if (cat === "person" || cat === "individual") setRegistrationType("Individual/Sole Prop");
+                        else if (cat === "huf") setRegistrationType("HUF");
+                        else if (cat === "firm" || cat === "partnership" || cat === "llp") setRegistrationType("Partnership/LLP");
+                        else if (cat === "company") setRegistrationType("Company");
+                    }
+                } catch (catErr) {
+                    console.error("Failed to fetch pan category", catErr);
+                }
             }
         } catch (err) {
             setError(err.response?.data?.message || err.message);
@@ -137,9 +155,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
             setError(err.response?.data?.message || err.message);
         } finally { setActionLoading(false); }
     };
-
     const acceptUdyamDeclaration = async (type) => {
-        // if (!firmName || !capacity) return setError("Please enter Firm Name and Capacity before accepting the declaration.");
         if (!udyamDeclarationAccepted) return setError("Please accept the declaration to continue.");
         
         let selectedUnit = null;
@@ -190,7 +206,6 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
     };
 
     const acceptGstDeclaration = async (type) => {
-        // if (!firmName || !capacity) return setError("Please ensure Firm Name and Capacity are filled.");
         if (!gstDeclarationAccepted) return setError("Please accept the declaration to continue.");
         try {
             setActionLoading(true); setError(null);
@@ -209,8 +224,23 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
     if (loading) return <div className="p-10 text-center">Loading Verification State...</div>;
 
     const { registrationType: regType, udyam, gst } = businessState;
+    const computedFirmName = udyam?.enterpriseName || gst?.legalName || gst?.businessName || panName || applicantName || "[Firm Name]";
+    const actualFirmName = udyam?.enterpriseName || gst?.legalName || gst?.businessName;
+    const firmNameNode = actualFirmName ? <> of <strong>{actualFirmName}</strong></> : null;
+    
     const isUdyamComplete = udyam?.declarationAccepted;
     const isGstComplete = gst?.declarationAccepted;
+
+    const getCapacity = () => {
+        switch(regType) {
+            case "Individual/Sole Prop": return "Self/Proprietor";
+            case "HUF": return "Karta/Authorized Signatory";
+            case "Partnership/LLP": return "Partner/Authorized Signatory";
+            case "Company": return "Director/Authorized Signatory";
+            default: return "Authorized Signatory";
+        }
+    };
+    const capacityText = getCapacity();
 
     return (
         <div className="px-6 py-6 bg-white rounded shadow min-h-screen">
@@ -230,20 +260,11 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                 {!regType ? (
                     <div>
                         <h2 className="text-xl font-semibold mb-4">Registration Type</h2>
-                        <select 
-                            className="border p-2 rounded bg-white w-full max-w-sm mb-4"
-                            value={registrationType}
-                            onChange={(e) => setRegistrationType(e.target.value)}
-                        >
-                            <option value="">Select Type</option>
-                            <option value="Individual">Individual</option>
-                            <option value="Sole Proprietorship">Sole Proprietorship</option>
-                            <option value="Firm/LLP">Firm/LLP</option>
-                            <option value="Company">Company</option>
-                            <option value="HUF">HUF</option>
-                        </select>
-                        <br />
-                        <Button disabled={actionLoading} onClick={handleSetRegistrationType}>Continue</Button>
+                        <Input 
+                            className="w-full max-w-sm mb-4 bg-gray-100"
+                            value={registrationType || "Fetching from PAN..."}
+                            disabled={true}
+                        />
                     </div>
                 ) : (
                     <div className="flex justify-between items-center bg-gray-200 p-3 rounded">
@@ -251,24 +272,6 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                         {!isUdyamComplete && <span className="text-sm text-green-600">Saved</span>}
                     </div>
                 )}
-
-                {/* Dynamic Information Block (required for declarations) */}
-                {/* {regType && (!isUdyamComplete || !isGstComplete) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 border rounded">
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium">Full Name of Firm <span className="text-red-500">*</span></label>
-                            <input type="text" value={firmName} onChange={e => setFirmName(e.target.value)} placeholder="e.g. ABC Pvt Ltd" className="border p-2 rounded" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium">Capacity <span className="text-red-500">*</span></label>
-                            <select value={capacity} onChange={e => setCapacity(e.target.value)} className="border p-2 rounded bg-white">
-                                <option value="">Select Capacity</option>
-                                <option value="Self">Self</option>
-                                <option value="Authorized Signatory">Authorized Signatory</option>
-                            </select>
-                        </div>
-                    </div>
-                )} */}
 
                 {/* STEP 2: Udyam Verification */}
                 {regType && !isUdyamComplete && (
@@ -289,7 +292,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                     <label className="flex items-start gap-2">
                                         <input type="checkbox" className="mt-1 cursor-pointer" checked={udyamDeclarationAccepted} onChange={e => setUdyamDeclarationAccepted(e.target.checked)} />
                                         <span className="text-sm text-gray-700">
-                                            I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacity || '[Capacity]'}</strong> of <strong>{firmName || '[Firm Name]'}</strong> confirms that I/We are not registered as Micro or Small or Medium Enterprise under the Micro, Small and Medium Enterprises Development Act, 2006. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
+                                            I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are not registered as Micro or Small or Medium Enterprise under the Micro, Small and Medium Enterprises Development Act, 2006. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
                                         </span>
                                     </label>
                                 </div>
@@ -386,7 +389,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                     <label className="flex items-start gap-2">
                                         <input type="checkbox" className="mt-1 cursor-pointer" checked={udyamDeclarationAccepted} onChange={e => setUdyamDeclarationAccepted(e.target.checked)} />
                                         <span className="text-sm text-gray-700">
-                                            I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacity || '[Capacity]'}</strong> of <strong>{firmName || '[Firm Name]'}</strong> confirms that I/We are registered as Micro or Small or Medium Enterprise under the Micro, Small and Medium Enterprises Development Act, 2006 via registration number <strong>{udyam.udyamNumber || udyamNumberInput}</strong>. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
+                                            I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are registered as Micro or Small or Medium Enterprise under the Micro, Small and Medium Enterprises Development Act, 2006 via registration number <strong>{udyam.udyamNumber || udyamNumberInput}</strong>. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
                                         </span>
                                     </label>
                                 </div>
@@ -432,6 +435,16 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                 </div>
                             </div>
                         )}
+                        {udyam.declarationType === "NOT_REGISTERED" && (
+                            <div className="p-4 bg-white border rounded opacity-75">
+                                <label className="flex items-start gap-2">
+                                    <input type="checkbox" className="mt-1 cursor-default" checked={true} readOnly />
+                                    <span className="text-sm text-gray-700">
+                                        I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are not registered as Micro or Small or Medium Enterprise under the Micro, Small and Medium Enterprises Development Act, 2006. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
+                                    </span>
+                                </label>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -451,7 +464,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                     <label className="flex items-start gap-2">
                                         <input type="checkbox" className="mt-1 cursor-pointer" checked={gstDeclarationAccepted} onChange={e => setGstDeclarationAccepted(e.target.checked)} />
                                         <span className="text-sm text-gray-700">
-                                            I, <strong>{applicantName}</strong> the applicant, in the capacity of <strong>{capacity || '[Capacity]'}</strong> of <strong>{firmName || '[Firm Name]'}</strong> confirms that I/We are not registered under Good and Services Tax, 2017. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
+                                            I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are not registered under Good and Services Tax, 2017. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
                                         </span>
                                     </label>
                                 </div>
@@ -500,8 +513,8 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                         <input type="checkbox" className="mt-1 cursor-pointer" checked={gstDeclarationAccepted} onChange={e => setGstDeclarationAccepted(e.target.checked)} />
                                         <span className="text-sm text-gray-700">
                                             {gst.gstRegistered 
-                                                ? <span>I, <strong>{applicantName}</strong> the applicant, in the capacity of <strong>{capacity || '[Capacity]'}</strong> of <strong>{firmName || '[Firm Name]'}</strong> confirms that I/We are registered under Good and Services Tax, 2017 via registration number <strong>{gst.selectedGstin}</strong>. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.</span>
-                                                : <span>I, <strong>{applicantName}</strong> the applicant, in the capacity of <strong>{capacity || '[Capacity]'}</strong> of <strong>{firmName || '[Firm Name]'}</strong> confirms that I/We are not registered under Good and Services Tax, 2017. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.</span>
+                                                ? <span>I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are registered under Good and Services Tax, 2017 via registration number <strong>{gst.selectedGstin}</strong>. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.</span>
+                                                : <span>I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are not registered under Good and Services Tax, 2017. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.</span>
                                             }
                                         </span>
                                     </label>
@@ -530,6 +543,16 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                 </div>
                             </div>
                         )}
+                        {gst.declarationType === "NOT_REGISTERED" && (
+                            <div className="p-4 bg-white border rounded opacity-75">
+                                <label className="flex items-start gap-2">
+                                    <input type="checkbox" className="mt-1 cursor-default" checked={true} readOnly />
+                                    <span className="text-sm text-gray-700">
+                                        I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are not registered under Good and Services Tax, 2017. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
+                                    </span>
+                                </label>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center bg-green-100 p-3 rounded border border-green-300">
                             <span className="text-green-800 font-semibold">Business Verification Completed Successfully!</span>
                             <Button onClick={() => navigate('/admin/add_channel_partner_bank', { state: { mobile, email, pan, aadhaar, channelPartnerId } })}>
@@ -538,9 +561,30 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                         </div>
                     </div>
                 )}
+                
+                {/* Navigation Footer */}
+                <div className="mt-8 pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <Button 
+                        variant="outline"
+                        onClick={() => navigate('/admin/add_channel_partner_aadhaar', { state: { mobile, email, channelPartnerId, pan, authPan: location.state?.authPan } })}
+                        className="px-8"
+                    >
+                        Back
+                    </Button>
+                    {!regType && (
+                        <Button 
+                            disabled={actionLoading || !registrationType} 
+                            onClick={handleSetRegistrationType}
+                            className="px-8"
+                        >
+                            Continue
+                        </Button>
+                    )}
+                </div>
             </div>
         </div>
     );
 };
 
 export default AddChannelPartnerBusiness;
+
