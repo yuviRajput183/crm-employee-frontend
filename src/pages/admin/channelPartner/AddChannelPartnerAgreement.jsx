@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import ChannelPartnerStepper from './components/ChannelPartnerStepper';
+import EsignButton from '@/components/shared/EsignButton';
 
 const AddChannelPartnerAgreement = () => {
     const location = useLocation();
@@ -60,10 +61,6 @@ const AddChannelPartnerAgreement = () => {
                                 document.body.appendChild(link);
                                 link.click();
                                 link.remove();
-
-                                navigate('/admin/add_channel_partner_code_creation', {
-                                    state: { ...previousState, agreementUrl: res.data.url }
-                                });
                             } catch (err) {
                                 console.error("Failed to generate agreement", err);
                                 alert(err.response?.data?.message || err.response?.data?.error || "Failed to generate agreement");
@@ -74,6 +71,19 @@ const AddChannelPartnerAgreement = () => {
                         Generate and Download Agreement
                     </Button>
                 </Alert>
+
+                {channelPartnerId && (
+                    <div className="mt-8">
+                        <EsignButton 
+                            channelPartnerId={channelPartnerId} 
+                            onEsignComplete={(esignData) => {
+                                navigate('/admin/add_channel_partner_code_creation', {
+                                    state: { ...previousState, agreementUrl: esignData.signedDocumentUrl }
+                                });
+                            }} 
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

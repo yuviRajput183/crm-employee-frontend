@@ -606,7 +606,6 @@ const EditPersonalLoanForm = () => {
                 <h1 className=' text-2xl text-bold'>Personal Loan</h1>
             </div>
 
-
             <Form {...form}>
                 <form
                     onSubmit={form.handleSubmit(handlePersonalLoan, (errors) => console.log("Form Validation Errors:", errors))}
