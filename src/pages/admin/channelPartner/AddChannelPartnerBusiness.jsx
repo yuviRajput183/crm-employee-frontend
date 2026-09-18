@@ -36,6 +36,11 @@ const AddChannelPartnerBusiness = () => {
     const [udyamDeclarationAccepted, setUdyamDeclarationAccepted] = useState(false);
     const [gstDeclarationAccepted, setGstDeclarationAccepted] = useState(false);
 
+    // Sole Prop / Individual Inactive GST States
+    const [solePropOption, setSolePropOption] = useState("");
+    const [showSolePropModal, setShowSolePropModal] = useState(false);
+    const [solePropModalCheckbox, setSolePropModalCheckbox] = useState(false);
+
     useEffect(() => {
         if (!channelPartnerId) {
             navigate('/admin/list_channel_partner');
@@ -222,6 +227,22 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
         } finally { setActionLoading(false); }
     };
 
+    const acceptInactiveGst = async () => {
+        if (!solePropModalCheckbox) return setError("Please check the box to continue.");
+        try {
+            setActionLoading(true); setError(null);
+            const res = await axios.post(`${baseURL}/channel-partners/${channelPartnerId}/business/gst/declaration`, 
+                { type: "NOT_REGISTERED", inactiveContinueAs: solePropOption },
+                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }, withCredentials: true }
+            );
+            setBusinessState(res.data.businessDetails);
+            setShowSolePropModal(false);
+            navigate('/admin/add_channel_partner_bank', { state: { mobile, email, pan, aadhaar, channelPartnerId } });
+        } catch (err) {
+            setError(err.response?.data?.message || err.message);
+        } finally { setActionLoading(false); }
+    };
+
     if (loading) return <div className="p-10 text-center">Loading Verification State...</div>;
 
     const { registrationType: regType, udyam, gst } = businessState;
@@ -241,6 +262,11 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
         }
     };
     const capacityText = getCapacity();
+
+    const allGstinsInactive = gst?.gstins?.length > 0 && gst.gstins.every(g => {
+        const status = typeof g === 'string' ? '' : g.active_status;
+        return status && status.toLowerCase() === 'inactive';
+    });
 
     return (
         <div className="px-6 py-6 bg-white rounded shadow min-h-screen">
@@ -497,7 +523,47 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                                 return <option key={val} value={val} disabled={isInactive}>{label}</option>
                                             })}
                                         </select>
-                                        <Button disabled={actionLoading} onClick={() => verifyGst(gstinInput)}>Verify GST</Button>
+                                        {!allGstinsInactive && (
+                                            <Button disabled={actionLoading} onClick={() => verifyGst(gstinInput)}>Verify GST</Button>
+                                        )}
+                                    </div>
+                                )}
+                                {regType === "Individual/Sole Prop" && allGstinsInactive && (
+                                    <div className="mt-4 p-4 border rounded bg-gray-50 space-y-4">
+                                        <div className="font-semibold text-gray-700">Please select how you would like to continue:</div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="solePropOption" 
+                                                    value="sole_prop" 
+                                                    checked={solePropOption === "sole_prop"} 
+                                                    onChange={() => setSolePropOption("sole_prop")} 
+                                                    className="w-4 h-4"
+                                                />
+                                                <span>Continue as sole prop of {actualFirmName || 'Enterprise'}</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="solePropOption" 
+                                                    value="individual" 
+                                                    checked={solePropOption === "individual"} 
+                                                    onChange={() => setSolePropOption("individual")}
+                                                    className="w-4 h-4" 
+                                                />
+                                                <span>Continue as individual</span>
+                                            </label>
+                                        </div>
+                                        <Button 
+                                            disabled={!solePropOption || actionLoading} 
+                                            onClick={() => {
+                                                setSolePropModalCheckbox(false);
+                                                setShowSolePropModal(true);
+                                            }}
+                                        >
+                                            Continue
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -590,6 +656,35 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                     )}
                 </div>
             </div>
+
+            {/* Sole Prop Inactive GST Modal */}
+            {showSolePropModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
+                        <h3 className="text-lg font-bold mb-4">Confirm Selection</h3>
+                        <div className="mb-6 p-4 border rounded bg-gray-50">
+                            <label className="flex items-start gap-2 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    className="mt-1" 
+                                    checked={solePropModalCheckbox} 
+                                    onChange={(e) => setSolePropModalCheckbox(e.target.checked)} 
+                                />
+                                <span className="text-sm text-gray-700">
+                                    {solePropOption === "individual" 
+                                        ? `Kindly note bank account would be required in the name of ${applicantName} only.`
+                                        : `Kindly note bank account would be required in the name of ${actualFirmName || 'Enterprise'} only.`
+                                    }
+                                </span>
+                            </label>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setShowSolePropModal(false)}>Cancel</Button>
+                            <Button disabled={actionLoading || !solePropModalCheckbox} onClick={acceptInactiveGst}>Accept and continue</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
