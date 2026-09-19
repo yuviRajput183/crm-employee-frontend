@@ -14,6 +14,7 @@ import PageLoader from '@/components/loaders/PageLoader';
 const InProgressAccountLeads = () => {
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedIds, setSelectedIds] = useState([]);
 
     const fetchLeads = async () => {
         try {
@@ -36,6 +37,23 @@ const InProgressAccountLeads = () => {
         fetchLeads();
     }, []);
 
+    const allIds = leads.map(lead => lead._id);
+    const isAllSelected = leads.length > 0 && selectedIds.length === allIds.length;
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(allIds);
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
     if (loading) return <PageLoader />;
 
     return (
@@ -51,6 +69,14 @@ const InProgressAccountLeads = () => {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-green-900 text-white hover:bg-green-900">
+                            <TableHead className="text-white w-10">
+                                <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 cursor-pointer accent-green-600"
+                                    checked={isAllSelected}
+                                    onChange={handleSelectAll} 
+                                />
+                            </TableHead>
                             <TableHead className="text-white">S.No</TableHead>
                             <TableHead className="text-white">Lead No</TableHead>
                             <TableHead className="text-white">Case Name</TableHead>
@@ -67,12 +93,16 @@ const InProgressAccountLeads = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {leads.length > 0 ? leads.flatMap((lead, leadIndex) => {
-                            const rows = [];
-                            
-                            // 1. Push the main lead row
-                            rows.push(
+                        {leads.length > 0 ? leads.map((lead, leadIndex) => (
                                 <TableRow key={lead._id} className={leadIndex % 2 === 0 ? "bg-gray-100" : ""}>
+                                    <TableCell>
+                                        <input 
+                                            type="checkbox" 
+                                            className="w-4 h-4 cursor-pointer accent-green-600"
+                                            checked={selectedIds.includes(lead._id)}
+                                            onChange={() => handleSelectRow(lead._id)}
+                                        />
+                                    </TableCell>
                                     <TableCell>{leadIndex + 1}</TableCell>
                                     <TableCell>
                                         <button 
@@ -105,37 +135,7 @@ const InProgressAccountLeads = () => {
                                         </button>
                                     </TableCell>
                                 </TableRow>
-                            );
-
-                            // 2. Push all its associated tranches underneath
-                            if (lead.tranches && lead.tranches.length > 0) {
-                                lead.tranches.forEach((t, tIndex) => {
-                                    rows.push(
-                                        <TableRow key={`${lead._id}-${t._id}`} className="bg-green-50 border-l-4 border-l-green-600">
-                                            <TableCell className="pl-6 font-semibold text-gray-500">{leadIndex + 1}.{tIndex + 1}</TableCell>
-                                            <TableCell>-</TableCell>
-                                            <TableCell className="text-gray-500 italic">↳ Tranche Split</TableCell>
-                                            <TableCell className="font-bold text-blue-600">T{t.trancheNumber}</TableCell>
-                                            <TableCell className="font-bold text-green-600">₹{t.amount?.toLocaleString('en-IN')}</TableCell>
-                                            <TableCell>{t.paymentUid}</TableCell>
-                                            <TableCell className="text-gray-400">-</TableCell>
-                                            <TableCell className="text-gray-400">-</TableCell>
-                                            <TableCell className="text-gray-400">-</TableCell>
-                                            <TableCell className="text-gray-400">-</TableCell>
-                                            <TableCell className="text-gray-400">-</TableCell>
-                                            <TableCell>
-                                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                                                    {t.status || 'FOUND'}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-gray-400">-</TableCell>
-                                        </TableRow>
-                                    );
-                                });
-                            }
-                            
-                            return rows;
-                        }) : (
+                        )) : (
                             <TableRow>
                                 <TableCell colSpan={14} className="text-center py-4">No in-progress leads found.</TableCell>
                             </TableRow>

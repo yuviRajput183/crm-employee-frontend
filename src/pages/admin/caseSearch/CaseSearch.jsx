@@ -222,7 +222,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
                 </div>
               )}
 
-              {(isFullCaseFound === 'yes' && reportInTranches === 'yes') && (
+              {((isFullCaseFound === 'yes' && reportInTranches === 'yes') || isFullCaseFound === 'no') && (
                 <div className="mb-6 p-4 bg-gray-50 border rounded">
                   <h3 className="font-bold mb-4">Tranche Entry</h3>
                   {newTranches.map((tranche, idx) => (

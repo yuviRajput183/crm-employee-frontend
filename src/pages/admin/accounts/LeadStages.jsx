@@ -487,8 +487,8 @@ const LeadStages = () => {
                   type="number" 
                   value={formData.totalPayoutAmount || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, totalPayoutAmount: e.target.value }))}
-                  disabled={formData.reportedPayoutPercentageSame !== 'No'}
-                  className={`w-full border rounded p-2 ${formData.reportedPayoutPercentageSame !== 'No' ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}
+                  disabled={true}
+                  className="w-full border rounded p-2 bg-gray-100 text-gray-500"
                 />
               </div>
             </div>
