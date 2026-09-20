@@ -193,6 +193,13 @@ const LeadStages = () => {
       return;
     }
 
+    if (formData.confirmationReceived === 'Yes') {
+      if (!formData.pdfFile || !formData.emlFile) {
+        alert("Both PDF and EML files are mandatory to upload.");
+        return;
+      }
+    }
+
     let finalReason = '';
     if (formData.confirmationReceived === 'No') {
       if (!formData.reasonOption) {
@@ -364,11 +371,11 @@ const LeadStages = () => {
             {formData.confirmationReceived === 'Yes' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Upload PDF</label>
+                  <label className="text-sm font-medium">Upload PDF <span className="text-red-500">*</span></label>
                   <input type="file" accept=".pdf" onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files[0] }))} className="w-full border rounded p-2 bg-white" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Upload EML</label>
+                  <label className="text-sm font-medium">Upload EML <span className="text-red-500">*</span></label>
                   <input type="file" accept=".eml" onChange={(e) => setFormData(prev => ({ ...prev, emlFile: e.target.files[0] }))} className="w-full border rounded p-2 bg-white" />
                 </div>
               </div>
@@ -527,7 +534,7 @@ const LeadStages = () => {
               return;
             }
             
-            try {
+              try {
               const token = localStorage.getItem('token');
               const res = await axios.post(`${baseURL}/lead-stages/${id}/sp-invoice/submit`, {
                 invoiceType: formData.invoiceType,
@@ -535,10 +542,10 @@ const LeadStages = () => {
                 roundOffDifference: formData.roundOffDifference === "Yes",
                 calculationFile: formData.calculationFile, // populated after upload
                 reported: {
-                  channelPartnerPercentage: lead?.reportedPayoutPercentage || 0,
-                  channelPartnerAmount: lead?.totalPayoutAmount || 0,
-                  selfPercentage: lead?.selfPercentage || 0,
-                  selfAmount: lead?.selfAmount || 0
+                  channelPartnerPercentage: lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0,
+                  channelPartnerAmount: lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0,
+                  selfPercentage: lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0,
+                  selfAmount: lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0
                 },
                 calculated: {
                   channelPartnerPercentage: formData.calculatedCPPercent,
@@ -614,10 +621,10 @@ const LeadStages = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="border p-4 rounded">
                     <h4 className="font-medium mb-2">REPORTED</h4>
-                    <p className="text-sm text-gray-600">CP %: {lead?.reportedPayoutPercentage || 0}</p>
-                    <p className="text-sm text-gray-600">CP Amount: ₹{lead?.totalPayoutAmount || 0}</p>
-                    <p className="text-sm text-gray-600">Self %: {lead?.selfPercentage || 0}</p>
-                    <p className="text-sm text-gray-600">Self Amount: ₹{lead?.selfAmount || 0}</p>
+                    <p className="text-sm text-gray-600">CP %: {lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0}</p>
+                    <p className="text-sm text-gray-600">CP Amount: ₹{lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0}</p>
+                    <p className="text-sm text-gray-600">Self %: {lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0}</p>
+                    <p className="text-sm text-gray-600">Self Amount: ₹{lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0}</p>
                   </div>
                   <div className="border p-4 rounded">
                     <h4 className="font-medium mb-2">CALCULATED</h4>
@@ -642,10 +649,10 @@ const LeadStages = () => {
                       setFormData(prev => {
                          const updated = { ...prev, calculationSameAsReported: val };
                          if (val === 'Yes') {
-                            updated.calculatedCPPercent = lead?.reportedPayoutPercentage || 0;
-                            updated.calculatedCPAmount = lead?.totalPayoutAmount || 0;
-                            updated.calculatedSelfPercent = lead?.selfPercentage || 0;
-                            updated.calculatedSelfAmount = lead?.selfAmount || 0;
+                            updated.calculatedCPPercent = lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0;
+                            updated.calculatedCPAmount = lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0;
+                            updated.calculatedSelfPercent = lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0;
+                            updated.calculatedSelfAmount = lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0;
                          }
                          return updated;
                       });

@@ -38,6 +38,14 @@ const formSchema = z.object({
     disbursementDate: z.string().min(1, 'Disbursement Date is required'),
     pddCleared: z.string().min(1, 'PDD Cleared is required'),
     pddClearedDate: z.string().optional()
+}).refine(data => {
+    if (data.pddCleared === 'Yes' && data.pddClearedDate && data.disbursementDate) {
+        return new Date(data.pddClearedDate) >= new Date(data.disbursementDate);
+    }
+    return true;
+}, {
+    message: "PDD Cleared Date cannot be before Disbursement Date",
+    path: ["pddClearedDate"]
 });
 
 const AddAccountLead = () => {

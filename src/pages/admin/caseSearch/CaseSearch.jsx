@@ -8,9 +8,12 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
   const [isFullCaseFound, setIsFullCaseFound] = useState('');
   const [reportInTranches, setReportInTranches] = useState('');
   const [newTranches, setNewTranches] = useState([{ amount: '', spUid: '', foundDate: '', foundMonth: '' }]);
+  const [singleTrancheSpUid, setSingleTrancheSpUid] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [editingTrancheId, setEditingTrancheId] = useState(null);
+  const [editingTrancheData, setEditingTrancheData] = useState({ amount: '', spUid: '', paymentUid: '' });
 
   const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
 
@@ -27,6 +30,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
       setIsFullCaseFound('');
       setReportInTranches('');
       setNewTranches([{ amount: '', spUid: '', foundDate: '', foundMonth: '' }]);
+      setSingleTrancheSpUid('');
     } catch (error) {
       alert(error.response?.data?.message || "Failed to fetch case details");
       setLead(null);
@@ -65,7 +69,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
   const handleSubmit = async () => {
     let tranchesToSubmit = newTranches.filter(t => t.amount !== '');
     if (isFullCaseFound === 'yes' && reportInTranches === 'no') {
-      tranchesToSubmit = [{ amount: remainingAmount + newTranchesTotal, spUid: '' }];
+      tranchesToSubmit = [{ amount: remainingAmount + newTranchesTotal, spUid: singleTrancheSpUid }];
     } else if (isFullCaseFound === 'no') {
       tranchesToSubmit = tranchesToSubmit.map(t => ({ ...t, status: 'FOUND' }));
       if (remainingAmount > 0) {
@@ -103,6 +107,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
       setIsFullCaseFound('');
       setReportInTranches('');
       setNewTranches([{ amount: '', spUid: '', foundDate: '', foundMonth: '' }]);
+      setSingleTrancheSpUid('');
       
       if (onComplete) {
           onComplete();
@@ -111,6 +116,20 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
       alert(error.response?.data?.message || "Failed to save tranches");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSaveTrancheEdit = async (trancheId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${baseURL}/tranches/${trancheId}`, editingTrancheData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Tranche updated successfully");
+      setEditingTrancheId(null);
+      fetchCaseDetails();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to update tranche");
     }
   };
 
@@ -172,16 +191,57 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
                     <th className="p-2 border">Payment UID</th>
                     <th className="p-2 border">SP UID</th>
                     <th className="p-2 border">Status</th>
+                    {lead.status !== 'Invoice Raised' && lead.status !== 'Closed' && (
+                      <th className="p-2 border">Action</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {tranches.map((t) => (
                     <tr key={t._id}>
                       <td className="p-2 border">T{t.trancheNumber}</td>
-                      <td className="p-2 border">₹{t.amount?.toLocaleString('en-IN')}</td>
-                      <td className="p-2 border">{t.paymentUid}</td>
-                      <td className="p-2 border">{t.spUid || 'N/A'}</td>
+                      <td className="p-2 border">
+                        {editingTrancheId === t._id ? (
+                           <input type="number" className="border p-1 w-full" value={editingTrancheData.amount} onChange={(e) => setEditingTrancheData({...editingTrancheData, amount: e.target.value})} />
+                        ) : (
+                           `₹${t.amount?.toLocaleString('en-IN')}`
+                        )}
+                      </td>
+                      <td className="p-2 border">
+                        {editingTrancheId === t._id ? (
+                           <input type="text" className="border p-1 w-full" value={editingTrancheData.paymentUid} onChange={(e) => setEditingTrancheData({...editingTrancheData, paymentUid: e.target.value})} />
+                        ) : (
+                           t.paymentUid
+                        )}
+                      </td>
+                      <td className="p-2 border">
+                        {editingTrancheId === t._id ? (
+                           <input type="text" className="border p-1 w-full" value={editingTrancheData.spUid} onChange={(e) => setEditingTrancheData({...editingTrancheData, spUid: e.target.value})} />
+                        ) : (
+                           t.spUid || 'N/A'
+                        )}
+                      </td>
                       <td className="p-2 border">{t.status}</td>
+                      {lead.status !== 'Invoice Raised' && lead.status !== 'Closed' && (
+                        <td className="p-2 border">
+                          {editingTrancheId === t._id ? (
+                            <div className="flex gap-2">
+                              <button className="text-green-600 hover:underline" onClick={() => handleSaveTrancheEdit(t._id)}>Save</button>
+                              <button className="text-red-600 hover:underline" onClick={() => setEditingTrancheId(null)}>Cancel</button>
+                            </div>
+                          ) : (
+                            <button 
+                              className="text-blue-600 hover:underline" 
+                              onClick={() => {
+                                setEditingTrancheId(t._id);
+                                setEditingTrancheData({ amount: t.amount, spUid: t.spUid || '', paymentUid: t.paymentUid || '' });
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -275,7 +335,16 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
 
               {isFullCaseFound === 'yes' && reportInTranches === 'no' && (
                 <div className="mb-6 p-4 bg-gray-50 border rounded">
-                  <p>The complete remaining amount of ₹{(lead.reportedLoanAmount - (lead.trancheFoundAmount || 0)).toLocaleString('en-IN')} will be treated as one tranche.</p>
+                  <p className="mb-4">The complete remaining amount of ₹{(lead.reportedLoanAmount - (lead.trancheFoundAmount || 0)).toLocaleString('en-IN')} will be treated as one tranche.</p>
+                  <div>
+                    <label className="block text-sm">SP UID (Optional)</label>
+                    <input 
+                      type="text" 
+                      className="border p-2 rounded w-full md:w-1/3"
+                      value={singleTrancheSpUid}
+                      onChange={(e) => setSingleTrancheSpUid(e.target.value)}
+                    />
+                  </div>
                 </div>
               )}
 
