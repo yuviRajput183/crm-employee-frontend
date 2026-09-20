@@ -15,6 +15,37 @@ const InProgressAccountLeads = () => {
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
+    const [filters, setFilters] = useState({
+        leadNo: '',
+        caseName: '',
+        tranche: '',
+        amount: '',
+        paymentUid: '',
+        lanApplicationNo: '',
+        location: '',
+        product: '',
+        bank: '',
+        spName: '',
+        status: ''
+    });
+    const [debouncedFilters, setDebouncedFilters] = useState(filters);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedFilters(filters);
+        }, 1000);
+        return () => clearTimeout(handler);
+    }, [filters]);
+
+    const handleFilterChange = (field, value) => {
+        setFilters(prev => ({ ...prev, [field]: value }));
+    };
+
+    const checkMatch = (value, filterVal) => {
+        if (!filterVal) return true;
+        if (value === null || value === undefined) return false;
+        return String(value).toLowerCase().includes(filterVal.toLowerCase());
+    };
 
     const fetchLeads = async () => {
         try {
@@ -37,13 +68,51 @@ const InProgressAccountLeads = () => {
         fetchLeads();
     }, []);
 
-    const allIds = leads.flatMap(lead => {
+    const filteredLeads = leads.reduce((acc, lead) => {
+        const df = debouncedFilters;
+        const mainMatches = 
+            checkMatch(lead.leadNo, df.leadNo) &&
+            checkMatch(lead.caseName, df.caseName) &&
+            checkMatch(lead.reportedLoanAmount, df.amount) &&
+            checkMatch(lead.lanApplicationNo, df.lanApplicationNo) &&
+            checkMatch(lead.location?.name, df.location) &&
+            checkMatch(lead.product?.name, df.product) &&
+            checkMatch(lead.bank?.name || lead.bank?.bankName, df.bank) &&
+            checkMatch(lead.serviceProvider?.legalName, df.spName) &&
+            checkMatch(lead.status, df.status) &&
+            checkMatch('', df.tranche) &&
+            checkMatch('', df.paymentUid);
+
+        const matchingTranches = (lead.tranches || []).filter(t => 
+            checkMatch(lead.leadNo, df.leadNo) &&
+            checkMatch(lead.caseName, df.caseName) &&
+            checkMatch(t.amount, df.amount) &&
+            checkMatch(lead.lanApplicationNo, df.lanApplicationNo) &&
+            checkMatch(lead.location?.name, df.location) &&
+            checkMatch(lead.product?.name, df.product) &&
+            checkMatch(lead.bank?.name || lead.bank?.bankName, df.bank) &&
+            checkMatch(lead.serviceProvider?.legalName, df.spName) &&
+            checkMatch(t.status || 'FOUND', df.status) &&
+            checkMatch(t.trancheNumber ? `T${t.trancheNumber}` : '', df.tranche) &&
+            checkMatch(t.paymentUid, df.paymentUid)
+        );
+
+        if (mainMatches) {
+            acc.push({ ...lead, tranches: df.tranche || df.paymentUid ? matchingTranches : lead.tranches });
+        } else if (matchingTranches.length > 0) {
+            acc.push({ ...lead, tranches: matchingTranches });
+        }
+        
+        return acc;
+    }, []);
+
+    const allIds = filteredLeads.flatMap(lead => {
         if (lead.tranches && lead.tranches.length > 0) {
             return lead.tranches.map(t => t._id);
         }
         return [lead._id];
     });
-    const isAllSelected = leads.length > 0 && selectedIds.length === allIds.length;
+    const isAllSelected = filteredLeads.length > 0 && selectedIds.length === allIds.length;
 
     const handleSelectAll = (e) => {
         if (e.target.checked) {
@@ -96,9 +165,25 @@ const InProgressAccountLeads = () => {
                             <TableHead className="text-white">Status</TableHead>
                             <TableHead className="text-white">Action</TableHead>
                         </TableRow>
+                        <TableRow className="bg-gray-100">
+                            <TableHead></TableHead>
+                            <TableHead></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.leadNo} onChange={e => handleFilterChange('leadNo', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.caseName} onChange={e => handleFilterChange('caseName', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.tranche} onChange={e => handleFilterChange('tranche', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.amount} onChange={e => handleFilterChange('amount', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.paymentUid} onChange={e => handleFilterChange('paymentUid', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.lanApplicationNo} onChange={e => handleFilterChange('lanApplicationNo', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.location} onChange={e => handleFilterChange('location', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.product} onChange={e => handleFilterChange('product', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.bank} onChange={e => handleFilterChange('bank', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.spName} onChange={e => handleFilterChange('spName', e.target.value)} /></TableHead>
+                            <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.status} onChange={e => handleFilterChange('status', e.target.value)} /></TableHead>
+                            <TableHead></TableHead>
+                        </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {leads.length > 0 ? leads.flatMap((lead, leadIndex) => {
+                        {filteredLeads.length > 0 ? filteredLeads.flatMap((lead, leadIndex) => {
                             const rows = [];
                             
                             // 1. Push the main lead row

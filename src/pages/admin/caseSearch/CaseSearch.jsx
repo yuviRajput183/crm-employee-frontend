@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const CaseSearch = ({ accountLeadId, onComplete }) => {
+const CaseSearch = ({ accountLeadId, onComplete, onBack, onContinue }) => {
   const [lead, setLead] = useState(null);
   const [tranches, setTranches] = useState([]);
   
@@ -68,7 +68,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
 
   const handleSubmit = async () => {
     let tranchesToSubmit = newTranches.filter(t => t.amount !== '');
-    if (isFullCaseFound === 'yes' && reportInTranches === 'no') {
+    if ((isFullCaseFound === 'yes' && reportInTranches === 'no') || isFullCaseFound === 'on_confirmation') {
       tranchesToSubmit = [{ amount: remainingAmount + newTranchesTotal, spUid: singleTrancheSpUid }];
     } else if (isFullCaseFound === 'no') {
       tranchesToSubmit = tranchesToSubmit.map(t => ({ ...t, status: 'FOUND' }));
@@ -88,7 +88,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
       return alert("Total tranche amount cannot exceed the case amount.");
     }
 
-    if (isFullCaseFound === 'yes' && finalTotalFoundAmount !== lead.reportedLoanAmount) {
+    if ((isFullCaseFound === 'yes' || isFullCaseFound === 'on_confirmation') && finalTotalFoundAmount !== lead.reportedLoanAmount) {
       return alert(`Full case cannot be marked as found because ₹${lead.reportedLoanAmount - finalTotalFoundAmount} is still remaining.`);
     }
 
@@ -97,7 +97,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
       const token = localStorage.getItem('token');
       const res = await axios.post(`${baseURL}/tranches/${lead._id}`, {
         tranches: tranchesToSubmit,
-        isFullCaseFound: isFullCaseFound === 'yes'
+        isFullCaseFound: (isFullCaseFound === 'yes' || isFullCaseFound === 'on_confirmation')
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -258,12 +258,15 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
                   value={isFullCaseFound}
                   onChange={(e) => {
                     setIsFullCaseFound(e.target.value);
-                    if (e.target.value === 'no') setReportInTranches('yes');
+                    if (e.target.value === 'no' || e.target.value === 'on_confirmation') {
+                       setReportInTranches(e.target.value === 'no' ? 'yes' : 'no');
+                    }
                   }}
                 >
                   <option value="">Select</option>
                   <option value="yes">Yes</option>
                   <option value="no">No</option>
+                  <option value="on_confirmation">On Confirmation</option>
                 </select>
               </div>
 
@@ -333,7 +336,7 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
                 </div>
               )}
 
-              {isFullCaseFound === 'yes' && reportInTranches === 'no' && (
+              {((isFullCaseFound === 'yes' && reportInTranches === 'no') || isFullCaseFound === 'on_confirmation') && (
                 <div className="mb-6 p-4 bg-gray-50 border rounded">
                   <p className="mb-4">The complete remaining amount of ₹{(lead.reportedLoanAmount - (lead.trancheFoundAmount || 0)).toLocaleString('en-IN')} will be treated as one tranche.</p>
                   <div>
@@ -354,22 +357,62 @@ const CaseSearch = ({ accountLeadId, onComplete }) => {
                 </div>
               )}
 
-              {(isFullCaseFound === 'no' || reportInTranches !== '') && (
+              <div className="flex justify-between items-center mt-6">
                 <button 
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="bg-green-600 text-white px-6 py-2 rounded font-bold disabled:opacity-50"
+                  type="button"
+                  onClick={onBack}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
                 >
-                  {submitting ? 'Saving...' : 'Save & Continue'}
+                  Back
                 </button>
-              )}
+                <div className="flex gap-4">
+                  {onContinue && (lead?.stageNumber > 3) && (
+                    <button 
+                      type="button"
+                      onClick={onContinue}
+                      className="bg-gray-500 text-white px-6 py-2 rounded font-bold hover:bg-gray-600"
+                    >
+                      Skip & Continue
+                    </button>
+                  )}
+                  {(isFullCaseFound === 'no' || isFullCaseFound === 'on_confirmation' || reportInTranches !== '') && (
+                    <button 
+                      onClick={handleSubmit}
+                      disabled={submitting}
+                      className="bg-green-600 text-white px-6 py-2 rounded font-bold disabled:opacity-50"
+                    >
+                      {submitting ? 'Saving...' : 'Save & Continue'}
+                    </button>
+                  )}
+                </div>
+              </div>
             </>
           )}
 
           {lead.reportedLoanAmount - (lead.trancheFoundAmount || 0) === 0 && (
-            <div className="mt-4 p-4 bg-green-100 text-green-800 rounded font-bold">
-              Case is fully found. No more tranches can be added.
-            </div>
+            <>
+              <div className="mt-4 p-4 bg-green-100 text-green-800 rounded font-bold">
+                Case is fully found. No more tranches can be added.
+              </div>
+              <div className="flex justify-between items-center mt-6">
+                <button 
+                  type="button"
+                  onClick={onBack}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+                >
+                  Back
+                </button>
+                {onContinue && (
+                  <button 
+                    type="button"
+                    onClick={onContinue}
+                    className="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700"
+                  >
+                    Continue
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}

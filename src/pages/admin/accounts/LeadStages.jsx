@@ -56,7 +56,8 @@ const LeadStages = () => {
     calculatedCPPercent: 0,
     calculatedCPAmount: 0,
     calculatedSelfPercent: 0,
-    calculatedSelfAmount: 0
+    calculatedSelfAmount: 0,
+    rawCalc: null
   });
 
   const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
@@ -135,7 +136,9 @@ const LeadStages = () => {
   const fetchBankers = async (cityId, stateName = selectedState) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${baseURL}/bankers/list-bankers?stateName=${stateName}&city=${cityId}`, {
+      const stateToUse = stateName || formData.stateName || selectedState;
+      if (!cityId || !stateToUse) return;
+      const res = await axios.get(`${baseURL}/bankers/list-bankers?stateName=${encodeURIComponent(stateToUse)}&city=${encodeURIComponent(cityId)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -145,6 +148,28 @@ const LeadStages = () => {
       console.error("Error fetching bankers", error);
     }
   };
+
+  useEffect(() => {
+    setFormData(prev => {
+      if (prev.calculationSameAsReported === 'No') return prev; 
+      
+      const updated = { ...prev };
+      
+      if (prev.rawCalc) {
+        updated.calculatedCPPercent = prev.rawCalc.channelPartnerPercentage !== null ? prev.rawCalc.channelPartnerPercentage : (lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0);
+        updated.calculatedCPAmount = prev.rawCalc.channelPartnerAmount !== null ? prev.rawCalc.channelPartnerAmount : (lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0);
+        updated.calculatedSelfPercent = prev.rawCalc.selfPercentage !== null ? prev.rawCalc.selfPercentage : (lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0);
+        updated.calculatedSelfAmount = prev.rawCalc.selfAmount !== null ? prev.rawCalc.selfAmount : (lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0);
+      } else if (!lead?.spInvoiceStageId) {
+        // No file uploaded and not saved yet, just mirror exactly
+        updated.calculatedCPPercent = lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0;
+        updated.calculatedCPAmount = lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0;
+        updated.calculatedSelfPercent = lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0;
+        updated.calculatedSelfAmount = lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0;
+      }
+      return updated;
+    });
+  }, [lead?.reportedThrough, lead?.reportedPayoutPercentage, lead?.totalPayoutAmount, lead?.spInvoiceStageId]);
 
   useEffect(() => {
     fetchLeadDetails();
@@ -339,16 +364,28 @@ const LeadStages = () => {
                   <SelectContent>
                       {bankersList.map((banker) => (
                           <SelectItem key={banker?._id} value={banker?._id}>
-                              {banker?.bankerName}
+                              {banker?.bank?.name ? `${banker.bank.name} - ${banker.bankerName}` : banker?.bankerName}
                           </SelectItem>
                       ))}
                   </SelectContent>
               </Select>
             </div>
 
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-              Save Details
-            </button>
+            <div className="flex justify-between items-center mt-6">
+              <button type="button" onClick={() => navigate('/admin/account_in_progress_leads')} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+                Back
+              </button>
+              <div className="flex gap-4">
+                {lead?.stageNumber > 1 && (
+                  <button type="button" onClick={() => setCurrentStage(2)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Skip & Continue
+                  </button>
+                )}
+                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                  Save Details
+                </button>
+              </div>
+            </div>
           </form>
         )}
 
@@ -412,14 +449,26 @@ const LeadStages = () => {
               </div>
             )}
 
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-              Save Confirmation
-            </button>
+            <div className="flex justify-between items-center mt-6">
+              <button type="button" onClick={() => setCurrentStage(1)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+                Back
+              </button>
+              <div className="flex gap-4">
+                {lead?.stageNumber > 2 && (
+                  <button type="button" onClick={() => setCurrentStage(3)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Skip & Continue
+                  </button>
+                )}
+                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                  Save Confirmation
+                </button>
+              </div>
+            </div>
           </form>
         )}
 
         {currentStage === 3 && (
-            <CaseSearch accountLeadId={lead?._id} onComplete={fetchLeadDetails} />
+            <CaseSearch accountLeadId={lead?._id} onComplete={fetchLeadDetails} onBack={() => setCurrentStage(2)} onContinue={() => setCurrentStage(4)} />
         )}
 
         {currentStage === 4 && (
@@ -516,9 +565,21 @@ const LeadStages = () => {
               </Select>
             </div>
 
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-              Save & Continue
-            </button>
+            <div className="flex justify-between items-center mt-6">
+              <button type="button" onClick={() => setCurrentStage(3)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+                Back
+              </button>
+              <div className="flex gap-4">
+                {lead?.stageNumber > 4 && (
+                  <button type="button" onClick={() => setCurrentStage(5)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Skip & Continue
+                  </button>
+                )}
+                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                  Save & Continue
+                </button>
+              </div>
+            </div>
           </form>
         )}
 
@@ -602,10 +663,11 @@ const LeadStages = () => {
                       setFormData(prev => ({
                         ...prev,
                         calculationFile: { fileName: res.data.data.fileName, filePath: res.data.data.filePath },
-                        calculatedCPPercent: calc.channelPartnerPercentage,
-                        calculatedCPAmount: calc.channelPartnerAmount,
-                        calculatedSelfPercent: calc.selfPercentage,
-                        calculatedSelfAmount: calc.selfAmount
+                        rawCalc: calc,
+                        calculatedCPPercent: calc.channelPartnerPercentage !== null ? calc.channelPartnerPercentage : (lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0),
+                        calculatedCPAmount: calc.channelPartnerAmount !== null ? calc.channelPartnerAmount : (lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0),
+                        calculatedSelfPercent: calc.selfPercentage !== null ? calc.selfPercentage : (lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0),
+                        calculatedSelfAmount: calc.selfAmount !== null ? calc.selfAmount : (lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0)
                       }));
                       alert("Calculation loaded successfully");
                    }
@@ -691,9 +753,21 @@ const LeadStages = () => {
                    </div>
                 )}
                 
-                <button type="submit" className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                  Save & Continue
-                </button>
+                <div className="flex justify-between items-center mt-6">
+                  <button type="button" onClick={() => setCurrentStage(4)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+                    Back
+                  </button>
+                  <div className="flex gap-4">
+                    {lead?.stageNumber > 5 && (
+                      <button type="button" onClick={() => setCurrentStage(6)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                        Skip & Continue
+                      </button>
+                    )}
+                    <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                      Save & Continue
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </form>
