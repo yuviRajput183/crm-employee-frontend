@@ -10,11 +10,14 @@ const getHeaders = () => {
     };
 };
 
-export const startEsign = async (channelPartnerId, file) => {
+export const startEsign = async (channelPartnerId, forceNew = false, redirectUrl = "") => {
   const token = localStorage.getItem('token');
   const formData = new FormData();
-  if (file) {
-      formData.append('document', file);
+  if (forceNew) {
+      formData.append('forceNew', 'true');
+  }
+  if (redirectUrl) {
+      formData.append('redirectUrl', redirectUrl);
   }
 
   const response = await axios.post(`${baseURL}/esign/channel-partners/${channelPartnerId}/start`, formData, {
@@ -45,6 +48,27 @@ export const getEsignStatus = async (esignId) => {
 
 export const getSignedDocument = async (esignId) => {
   const response = await axios.get(`${baseURL}/esign/${esignId}/document`, {
+      headers: getHeaders(),
+      responseType: "blob",
+      withCredentials: true
+  });
+  return response;
+};
+
+export const startAdminEsign = async (channelPartnerId, forceNew = false, redirectUrl = "") => {
+  const token = localStorage.getItem('token');
+  const response = await axios.post(`${baseURL}/esign/admin/channel-partners/${channelPartnerId}/start`, {
+      forceNew,
+      redirectUrl
+  }, {
+      headers: getHeaders(),
+      withCredentials: true
+  });
+  return response.data;
+};
+
+export const getAdminActiveEsign = async (channelPartnerId) => {
+  const response = await axios.get(`${baseURL}/esign/admin/channel-partners/${channelPartnerId}/active`, {
       headers: getHeaders(),
       withCredentials: true
   });

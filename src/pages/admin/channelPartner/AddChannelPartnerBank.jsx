@@ -163,6 +163,12 @@ const AddChannelPartnerBank = () => {
         }
     }
 
+    const showAadhaarAddress = 
+        (!isGst && !isUdyam) || 
+        (partnerDetails?.businessDetails?.gst?.inactiveContinueAs === 'individual') || 
+        (partnerDetails?.businessDetails?.udyam?.declarationType === 'NOT_REGISTERED');
+
+
     return (
         <div className="px-6 py-6 bg-white rounded shadow min-h-screen">
             <div className="flex gap-2 items-center pb-4 border-b-2 mb-6">
@@ -286,7 +292,7 @@ const AddChannelPartnerBank = () => {
                                         <option value="">Select Address Source</option>
                                         {isGst && <option value="gst">GST Address</option>}
                                         {isUdyam && <option value="udyam">Udyam Address</option>}
-                                        {!isGst && !isUdyam && <option value="aadhaar">Aadhaar Address</option>}
+                                        {showAadhaarAddress && <option value="aadhaar">Aadhaar Address</option>}
                                     </select>
                                     {selectedAddressType === 'gst' && <div className="mt-2 text-xs text-gray-600 p-2 bg-gray-50 rounded">{partnerDetails.businessDetails?.gst?.address}</div>}
                                     {selectedAddressType === 'udyam' && (

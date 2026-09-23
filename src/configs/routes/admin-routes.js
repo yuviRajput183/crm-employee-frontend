@@ -515,5 +515,15 @@ export const adminRoutes = [
         path: "review_channel_partner_documents/:id",
         name: "Review Channel Partner Documents Details",
         component: lazy(() => import('@/pages/admin/channelPartner/ReviewChannelPartnerDetails'))
+    },
+    {
+        path: "review_channel_partner_agreement",
+        name: "Review Channel Partner Agreement",
+        component: lazy(() => import('@/pages/admin/channelPartner/ReviewAgreementList'))
+    },
+    {
+        path: "review_channel_partner_agreement/:id",
+        name: "Review Channel Partner Agreement Details",
+        component: lazy(() => import('@/pages/admin/channelPartner/ReviewAgreementDetails'))
     }
 ]

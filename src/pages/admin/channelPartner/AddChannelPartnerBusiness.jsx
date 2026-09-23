@@ -22,6 +22,7 @@ const AddChannelPartnerBusiness = () => {
     
     // Form Inputs
     const [registrationType, setRegistrationType] = useState("");
+    const [panCategory, setPanCategory] = useState("");
     // eslint-disable-next-line no-unused-vars
     const [panName, setPanName] = useState("");
     const [udyamNumberInput, setUdyamNumberInput] = useState("");
@@ -63,22 +64,27 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
             setBusinessState(res.data.businessDetails || {});
             setApplicantName(res.data.aadhaar || "Applicant");
             setPanName(res.data.panName || "");
-            if (res.data.businessDetails?.registrationType) {
-                setRegistrationType(res.data.businessDetails.registrationType);
-            } else if (mobile) {
-                // Auto-select based on PAN category
+            let cat = "";
+            if (mobile) {
                 try {
                     const statusRes = await apiGetVerificationStatus(mobile);
-                    const cat = statusRes.data?.panDetails?.category?.toLowerCase();
+                    cat = statusRes.data?.panDetails?.category?.toLowerCase();
                     if (cat) {
-                        if (cat === "person" || cat === "individual") setRegistrationType("Individual/Sole Prop");
-                        else if (cat === "huf") setRegistrationType("HUF");
-                        else if (cat === "firm" || cat === "partnership" || cat === "llp") setRegistrationType("Partnership/LLP");
-                        else if (cat === "company") setRegistrationType("Company");
+                        setPanCategory(cat);
                     }
                 } catch (catErr) {
                     console.error("Failed to fetch pan category", catErr);
                 }
+            }
+
+            if (res.data.businessDetails?.registrationType) {
+                setRegistrationType(res.data.businessDetails.registrationType);
+            } else if (cat) {
+                // Auto-select based on PAN category
+                if (cat === "person" || cat === "individual" || cat === "p") setRegistrationType("Individual/Sole Prop");
+                else if (cat === "huf") setRegistrationType("HUF");
+                else if (cat === "firm" || cat === "partnership" || cat === "llp") setRegistrationType("Partnership/LLP");
+                else if (cat === "company") setRegistrationType("Company");
             }
         } catch (err) {
             setError(err.response?.data?.message || err.message);
@@ -307,12 +313,32 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                         {!udyam?.panCheckStatus || udyam.panCheckStatus === "PENDING" ? (
                             <div className="space-y-4">
                                 <p className="text-sm text-gray-600">Initiating background Udyam check for the registered PAN...</p>
-                                <Button disabled={actionLoading} onClick={checkUdyamPan}>Check Udyam by PAN</Button>
+                                <div className="flex gap-4">
+                                    <Button disabled={actionLoading} onClick={checkUdyamPan}>Check Udyam by PAN</Button>
+                                    {(panCategory === 'p' || panCategory === 'person' || panCategory === 'individual') && (
+                                        <Button 
+                                            variant="outline" 
+                                            disabled={actionLoading} 
+                                            onClick={() => {
+                                                setBusinessState(prev => ({
+                                                    ...prev,
+                                                    udyam: {
+                                                        ...prev.udyam,
+                                                        panCheckStatus: "NOT_FOUND",
+                                                        skipped: true
+                                                    }
+                                                }));
+                                            }}
+                                        >
+                                            Skip Udyam
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         ) : udyam.panCheckStatus === "NOT_FOUND" ? (
                             <div className="space-y-4">
-                                <div className="text-red-600 font-semibold flex items-center gap-2">
-                                    <span>❌</span> Udyam registration not found for the given PAN.
+                                <div className={`${udyam.skipped ? 'text-blue-600' : 'text-red-600'} font-semibold flex items-center gap-2`}>
+                                    <span>{udyam.skipped ? 'ℹ️' : '❌'}</span> {udyam.skipped ? 'Udyam verification skipped.' : 'Udyam registration not found for the given PAN.'}
                                 </div>
                                 <div className="p-4 bg-white border rounded">
                                     <label className="flex items-start gap-2">
@@ -467,8 +493,18 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                 </div>
                             </div>
                         )}
+                        {udyam.declarationType === "REGISTERED" && (
+                            <div className="p-4 bg-white border rounded opacity-75 mt-4">
+                                <label className="flex items-start gap-2">
+                                    <input type="checkbox" className="mt-1 cursor-default" checked={true} readOnly />
+                                    <span className="text-sm text-gray-700">
+                                        I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are registered as Micro or Small or Medium Enterprise under the Micro, Small and Medium Enterprises Development Act, 2006 via registration number <strong>{udyam.udyamNumber || udyamNumberInput}</strong>. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.
+                                    </span>
+                                </label>
+                            </div>
+                        )}
                         {udyam.declarationType === "NOT_REGISTERED" && (
-                            <div className="p-4 bg-white border rounded opacity-75">
+                            <div className="p-4 bg-white border rounded opacity-75 mt-4">
                                 <label className="flex items-start gap-2">
                                     <input type="checkbox" className="mt-1 cursor-default" checked={true} readOnly />
                                     <span className="text-sm text-gray-700">
@@ -617,8 +653,18 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                 </div>
                             </div>
                         )}
-                        {gst.declarationType === "NOT_REGISTERED" && (
-                            <div className="p-4 bg-white border rounded opacity-75">
+                        {gst.gstRegistered && (
+                            <div className="p-4 bg-white border rounded opacity-75 mt-4">
+                                <label className="flex items-start gap-2">
+                                    <input type="checkbox" className="mt-1 cursor-default" checked={true} readOnly />
+                                    <span className="text-sm text-gray-700">
+                                        <span>I, <strong>{applicantName}</strong>, the applicant, in the capacity of <strong>{capacityText}</strong>{firmNameNode} confirms that I/We are registered under Good and Services Tax, 2017 via registration number <strong>{gst.selectedGstin}</strong>. In case of any change in the registration status it will be my/our responsibility to inform you of the same immediately.</span>
+                                    </span>
+                                </label>
+                            </div>
+                        )}
+                        {!gst.gstRegistered && (
+                            <div className="p-4 bg-white border rounded opacity-75 mt-4">
                                 <label className="flex items-start gap-2">
                                     <input type="checkbox" className="mt-1 cursor-default" checked={true} readOnly />
                                     <span className="text-sm text-gray-700">
