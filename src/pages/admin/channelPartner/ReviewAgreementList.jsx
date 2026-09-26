@@ -57,7 +57,7 @@ const ReviewAgreementList = () => {
                         {loading ? (
                             <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">Loading...</td></tr>
                         ) : partners.length === 0 ? (
-                            <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">No channel partners waiting for admin e-sign.</td></tr>
+                            <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">No channel partners found.</td></tr>
                         ) : (
                             partners.map(cp => (
                                 <tr key={cp._id} className="hover:bg-gray-50">
@@ -72,16 +72,30 @@ const ReviewAgreementList = () => {
                                         {cp.userEsignRequest?.signedAt ? new Date(cp.userEsignRequest.signedAt).toLocaleDateString() : 'N/A'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap border-r">
-                                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">Pending Admin Sign</span>
+                                        {cp.adminEsignStatus === 'APPROVED' ? (
+                                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">Approved</span>
+                                        ) : (
+                                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">Pending Admin Sign</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                                        <Button 
-                                            onClick={() => handleReviewClick(cp)}
-                                            size="sm"
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                                        >
-                                            Review & Sign
-                                        </Button>
+                                        {cp.adminEsignStatus === 'APPROVED' ? (
+                                            <Button 
+                                                onClick={() => handleReviewClick(cp)}
+                                                size="sm"
+                                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                            >
+                                                View
+                                            </Button>
+                                        ) : (
+                                            <Button 
+                                                onClick={() => handleReviewClick(cp)}
+                                                size="sm"
+                                                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                            >
+                                                Review & Sign
+                                            </Button>
+                                        )}
                                     </td>
                                 </tr>
                             ))

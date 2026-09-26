@@ -150,23 +150,31 @@ const ReviewAgreementDetails = () => {
                 </p>
 
                 <div className="flex flex-col gap-4">
-                    {!adminEsignRequest ? (
-                        <Button onClick={(e) => handleSign(e, false)} disabled={isEsigning} className="bg-blue-600 hover:bg-blue-700 text-white self-start">
-                            {isEsigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Start Admin e-Sign
-                        </Button>
-                    ) : adminEsignRequest.status === "SIGNED" ? (
+                    {(adminEsignRequest && (adminEsignRequest.status === "SIGNED" || adminEsignRequest.status === "SIGNED_PENDING_DOWNLOAD")) || partnerDetails?.adminEsignStatus === 'APPROVED' ? (
                         <div className="flex gap-4 items-center">
                             <Alert className="bg-green-50 text-green-800 border-green-300">
                                 Admin e-Sign completed successfully.
                             </Alert>
-                            <Button onClick={handleDownload} className="bg-green-600 hover:bg-green-700 text-white">
-                                Download Fully Signed Agreement
-                            </Button>
+                            {adminEsignRequest?._id ? (
+                                <Button onClick={handleDownload} className="bg-green-600 hover:bg-green-700 text-white">
+                                    Download Fully Signed Agreement
+                                </Button>
+                            ) : partnerDetails?.docStates?.adminSignedAgreementUrl || partnerDetails?.docStates?.signedAgreementUrl ? (
+                                <a href={`${baseURL.replace('/api/v1', '')}${partnerDetails?.docStates?.adminSignedAgreementUrl || partnerDetails?.docStates?.signedAgreementUrl}`} target="_blank" rel="noreferrer">
+                                    <Button className="bg-green-600 hover:bg-green-700 text-white">
+                                        Download Fully Signed Agreement
+                                    </Button>
+                                </a>
+                            ) : null}
                             <Button onClick={handleContinue} className="bg-blue-600 hover:bg-blue-700 text-white">
                                 Back to List
                             </Button>
                         </div>
+                    ) : !adminEsignRequest ? (
+                        <Button onClick={(e) => handleSign(e, false)} disabled={isEsigning} className="bg-blue-600 hover:bg-blue-700 text-white self-start">
+                            {isEsigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Start Admin e-Sign
+                        </Button>
                     ) : adminEsignRequest.status === "FAILED" || adminEsignRequest.status === "CANCELLED" || adminEsignRequest.status === "EXPIRED" ? (
                         <div className="flex items-center gap-4">
                             <span className="text-red-500 font-medium">Admin e-Sign Failed or Expired</span>

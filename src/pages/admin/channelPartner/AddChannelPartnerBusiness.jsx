@@ -691,15 +691,35 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                     >
                         Back
                     </Button>
-                    {!regType && (
-                        <Button 
-                            disabled={actionLoading || !registrationType} 
-                            onClick={handleSetRegistrationType}
-                            className="px-8"
-                        >
-                            Continue
-                        </Button>
-                    )}
+                    <div className="flex gap-4">
+                        {regType && !isUdyamComplete && udyam?.panCheckStatus === "FOUND" && udyam?.verificationStatus !== "VERIFIED" && (panCategory === 'p' || panCategory === 'person' || panCategory === 'individual') && (
+                            <Button 
+                                variant="outline" 
+                                disabled={actionLoading} 
+                                onClick={() => {
+                                    setBusinessState(prev => ({
+                                        ...prev,
+                                        udyam: {
+                                            ...prev.udyam,
+                                            panCheckStatus: "NOT_FOUND",
+                                            skipped: true
+                                        }
+                                    }));
+                                }}
+                            >
+                                Skip and process as individual
+                            </Button>
+                        )}
+                        {!regType && (
+                            <Button 
+                                disabled={actionLoading || !registrationType} 
+                                onClick={handleSetRegistrationType}
+                                className="px-8"
+                            >
+                                Continue
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
 
