@@ -407,11 +407,17 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                         <div className="col-span-1 sm:col-span-2"><strong>Official Address:</strong> {udyam.officialAddress}</div>
                                         <div><strong>Registration Date:</strong> {udyam.registrationDate}</div>
                                         <div><strong>Last Updated Date:</strong> {udyam.lastUpdatedDate}</div>
-                                        {udyam.certificateDocument?.url && (
-                                            <div className="col-span-1 sm:col-span-2 mt-2">
-                                                <strong>Certificate:</strong> <a href={udyam.certificateDocument.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">View/Download Document</a>
-                                            </div>
-                                        )}
+                                        {udyam.certificateDocument?.url && (() => {
+                                            const rootUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin);
+                                            const certUrl = udyam.certificateDocument.url.startsWith('http') 
+                                                ? udyam.certificateDocument.url 
+                                                : `${rootUrl}${udyam.certificateDocument.url}`;
+                                            return (
+                                                <div className="col-span-1 sm:col-span-2 mt-2">
+                                                    <strong>Certificate:</strong> <a href={certUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">View/Download Document</a>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                     
                                     {udyam?.units?.length > 1 && (
@@ -480,7 +486,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname =
                                         );
                                     })()}
                                     {udyam.certificateDocument?.url && (() => {
-                                        const rootUrl = typeof baseURL !== 'undefined' ? baseURL.replace('/api/v1', '') : '';
+                                        const rootUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin);
                                         const certUrl = udyam.certificateDocument.url.startsWith('http') 
                                             ? udyam.certificateDocument.url 
                                             : `${rootUrl}${udyam.certificateDocument.url}`;

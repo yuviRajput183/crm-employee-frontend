@@ -74,35 +74,25 @@ const AddChannelPartnerAgreement = () => {
 
                 <Alert className="bg-blue-50 text-blue-800 border-blue-300 py-6 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div>
-                        <span className="font-semibold block mb-2 text-lg">{adminEsignSigned ? 'Download Agreement' : 'Generate Agreement'}</span> 
+                        <span className="font-semibold block mb-2 text-lg">
+                            {adminEsignSigned ? 'Download Fully Signed Agreement' : 'Generate Agreement'}
+                        </span> 
                         {adminEsignSigned 
-                            ? 'Click the button to download the signed agreement for this channel partner.'
-                            : 'Click the button to generate the agreement for this channel partner.'}
+                            ? 'Click the button to download the completely esigned agreement by both user and admin.'
+                            : 'Click the button to generate and download the agreement for this channel partner.'}
                     </div>
                     <div className="flex flex-col gap-2">
-                        {!adminEsignSigned && (
+                        {!adminEsignSigned ? (
                             <Button 
                                 onClick={async () => {
                                     try {
+                                        // 1. Generate Agreement
                                         await axios.post(`${baseURL}/channel-partners/${channelPartnerId}/agreement/generate`, {}, {
                                             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                                             withCredentials: true
                                         });
-                                        alert("Agreement generated successfully!");
-                                    } catch (err) {
-                                        console.error("Failed to generate agreement", err);
-                                        alert(err.response?.data?.message || err.response?.data?.error || "Failed to generate agreement");
-                                    }
-                                }} 
-                                className="bg-green-600 hover:bg-green-700 text-white min-w-[250px]"
-                            >
-                                Generate Agreement
-                            </Button>
-                        )}
-                        {adminEsignSigned && (
-                            <Button 
-                                onClick={async () => {
-                                    try {
+                                        
+                                        // 2. Download Agreement
                                         const downloadRes = await axios.get(`${baseURL}/channel-partners/${channelPartnerId}/agreement/download`, {
                                             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                                             responseType: 'blob',
@@ -116,13 +106,38 @@ const AddChannelPartnerAgreement = () => {
                                         link.click();
                                         link.remove();
                                     } catch (err) {
-                                        console.error("Failed to download agreement", err);
-                                        alert("Failed to download agreement");
+                                        console.error("Failed to generate or download agreement", err);
+                                        alert(err.response?.data?.message || err.response?.data?.error || "Failed to generate or download agreement");
+                                    }
+                                }} 
+                                className="bg-green-600 hover:bg-green-700 text-white min-w-[250px]"
+                            >
+                                Generate and Download Agreement
+                            </Button>
+                        ) : (
+                            <Button 
+                                onClick={async () => {
+                                    try {
+                                        const downloadRes = await axios.get(`${baseURL}/channel-partners/${channelPartnerId}/agreement/download`, {
+                                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                                            responseType: 'blob',
+                                            withCredentials: true
+                                        });
+                                        const url = window.URL.createObjectURL(new Blob([downloadRes.data]));
+                                        const link = document.createElement('a');
+                                        link.href = url;
+                                        link.setAttribute('download', 'Signed-Connector-Agreement.pdf');
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        link.remove();
+                                    } catch (err) {
+                                        console.error("Failed to download signed agreement", err);
+                                        alert("Failed to download signed agreement");
                                     }
                                 }} 
                                 className="bg-blue-600 hover:bg-blue-700 text-white min-w-[250px]"
                             >
-                                Download Agreement
+                                Download Signed Agreement
                             </Button>
                         )}
                     </div>

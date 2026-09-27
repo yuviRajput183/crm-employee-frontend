@@ -199,11 +199,15 @@ const DocReviewRow = ({ title, docKey, docState, onReview }) => {
                     <span className="truncate text-gray-600 max-w-[200px]">
                         {docState?.url ? docState.url.split('/').pop() : `${title}_Uploaded.pdf`}
                     </span>
-                    {docState?.url ? (
-                        <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin)}${docState.url}`} target="_blank" rel="noreferrer" className="hover:text-blue-500">
-                            <Download size={16} />
-                        </a>
-                    ) : (
+                    {docState?.url ? (() => {
+                        const rootUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin);
+                        const docUrl = docState.url.startsWith('http') ? docState.url : `${rootUrl}${docState.url}`;
+                        return (
+                            <a href={docUrl} target="_blank" rel="noreferrer" className="hover:text-blue-500">
+                                <Download size={16} />
+                            </a>
+                        );
+                    })() : (
                         <button className="hover:text-blue-500" onClick={(e) => { e.preventDefault(); alert("File URL not available."); }}>
                             <Download size={16} />
                         </button>
