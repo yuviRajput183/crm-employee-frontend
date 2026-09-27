@@ -197,25 +197,43 @@ const ViewChannelPartner = () => {
                 </section>
 
                 {/* Deal Info */}
-                {(cp.dealType || cp.dealPercentage !== undefined) && (
+                {(cp.processedDealType || cp.reportedDealType) && (
                     <section>
                         <h2 className="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Deal & Referral Details</h2>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                             <div className="flex flex-col">
-                                <span className="text-gray-500 font-semibold">Deal Type</span>
-                                <span>{cp.dealType || '-'}</span>
+                                <span className="text-gray-500 font-semibold">Processed Deal Type</span>
+                                <span>{cp.processedDealType || '-'}</span>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-gray-500 font-semibold">Deal Percentage</span>
-                                <span>{cp.dealPercentage !== undefined ? `${cp.dealPercentage}%` : '-'}</span>
+                                <span className="text-gray-500 font-semibold">Processed Deal %</span>
+                                <span>{cp.processedDealPercentage !== undefined ? `${cp.processedDealPercentage}%` : '-'}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-gray-500 font-semibold">Processed Balance</span>
+                                <span>{cp.processedBalanceReferralDealPercentage !== undefined ? `${cp.processedBalanceReferralDealPercentage}%` : '-'}</span>
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-gray-500 font-semibold">Level 1 Referrer ID</span>
                                 <span>{cp.referredByLevel1Id || '-'}</span>
                             </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div className="flex flex-col">
-                                <span className="text-gray-500 font-semibold">Balance Deal</span>
-                                <span>{cp.balanceReferralDealPercentage !== undefined ? `${cp.balanceReferralDealPercentage}%` : '-'}</span>
+                                <span className="text-gray-500 font-semibold">Reported Deal Type</span>
+                                <span>{cp.reportedDealType || '-'}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-gray-500 font-semibold">Reported Deal %</span>
+                                <span>{cp.reportedDealPercentage !== undefined ? `${cp.reportedDealPercentage}%` : '-'}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-gray-500 font-semibold">Reported Balance</span>
+                                <span>{cp.reportedBalanceReferralDealPercentage !== undefined ? `${cp.reportedBalanceReferralDealPercentage}%` : '-'}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-gray-500 font-semibold">Level 2 Referrer ID</span>
+                                <span>{cp.referredByLevel2Id || '-'}</span>
                             </div>
                         </div>
                     </section>
