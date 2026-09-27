@@ -74,39 +74,58 @@ const AddChannelPartnerAgreement = () => {
 
                 <Alert className="bg-blue-50 text-blue-800 border-blue-300 py-6 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div>
-                        <span className="font-semibold block mb-2 text-lg">Generate Agreement</span> 
-                        Click the button to generate and download the agreement for this channel partner.
+                        <span className="font-semibold block mb-2 text-lg">{adminEsignSigned ? 'Download Agreement' : 'Generate Agreement'}</span> 
+                        {adminEsignSigned 
+                            ? 'Click the button to download the signed agreement for this channel partner.'
+                            : 'Click the button to generate the agreement for this channel partner.'}
                     </div>
-                    <Button 
-                        onClick={async () => {
-                            try {
-                                const res = await axios.post(`${baseURL}/channel-partners/${channelPartnerId}/agreement/generate`, {}, {
-                                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-                                    withCredentials: true
-                                });
-                                
-                                // Download the file
-                                const downloadRes = await axios.get(`${baseURL}/channel-partners/${channelPartnerId}/agreement/download`, {
-                                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-                                    responseType: 'blob',
-                                    withCredentials: true
-                                });
-                                const url = window.URL.createObjectURL(new Blob([downloadRes.data]));
-                                const link = document.createElement('a');
-                                link.href = url;
-                                link.setAttribute('download', res.data.data?.fileName || 'Connector-Agreement.pdf');
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
-                            } catch (err) {
-                                console.error("Failed to generate agreement", err);
-                                alert(err.response?.data?.message || err.response?.data?.error || "Failed to generate agreement");
-                            }
-                        }} 
-                        className="bg-green-600 hover:bg-green-700 text-white min-w-[250px]"
-                    >
-                        Generate and Download Agreement
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                        {!adminEsignSigned && (
+                            <Button 
+                                onClick={async () => {
+                                    try {
+                                        await axios.post(`${baseURL}/channel-partners/${channelPartnerId}/agreement/generate`, {}, {
+                                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                                            withCredentials: true
+                                        });
+                                        alert("Agreement generated successfully!");
+                                    } catch (err) {
+                                        console.error("Failed to generate agreement", err);
+                                        alert(err.response?.data?.message || err.response?.data?.error || "Failed to generate agreement");
+                                    }
+                                }} 
+                                className="bg-green-600 hover:bg-green-700 text-white min-w-[250px]"
+                            >
+                                Generate Agreement
+                            </Button>
+                        )}
+                        {adminEsignSigned && (
+                            <Button 
+                                onClick={async () => {
+                                    try {
+                                        const downloadRes = await axios.get(`${baseURL}/channel-partners/${channelPartnerId}/agreement/download`, {
+                                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                                            responseType: 'blob',
+                                            withCredentials: true
+                                        });
+                                        const url = window.URL.createObjectURL(new Blob([downloadRes.data]));
+                                        const link = document.createElement('a');
+                                        link.href = url;
+                                        link.setAttribute('download', 'Connector-Agreement.pdf');
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        link.remove();
+                                    } catch (err) {
+                                        console.error("Failed to download agreement", err);
+                                        alert("Failed to download agreement");
+                                    }
+                                }} 
+                                className="bg-blue-600 hover:bg-blue-700 text-white min-w-[250px]"
+                            >
+                                Download Agreement
+                            </Button>
+                        )}
+                    </div>
                 </Alert>
 
                 {channelPartnerId && (
@@ -114,6 +133,7 @@ const AddChannelPartnerAgreement = () => {
                         <EsignButton 
                             channelPartnerId={channelPartnerId} 
                             hideContinueButton={true}
+                            hideDownloadButton={true}
                         />
                     </div>
                 )}

@@ -46,7 +46,8 @@ const ReviewAgreementDetails = () => {
         try {
             setIsEsigning(true);
             setError(null);
-            const response = await startAdminEsign(id, forceNew);
+            const redirectUrl = `${window.location.origin}/admin/review_channel_partner_agreement/${id}`;
+            const response = await startAdminEsign(id, forceNew, redirectUrl);
             if (response.success && response.data?.signingUrl) {
                 window.location.href = response.data.signingUrl;
             } else {

@@ -249,7 +249,14 @@ const AddChannelPartnerCodeCreation = () => {
                     </Alert>
                 )}
 
-                <div className="border-t pt-6 mt-6 flex justify-end">
+                <div className="border-t pt-6 mt-6 flex justify-between items-center">
+                    <Button 
+                        variant="outline"
+                        onClick={() => navigate('/admin/add_channel_partner_agreement', { state: previousState })}
+                        className="px-8"
+                    >
+                        Back
+                    </Button>
                     <Button 
                         onClick={handleGenerate} 
                         disabled={!canSubmit}

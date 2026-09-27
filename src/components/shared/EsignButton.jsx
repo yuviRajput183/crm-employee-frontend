@@ -5,7 +5,7 @@ import { Alert } from '@/components/ui/alert';
 import { getErrorMessage } from '@/lib/helpers/get-message';
 import { Loader2 } from 'lucide-react';
 
-const EsignButton = ({ channelPartnerId, onEsignComplete, hideContinueButton }) => {
+const EsignButton = ({ channelPartnerId, onEsignComplete, hideContinueButton, hideDownloadButton }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [esignRequest, setEsignRequest] = useState(null);
@@ -32,7 +32,8 @@ const EsignButton = ({ channelPartnerId, onEsignComplete, hideContinueButton }) 
         try {
             setIsLoading(true);
             setError(null);
-            const response = await startEsign(channelPartnerId, forceNew);
+            const redirectUrl = `${window.location.origin}/admin/add_channel_partner_agreement`;
+            const response = await startEsign(channelPartnerId, forceNew, redirectUrl);
             if (response.success && response.data?.signingUrl) {
                 window.location.href = response.data.signingUrl;
             } else {
@@ -101,9 +102,12 @@ const EsignButton = ({ channelPartnerId, onEsignComplete, hideContinueButton }) 
             case "SIGNED":
                 return (
                     <div className="flex gap-4 items-center">
-                        <Button onClick={handleDownload} className="bg-green-600 hover:bg-green-700 text-white">
-                            Download Signed Agreement
-                        </Button>
+                        <span className="text-green-600 font-medium">Agreement signed successfully</span>
+                        {!hideDownloadButton && (
+                            <Button onClick={handleDownload} className="bg-green-600 hover:bg-green-700 text-white">
+                                Download Signed Agreement
+                            </Button>
+                        )}
                         {!hideContinueButton && (
                             <Button onClick={() => onEsignComplete && onEsignComplete(esignRequest)} className="bg-blue-600 hover:bg-blue-700 text-white">
                                 Continue to Next Stage
