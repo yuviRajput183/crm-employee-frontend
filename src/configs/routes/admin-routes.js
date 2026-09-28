@@ -525,5 +525,25 @@ export const adminRoutes = [
         path: "review_channel_partner_agreement/:id",
         name: "Review Channel Partner Agreement Details",
         component: lazy(() => import('@/pages/admin/channelPartner/ReviewAgreementDetails'))
+    },
+    {
+        path: "cibil-reports/transunion",
+        name: "TransUnion Report",
+        component: lazy(() => import('@/pages/admin/cibilReports/TransUnion'))
+    },
+    {
+        path: "cibil-reports/equifax",
+        name: "Equifax Report",
+        component: lazy(() => import('@/pages/admin/cibilReports/Equifax'))
+    },
+    {
+        path: "cibil-reports/experian",
+        name: "Experian Report",
+        component: lazy(() => import('@/pages/admin/cibilReports/Experian'))
+    },
+    {
+        path: "cibil-reports/crif",
+        name: "CRIF Report",
+        component: lazy(() => import('@/pages/admin/cibilReports/Crif'))
     }
 ]

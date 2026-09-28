@@ -9,7 +9,11 @@ const sidebarMenuList = [
     { id: 3, title: "New Lead", path: "/employee/new_leads", icon: <LayoutDashboard /> },
     { id: 4, title: "My Lead", path: "/employee/my_leads", icon: <ChartNoAxesCombined /> },
     { id: 5, title: "Advisor Payout", path: "/employee/advisor_payout", icon: <NotebookPen /> },
-    { id: 6, title: "My Performance", path: "/employee/my_performance", icon: <ChartNoAxesCombined /> }
+    { id: 6, title: "My Performance", path: "/employee/my_performance", icon: <ChartNoAxesCombined /> },
+    { id: 7, title: "TU Report", path: "/employee/cibil-reports/transunion", icon: <FileCheck2 /> },
+    { id: 8, title: "Equifax Report", path: "/employee/cibil-reports/equifax", icon: <FileCheck2 /> },
+    { id: 9, title: "Experian Report", path: "/employee/cibil-reports/experian", icon: <FileCheck2 /> },
+    { id: 10, title: "CRIF Report", path: "/employee/cibil-reports/crif", icon: <FileCheck2 /> }
 ]
 
 const EmployeeSidebar = ({ onMenuClick }) => {

@@ -151,5 +151,25 @@ export const employeeRoutes = [
         path: "case_search",
         name: "Case Search",
         component: lazy(() => import('@/pages/admin/caseSearch/CaseSearch'))
+    },
+    {
+        path: "cibil-reports/transunion",
+        name: "TransUnion Report",
+        component: lazy(() => import('@/pages/admin/cibilReports/TransUnion'))
+    },
+    {
+        path: "cibil-reports/equifax",
+        name: "Equifax Report",
+        component: lazy(() => import('@/pages/admin/cibilReports/Equifax'))
+    },
+    {
+        path: "cibil-reports/experian",
+        name: "Experian Report",
+        component: lazy(() => import('@/pages/admin/cibilReports/Experian'))
+    },
+    {
+        path: "cibil-reports/crif",
+        name: "CRIF Report",
+        component: lazy(() => import('@/pages/admin/cibilReports/Crif'))
     }
 ]

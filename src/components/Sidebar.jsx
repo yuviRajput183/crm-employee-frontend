@@ -31,6 +31,14 @@ const sidebarMenuList = [
             { id: 34, title: "Payables", path: "/admin/payable_payout", icon: <NotebookPen /> },
         ]
     },
+    {
+        id: 4, title: "Cibil Reports", icon: <FileCheck2 />, subList: [
+            { id: 41, title: "TransUnion", path: "/admin/cibil-reports/transunion", icon: <File /> },
+            { id: 42, title: "Equifax", path: "/admin/cibil-reports/equifax", icon: <File /> },
+            { id: 43, title: "Experian", path: "/admin/cibil-reports/experian", icon: <File /> },
+            { id: 44, title: "CRIF", path: "/admin/cibil-reports/crif", icon: <File /> },
+        ]
+    },
     { id: 9, title: "Delete Attachments", path: "/admin/delete_attachments", icon: <ChartNoAxesCombined />, subList: [] },
     { id: 10, title: "Reports", path: "/admin/reports", icon: <NotebookPen />, subList: [] },
 ]

@@ -28,14 +28,6 @@ const InProgressAccountLeads = () => {
         spName: '',
         status: ''
     });
-    const [debouncedFilters, setDebouncedFilters] = useState(filters);
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedFilters(filters);
-        }, 1000);
-        return () => clearTimeout(handler);
-    }, [filters]);
 
     const handleFilterChange = (field, value) => {
         setFilters(prev => ({ ...prev, [field]: value }));
@@ -69,7 +61,7 @@ const InProgressAccountLeads = () => {
     }, []);
 
     const filteredLeads = leads.reduce((acc, lead) => {
-        const df = debouncedFilters;
+        const df = filters;
         const mainMatches = 
             checkMatch(lead.leadNo, df.leadNo) &&
             checkMatch(lead.caseName, df.caseName) &&
