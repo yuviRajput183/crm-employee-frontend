@@ -63,7 +63,28 @@ const AddChannelPartnerDocuments = () => {
                 if (cp.documents) {
                     setStatus(cp.documents.status);
                     if (cp.documents.docStates) {
-                        setDocStates(cp.documents.docStates);
+                        const states = { ...cp.documents.docStates };
+                        // Pre-fill Udyam Certificate if it was downloaded in Business Verification
+                        if (cp.businessDetails?.udyam?.certificateDocument?.url && (!states.udyamCert || !states.udyamCert.url)) {
+                            states.udyamCert = {
+                                ...(states.udyamCert || {}),
+                                status: (states.udyamCert?.status === 'PENDING' || !states.udyamCert?.status) ? 'UPLOADED' : states.udyamCert.status,
+                                url: cp.businessDetails.udyam.certificateDocument.url
+                            };
+                        }
+                        setDocStates(states);
+                    }
+                } else {
+                    // Initialize empty docStates if none exist but pre-fill Udyam if available
+                    if (cp.businessDetails?.udyam?.certificateDocument?.url) {
+                        setDocStates(prev => ({
+                            ...prev,
+                            udyamCert: {
+                                status: 'UPLOADED',
+                                remark: '',
+                                url: cp.businessDetails.udyam.certificateDocument.url
+                            }
+                        }));
                     }
                 }
             } catch (err) {
@@ -80,7 +101,15 @@ const AddChannelPartnerDocuments = () => {
         if (Object.keys(docStates).length === 0 && Object.keys(partnerDetails).length > 0) {
             const initialStates = {};
             getRequiredDocs().forEach(doc => {
-                initialStates[doc] = { status: 'PENDING', remark: '' };
+                if (doc === 'udyamCert' && partnerDetails.businessDetails?.udyam?.certificateDocument?.url) {
+                    initialStates[doc] = { 
+                        status: 'UPLOADED', 
+                        remark: '', 
+                        url: partnerDetails.businessDetails.udyam.certificateDocument.url 
+                    };
+                } else {
+                    initialStates[doc] = { status: 'PENDING', remark: '' };
+                }
             });
             setDocStates(initialStates);
         }
