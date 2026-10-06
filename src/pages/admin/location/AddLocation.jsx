@@ -42,6 +42,8 @@ const formSchema = z.object({
     authorizedSignatoryName: z.string().optional(),
     authorizedSignatoryDesignation: z.string().optional(),
     accountHolderName: z.string().optional(),
+    bankName: z.string().optional(),
+    bankName: z.string().optional(),
     accountNumber: z.string().optional(),
     ifscCode: z.string().optional(),
 });
@@ -67,6 +69,8 @@ const AddLocation = () => {
             authorizedSignatoryName: "",
             authorizedSignatoryDesignation: "",
             accountHolderName: "",
+              bankName: "",
+            bankName: "",
             accountNumber: "",
             ifscCode: "",
         },
@@ -95,6 +99,8 @@ const AddLocation = () => {
             form.setValue('authorizedSignatoryName', data.authorizedSignatoryName || '');
             form.setValue('authorizedSignatoryDesignation', data.authorizedSignatoryDesignation || '');
             form.setValue('accountHolderName', data.accountHolderName || '');
+            form.setValue('bankName', data.bankName || '');
+            form.setValue('bankName', data.bankName || '');
             form.setValue('accountNumber', data.accountNumber || '');
             form.setValue('ifscCode', data.ifscCode || '');
         }
@@ -310,6 +316,19 @@ const AddLocation = () => {
                             )}
                         />
                         
+                        <FormField
+                            control={form.control}
+                            name="bankName"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col gap-1">
+                                    <FormLabel>Bank Name</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name="accountNumber"

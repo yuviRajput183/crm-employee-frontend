@@ -538,7 +538,7 @@ const AddAccountLead = () => {
                             <FormItem>
                                 <FormLabel>CP 1 Deal %age</FormLabel>
                                 <FormControl>
-                                    <Input readOnly type="number" step="0.01" placeholder="Enter %age" className="shadow bg-gray-100" {...field} />
+                                    <Input type="number" step="0.01" placeholder="Enter %age" className="shadow bg-gray-100" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -580,7 +580,7 @@ const AddAccountLead = () => {
                                     <FormItem>
                                         <FormLabel>CP 2 Deal %age</FormLabel>
                                         <FormControl>
-                                            <Input readOnly type="number" step="0.01" className="shadow bg-gray-100" {...field} />
+                                            <Input type="number" step="0.01" className="shadow bg-gray-100" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -621,7 +621,7 @@ const AddAccountLead = () => {
                                     <FormItem>
                                         <FormLabel>CP 3 Deal %age</FormLabel>
                                         <FormControl>
-                                            <Input readOnly type="number" step="0.01" className="shadow bg-gray-100" {...field} />
+                                            <Input type="number" step="0.01" className="shadow bg-gray-100" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import axios from 'axios';
 import {
   Table,
@@ -120,15 +121,84 @@ const InProgressAccountLeads = () => {
         );
     };
 
+    const [invoiceDate, setInvoiceDate] = useState(() => {
+        const d = new Date();
+        return d.toISOString().split('T')[0];
+    });
+
+    const handleGeneratePdf = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
+            const res = await axios.post(`${baseURL}/account-invoices/generate`, {
+                selectedLeadIds: selectedIds,
+                invoiceDate: new Date(invoiceDate).toISOString()
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success) {
+                alert("Invoice PDF generated successfully!");
+                // Clear selection and refresh
+                setSelectedIds([]);
+                fetchLeads();
+                if (res.data.data && res.data.data.invoicePdfUrl) {
+                    const fileUrl = `${baseURL.replace('/api/v1', '')}${res.data.data.invoicePdfUrl}`;
+                    const filename = res.data.data.invoicePdfUrl.split('/').pop() || 'Invoice.pdf';
+                    
+                    fetch(fileUrl)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const blobUrl = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = blobUrl;
+                            link.setAttribute('download', filename);
+                            document.body.appendChild(link);
+                            link.click();
+                            link.parentNode.removeChild(link);
+                            window.URL.revokeObjectURL(blobUrl);
+                        })
+                        .catch(err => {
+                            console.error("Error downloading file via blob, falling back to open:", err);
+                            window.open(fileUrl, '_blank');
+                        });
+                }
+            }
+        } catch (error) {
+            console.error("Error generating PDF", error);
+            alert(error.response?.data?.message || "Error generating PDF");
+        }
+    };
+
     if (loading) return <PageLoader />;
 
     return (
         <div className='px-6 py-3 bg-white rounded shadow min-h-screen'>
-            <div className='flex gap-2 items-center pb-2 border-b-2'>
-                <Avatar>
-                    <AvatarFallback>IP</AvatarFallback>
-                </Avatar>
-                <h1 className='text-2xl font-bold'>In Progress Leads</h1>
+            <div className='flex gap-2 items-center pb-2 border-b-2 justify-between'>
+                <div className='flex gap-2 items-center'>
+                    <Avatar>
+                        <AvatarFallback>IP</AvatarFallback>
+                    </Avatar>
+                    <h1 className='text-2xl font-bold'>In Progress Leads</h1>
+                </div>
+                {selectedIds.length > 0 && (
+                    <div className="flex gap-4 items-center">
+                        <div>
+                            <label className="text-sm font-semibold mr-2">Invoice Date:</label>
+                            <input 
+                                type="date" 
+                                value={invoiceDate} 
+                                onChange={(e) => setInvoiceDate(e.target.value)}
+                                className="border border-gray-300 rounded px-2 py-1"
+                            />
+                        </div>
+                        <Button 
+                            onClick={handleGeneratePdf}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                            Generate PDF
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 hover:scrollbar-thumb-gray-500 w-full p-2 shadow border border-gray-100 rounded-md mt-4 max-h-[70vh] overflow-y-auto">
