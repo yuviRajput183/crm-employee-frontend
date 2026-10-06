@@ -43,7 +43,6 @@ const formSchema = z.object({
     authorizedSignatoryDesignation: z.string().optional(),
     accountHolderName: z.string().optional(),
     bankName: z.string().optional(),
-    bankName: z.string().optional(),
     accountNumber: z.string().optional(),
     ifscCode: z.string().optional(),
 });
@@ -69,7 +68,6 @@ const AddLocation = () => {
             authorizedSignatoryName: "",
             authorizedSignatoryDesignation: "",
             accountHolderName: "",
-              bankName: "",
             bankName: "",
             accountNumber: "",
             ifscCode: "",
