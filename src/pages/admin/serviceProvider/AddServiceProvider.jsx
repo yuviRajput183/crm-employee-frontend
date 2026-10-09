@@ -45,6 +45,7 @@ const formSchema = z.object({
     code: z.string().optional(),
     billingFormat: z.any().optional(),
     location: z.string().min(1, "Location is required"),
+    dealPercentage: z.coerce.number().min(0).max(100).optional(),
 });
 
 const AddServiceProvider = () => {
@@ -67,6 +68,7 @@ const AddServiceProvider = () => {
             code: "",
             billingFormat: "",
             location: "",
+            dealPercentage: "",
         },
     });
 
@@ -100,6 +102,7 @@ const AddServiceProvider = () => {
             form.setValue('code', data.code || '');
             form.setValue('billingFormat', data.billingFormat || '');
             form.setValue('location', data.location || '');
+            form.setValue('dealPercentage', data.dealPercentage || '');
         }
     }, [providerData, form]);
 
@@ -332,6 +335,20 @@ const AddServiceProvider = () => {
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="dealPercentage"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col gap-1">
+                                    <FormLabel>Deal Percentage (%)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" step="0.01" min="0" max="100" placeholder="e.g. 5" {...field} />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

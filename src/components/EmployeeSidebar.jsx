@@ -1,7 +1,6 @@
 import React from 'react'
 import { Monitor, NotebookPen, LayoutDashboard, ChartNoAxesCombined, Command, UserRound, FileCheck2, File, LaptopMinimal, ShieldHalf, Landmark, BriefcaseBusiness, Gauge } from 'lucide-react'
-import { useNavigate, useLocation } from 'react-router-dom'
-
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 
 const sidebarMenuList = [
     { id: 1, title: "Dashboard", path: "/employee/dashboard", icon: <Monitor /> },
@@ -23,13 +22,14 @@ const EmployeeSidebar = ({ onMenuClick }) => {
     return (
         <div className=' h-full overflow-y-auto cursor-pointer scrollbar-thin  bg-gray-800'>
             {sidebarMenuList.map((menu) => (
-                <div
+                <Link
+                    to={menu.path}
                     key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black border-b border-gray-500 border-opacity-15 ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
-                    onClick={() => { onMenuClick(); navigate(menu.path) }}
+                    onClick={() => { onMenuClick && onMenuClick(); }}
                 >
                     {menu.icon}
                     <h1>{menu.title}</h1>
-                </div>
+                </Link>
             ))}
         </div>
     )

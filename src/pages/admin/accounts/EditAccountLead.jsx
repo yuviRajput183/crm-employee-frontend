@@ -24,6 +24,7 @@ import {
     SelectContent,
     SelectItem,
 } from '@/components/ui/select';
+import { numberToWords } from '@/lib/helpers/number-to-words';
 
 const formSchema = z.object({
     location: z.string().min(1, 'Location is required'),
@@ -34,6 +35,7 @@ const formSchema = z.object({
     bank: z.string().min(1, 'Bank is required'),
     reportedLoanAmount: z.union([z.string(), z.number()]).transform(v => String(v)).refine(v => v.length > 0, { message: 'Reported Loan Amount is required' }),
     reportedPayoutPercentage: z.union([z.string(), z.number()]).transform(v => String(v)).refine(v => v.length > 0, { message: 'Reported Payout Percentage is required' }),
+    payoutAmount: z.union([z.string(), z.number()]).optional().transform(v => v !== undefined && v !== null ? String(v) : ''),
     caseType: z.string().min(1, 'Case Type is required'),
     serviceProvider: z.string().min(1, 'Service Provider is required'),
     spCode: z.string().optional(),
@@ -74,6 +76,7 @@ const EditAccountLead = () => {
             bank: '',
             reportedLoanAmount: '',
             reportedPayoutPercentage: '',
+            payoutAmount: '',
             caseType: 'Processed',
             serviceProvider: '',
             spCode: '',
@@ -87,6 +90,8 @@ const EditAccountLead = () => {
     const watchProduct = form.watch("product");
     const watchServiceProvider = form.watch("serviceProvider");
     const watchPddCleared = form.watch("pddCleared");
+    const watchReportedLoanAmount = form.watch("reportedLoanAmount");
+    const watchReportedPayoutPercentage = form.watch("reportedPayoutPercentage");
 
     const fetchDropdowns = async () => {
         try {
@@ -139,6 +144,7 @@ const EditAccountLead = () => {
                     bank: lead.bank?._id || lead.bank,
                     reportedLoanAmount: lead.reportedLoanAmount || '',
                     reportedPayoutPercentage: lead.reportedPayoutPercentage || '',
+                    payoutAmount: lead.payoutAmount !== undefined && lead.payoutAmount !== null ? String(lead.payoutAmount) : '',
                     caseType: lead.caseType || 'Processed',
                     serviceProvider: lead.serviceProvider?._id || lead.serviceProvider,
                     spCode: lead.spCode || '',
@@ -200,16 +206,34 @@ const EditAccountLead = () => {
         }
     }, [watchServiceProvider, serviceProviders, form]);
 
+    useEffect(() => {
+        const loanAmt = parseFloat(watchReportedLoanAmount);
+        if (!isNaN(loanAmt)) {
+            const payoutPct = parseFloat(watchReportedPayoutPercentage);
+            if (!isNaN(payoutPct)) {
+                form.setValue('payoutAmount', ((loanAmt * payoutPct) / 100).toFixed(2));
+            } else {
+                form.setValue('payoutAmount', '');
+            }
+        } else {
+            form.setValue('payoutAmount', '');
+        }
+    }, [watchReportedLoanAmount, watchReportedPayoutPercentage, form]);
+
     const onSubmit = async (data) => {
         if (isReadOnly) return;
         try {
             const token = localStorage.getItem('token');
             const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
-            const res = await axios.put(`${baseURL}/account-leads/${id}`, {
+            
+            const payload = {
                 ...data,
                 reportedLoanAmount: Number(data.reportedLoanAmount),
                 reportedPayoutPercentage: Number(data.reportedPayoutPercentage)
-            }, {
+            };
+            if (payload.payoutAmount) payload.payoutAmount = Number(payload.payoutAmount);
+
+            const res = await axios.put(`${baseURL}/account-leads/${id}`, payload, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -323,6 +347,11 @@ const EditAccountLead = () => {
                                 <FormControl>
                                     <Input type="number" placeholder="Enter Amount" className="shadow" disabled={isReadOnly} {...field} />
                                 </FormControl>
+                                {field.value && !isNaN(Number(field.value)) && (
+                                    <p className="text-sm text-green-600 font-medium mt-1">
+                                        {numberToWords(field.value)}
+                                    </p>
+                                )}
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -332,6 +361,16 @@ const EditAccountLead = () => {
                                 <FormLabel>Reported Payout %age from Bank <span className="text-red-500">*</span></FormLabel>
                                 <FormControl>
                                     <Input type="number" step="0.01" placeholder="Enter %age" className="shadow" disabled={isReadOnly} {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <FormField control={form.control} name="payoutAmount" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Payout Amount (in ₹)</FormLabel>
+                                <FormControl>
+                                    <Input readOnly placeholder="Auto Calculated" className="shadow bg-gray-100" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

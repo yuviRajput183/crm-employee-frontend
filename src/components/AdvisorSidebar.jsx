@@ -1,6 +1,6 @@
 import React from 'react'
 import { Monitor, NotebookPen, LayoutDashboard, ChartNoAxesCombined } from 'lucide-react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 
 
 const sidebarMenuList = [
@@ -23,20 +23,29 @@ const AdvisorSidebar = ({ onMenuClick }) => {
     return (
         <div className=' h-full overflow-y-auto cursor-pointer scrollbar-thin  bg-gray-800'>
             {sidebarMenuList.map((menu) => (
-                <div
-                    key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black border-b border-gray-500 border-opacity-15 ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
-                    onClick={() => {
-                        onMenuClick();
-                        if (menu.isExternal) {
-                            window.open(menu.path, '_blank');
-                        } else {
-                            navigate(menu.path);
-                        }
-                    }}
-                >
-                    {menu.icon}
-                    <h1>{menu.title}</h1>
-                </div>
+                menu.isExternal ? (
+                    <a
+                        href={menu.path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        key={menu.id} 
+                        className={`flex gap-2 items-center p-4 text-white hover:bg-black border-b border-gray-500 border-opacity-15 ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
+                        onClick={() => { onMenuClick && onMenuClick(); }}
+                    >
+                        {menu.icon}
+                        <h1>{menu.title}</h1>
+                    </a>
+                ) : (
+                    <Link
+                        to={menu.path}
+                        key={menu.id} 
+                        className={`flex gap-2 items-center p-4 text-white hover:bg-black border-b border-gray-500 border-opacity-15 ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
+                        onClick={() => { onMenuClick && onMenuClick(); }}
+                    >
+                        {menu.icon}
+                        <h1>{menu.title}</h1>
+                    </Link>
+                )
             ))}
         </div>
     )

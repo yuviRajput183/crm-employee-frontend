@@ -10,9 +10,9 @@ import AdvisorSidebar from '../AdvisorSidebar'
 
 const UserLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true)
     const [profile, setProfile] = useState(null);
     const navigate = useNavigate();
-
 
     // Function to close sidebar when menu item is clicked
     const handleMenuClick = () => {
@@ -67,8 +67,20 @@ const UserLayout = () => {
 
 
                 {/* Sidebar for md+ screens */}
-                <div className="w-[225px] h-[80vh] hidden md:block">
-                    {renderSidebar()}
+                <div className={`relative transition-all duration-300 hidden md:block z-[60] ${isDesktopSidebarOpen ? 'w-[225px]' : 'w-0'}`}>
+                    <div className={`h-[80vh] overflow-hidden ${isDesktopSidebarOpen ? 'w-[225px]' : 'w-0'}`}>
+                        {renderSidebar()}
+                    </div>
+                    {/* Toggle Button */}
+                    <button
+                        onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
+                        className={`absolute top-4 bg-white border border-gray-300 shadow-lg rounded-full p-2 z-[100] text-gray-700 hover:text-black hover:bg-gray-200 transition-all ${isDesktopSidebarOpen ? '-right-5' : '-right-10'}`}
+                        title={isDesktopSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            {isDesktopSidebarOpen ? <polyline points="15 18 9 12 15 6"></polyline> : <polyline points="9 18 15 12 9 6"></polyline>}
+                        </svg>
+                    </button>
                 </div>
 
                 {/* Sidebar for small screens - overlay style */}

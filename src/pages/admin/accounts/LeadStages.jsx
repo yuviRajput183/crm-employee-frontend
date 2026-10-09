@@ -138,11 +138,35 @@ const LeadStages = () => {
       const token = localStorage.getItem('token');
       const stateToUse = stateName || formData.stateName || selectedState;
       if (!cityId || !stateToUse) return;
-      const res = await axios.get(`${baseURL}/bankers/list-bankers?stateName=${encodeURIComponent(stateToUse)}&city=${encodeURIComponent(cityId)}`, {
+      
+      let apiUrl = `${baseURL}/bankers/list-bankers?stateName=${encodeURIComponent(stateToUse)}&city=${encodeURIComponent(cityId)}`;
+      if (lead) {
+        let productParam = lead.product;
+        if (typeof lead.product === 'object' && lead.product !== null) {
+            productParam = lead.product._id || lead.product.name;
+        }
+        if (productParam) apiUrl += `&product=${encodeURIComponent(productParam)}`;
+        
+        const bankId = typeof lead.bank === 'object' && lead.bank !== null ? lead.bank._id : lead.bank;
+        if (bankId) apiUrl += `&bank=${encodeURIComponent(bankId)}`;
+      }
+
+      const res = await axios.get(apiUrl, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
-        setBankersList(res.data.data);
+        let fetchedBankers = res.data.data || [];
+        
+        setBankersList(fetchedBankers);
+
+        // Auto-select the banker
+        setFormData(prev => {
+            const isCurrentBankerValid = fetchedBankers.some(b => b._id === prev.bankerId);
+            if (!isCurrentBankerValid && fetchedBankers.length > 0) {
+                return { ...prev, bankerId: fetchedBankers[0]._id };
+            }
+            return prev;
+        });
       }
     } catch (error) {
       console.error("Error fetching bankers", error);
@@ -155,17 +179,21 @@ const LeadStages = () => {
       
       const updated = { ...prev };
       
+      const spDealPercent = lead?.serviceProvider?.dealPercentage || 0;
+      const baseAmount = lead?.totalPayoutAmount || 0;
+      const defaultSelfAmt = ((baseAmount * spDealPercent) / 100).toFixed(2);
+
       if (prev.rawCalc) {
         updated.calculatedCPPercent = prev.rawCalc.channelPartnerPercentage !== null ? prev.rawCalc.channelPartnerPercentage : (lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0);
-        updated.calculatedCPAmount = prev.rawCalc.channelPartnerAmount !== null ? prev.rawCalc.channelPartnerAmount : (lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0);
-        updated.calculatedSelfPercent = prev.rawCalc.selfPercentage !== null ? prev.rawCalc.selfPercentage : (lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0);
-        updated.calculatedSelfAmount = prev.rawCalc.selfAmount !== null ? prev.rawCalc.selfAmount : (lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0);
+        updated.calculatedCPAmount = prev.rawCalc.channelPartnerAmount !== null ? prev.rawCalc.channelPartnerAmount : (lead?.reportedThrough === 'Channel Partner' ? baseAmount : 0);
+        updated.calculatedSelfPercent = prev.rawCalc.selfPercentage !== null ? prev.rawCalc.selfPercentage : spDealPercent;
+        updated.calculatedSelfAmount = prev.rawCalc.selfAmount !== null ? prev.rawCalc.selfAmount : defaultSelfAmt;
       } else if (!lead?.spInvoiceStageId) {
-        // No file uploaded and not saved yet, just mirror exactly
+        // No file uploaded and not saved yet
         updated.calculatedCPPercent = lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0;
-        updated.calculatedCPAmount = lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0;
-        updated.calculatedSelfPercent = lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0;
-        updated.calculatedSelfAmount = lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0;
+        updated.calculatedCPAmount = lead?.reportedThrough === 'Channel Partner' ? baseAmount : 0;
+        updated.calculatedSelfPercent = spDealPercent;
+        updated.calculatedSelfAmount = defaultSelfAmt;
       }
       return updated;
     });
@@ -364,7 +392,7 @@ const LeadStages = () => {
                   <SelectContent>
                       {bankersList.map((banker) => (
                           <SelectItem key={banker?._id} value={banker?._id}>
-                              {banker?.bank?.name ? `${banker.bank.name} - ${banker.bankerName}` : banker?.bankerName}
+                              {banker?.bankerName}
                           </SelectItem>
                       ))}
                   </SelectContent>
@@ -685,8 +713,8 @@ const LeadStages = () => {
                     <h4 className="font-medium mb-2">REPORTED</h4>
                     <p className="text-sm text-gray-600">CP %: {lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0}</p>
                     <p className="text-sm text-gray-600">CP Amount: ₹{lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0}</p>
-                    <p className="text-sm text-gray-600">Self %: {lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0}</p>
-                    <p className="text-sm text-gray-600">Self Amount: ₹{lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0}</p>
+                    <p className="text-sm text-gray-600">Self %: {lead?.serviceProvider?.dealPercentage || 0}</p>
+                    <p className="text-sm text-gray-600">Self Amount: ₹{(((lead?.totalPayoutAmount || 0) * (lead?.serviceProvider?.dealPercentage || 0)) / 100).toFixed(2)}</p>
                   </div>
                   <div className="border p-4 rounded">
                     <h4 className="font-medium mb-2">CALCULATED</h4>
@@ -711,10 +739,12 @@ const LeadStages = () => {
                       setFormData(prev => {
                          const updated = { ...prev, calculationSameAsReported: val };
                          if (val === 'Yes') {
+                            const spDealPercent = lead?.serviceProvider?.dealPercentage || 0;
+                            const baseAmount = lead?.totalPayoutAmount || 0;
                             updated.calculatedCPPercent = lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0;
-                            updated.calculatedCPAmount = lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0;
-                            updated.calculatedSelfPercent = lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0;
-                            updated.calculatedSelfAmount = lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0;
+                            updated.calculatedCPAmount = lead?.reportedThrough === 'Channel Partner' ? baseAmount : 0;
+                            updated.calculatedSelfPercent = spDealPercent;
+                            updated.calculatedSelfAmount = ((baseAmount * spDealPercent) / 100).toFixed(2);
                          }
                          return updated;
                       });

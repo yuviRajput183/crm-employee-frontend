@@ -8,7 +8,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 
 
 const sidebarMenuList = [
@@ -188,23 +188,25 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
                                 <span className=' ml-auto text-xs'>▼</span>
                             </div>
                             {openMenus[menu.id] && menu.subList.map((sub) => (
-                                <div
+                                <Link
+                                    to={sub.path}
                                     key={sub.id} className={`pl-5 text-[12px] flex gap-2 items-center p-3 text-white hover:bg-black ${location.pathname === sub.path ? 'bg-black' : 'bg-gray-800'}`}
-                                    onClick={() => { onMenuClick(); navigate(sub.path) }}
+                                    onClick={() => { onMenuClick && onMenuClick(); }}
                                 >
                                     {sub.icon}
                                     <h3>{sub.title}</h3>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     ) : (
-                        <div
+                        <Link
+                            to={menu.path}
                             key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}
-                            onClick={() => { onMenuClick(); navigate(menu.path) }}
+                            onClick={() => { onMenuClick && onMenuClick(); }}
                         >
                             {menu.icon}
                             <h1>{menu.title}</h1>
-                        </div>
+                        </Link>
                     )
                 ))}
 
@@ -231,31 +233,31 @@ const Sidebar = ({ onMenuClick, isOwner }) => {
 
                             {/* show the submenus only if the parent menu is open */}
                             {openMenus[menu.id] && menu.subList.map((sub) => (
-                                <div
+                                <Link
+                                    to={sub.path}
                                     key={sub.id} className={`pl-5 text-[12px] flex gap-2 items-center p-3 text-white hover:bg-black ${location.pathname === sub.path ? 'bg-black' : 'bg-gray-800'}`}
-                                    onClick={() => { onMenuClick(); navigate(sub.path) }}
+                                    onClick={() => { onMenuClick && onMenuClick(); }}
                                 >
                                     {sub.icon}
                                     <h3>{sub.title}</h3>
-                                </div>
+                                </Link>
                             ))}
 
                         </div>
                     ) : (
-                        <div
+                        <Link
+                            to={menu.shouldCloseMaster ? "/admin/dashboard" : menu.path}
                             onClick={() => {
                                 if (menu.shouldCloseMaster) {
                                     // close the master menu list
                                     setIsMasterOpen(false);
-                                    navigate("/admin/dashboard")
-                                } else {
-                                    navigate(menu.path)
                                 }
+                                onMenuClick && onMenuClick();
                             }}
                             key={menu.id} className={`flex gap-2 items-center p-4 text-white hover:bg-black ${location.pathname === menu.path ? 'bg-black' : 'bg-gray-800'}`}>
                             {menu.icon}
                             <h1>{menu.title}</h1>
-                        </div>
+                        </Link>
                     )
                 ))}
             </div>
