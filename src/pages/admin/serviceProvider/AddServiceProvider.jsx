@@ -101,7 +101,7 @@ const AddServiceProvider = () => {
             form.setValue('gstin', data.gstin || '');
             form.setValue('code', data.code || '');
             form.setValue('billingFormat', data.billingFormat || '');
-            form.setValue('location', data.location || '');
+            form.setValue('location', data.location?._id || data.location || '');
             form.setValue('dealPercentage', data.dealPercentage || '');
         }
     }, [providerData, form]);

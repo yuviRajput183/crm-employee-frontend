@@ -101,16 +101,43 @@ const LeadStages = () => {
                  updated.reasonOption = 'Others';
                  updated.customReason = c.reason;
                }
+            } else if (c.confirmationReceived === 'Yes') {
+               updated.hasConfirmationFiles = !!(c.pdf && c.eml);
+               updated.pdfPath = c.pdf || '';
+               updated.emlPath = c.eml || '';
             }
           }
           
           // Pre-fill Stage 4 default values from the lead model
           updated.reportedPayoutPercentage = fetchedLead.reportedPayoutPercentage || '';
           updated.totalPayoutAmount = fetchedLead.totalPayoutAmount || '';
+          
+          if (fetchedLead.reportedThrough) {
+             updated.reportedThrough = fetchedLead.reportedThrough;
+             if (fetchedLead.reportedPayoutPercentageSame) {
+               updated.reportedPayoutPercentageSame = fetchedLead.reportedPayoutPercentageSame;
+             } else {
+               // Fallback for older leads
+               updated.reportedPayoutPercentageSame = fetchedLead.reportedPayoutPercentage ? 'No' : 'Yes';
+             }
+          }
 
           // Stage 5 auto-selections
           if (["CASE_FOUND", "Ready to report", "Invoiced"].includes(fetchedLead.status)) {
             updated.invoiceType = "Standard";
+          }
+          if (fetchedLead.spInvoiceStageId) {
+            const sp = fetchedLead.spInvoiceStageId;
+            updated.invoiceType = sp.invoiceType || updated.invoiceType;
+            updated.calculationSameAsReported = sp.calculationSameAsReported ? 'Yes' : 'No';
+            updated.roundOffDifference = sp.roundOffDifference ? 'Yes' : 'No';
+            updated.calculationFile = sp.calculationFile || null;
+            if (sp.calculated) {
+               updated.calculatedCPPercent = sp.calculated.channelPartnerPercentage || 0;
+               updated.calculatedCPAmount = sp.calculated.channelPartnerAmount || 0;
+               updated.calculatedSelfPercent = sp.calculated.selfPercentage || 0;
+               updated.calculatedSelfAmount = sp.calculated.selfAmount || 0;
+            }
           }
           
           return updated;
@@ -182,26 +209,35 @@ const LeadStages = () => {
       const spDealPercent = lead?.serviceProvider?.dealPercentage || 0;
       const baseAmount = lead?.totalPayoutAmount || 0;
       const defaultSelfAmt = ((baseAmount * spDealPercent) / 100).toFixed(2);
+      const defaultCPPercent = lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0;
+      const defaultCPAmount = lead?.reportedThrough === 'Channel Partner' ? baseAmount : 0;
 
       if (prev.rawCalc) {
-        updated.calculatedCPPercent = prev.rawCalc.channelPartnerPercentage !== null ? prev.rawCalc.channelPartnerPercentage : (lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0);
-        updated.calculatedCPAmount = prev.rawCalc.channelPartnerAmount !== null ? prev.rawCalc.channelPartnerAmount : (lead?.reportedThrough === 'Channel Partner' ? baseAmount : 0);
+        updated.calculatedCPPercent = prev.rawCalc.channelPartnerPercentage !== null ? prev.rawCalc.channelPartnerPercentage : defaultCPPercent;
+        updated.calculatedCPAmount = prev.rawCalc.channelPartnerAmount !== null ? prev.rawCalc.channelPartnerAmount : defaultCPAmount;
         updated.calculatedSelfPercent = prev.rawCalc.selfPercentage !== null ? prev.rawCalc.selfPercentage : spDealPercent;
         updated.calculatedSelfAmount = prev.rawCalc.selfAmount !== null ? prev.rawCalc.selfAmount : defaultSelfAmt;
       } else if (!lead?.spInvoiceStageId) {
         // No file uploaded and not saved yet
-        updated.calculatedCPPercent = lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0;
-        updated.calculatedCPAmount = lead?.reportedThrough === 'Channel Partner' ? baseAmount : 0;
+        updated.calculatedCPPercent = defaultCPPercent;
+        updated.calculatedCPAmount = defaultCPAmount;
         updated.calculatedSelfPercent = spDealPercent;
         updated.calculatedSelfAmount = defaultSelfAmt;
       }
       return updated;
     });
-  }, [lead?.reportedThrough, lead?.reportedPayoutPercentage, lead?.totalPayoutAmount, lead?.spInvoiceStageId]);
+  }, [lead?.reportedThrough, lead?.reportedPayoutPercentage, lead?.totalPayoutAmount, lead?.serviceProvider?.dealPercentage, lead?.spInvoiceStageId]);
 
   useEffect(() => {
     fetchLeadDetails();
   }, [id]);
+
+  const handleViewFile = (filePath) => {
+    if (!filePath) return;
+    const staticBaseUrl = baseURL.replace(/\/api\/v1\/?$/, '');
+    const fileUrl = `${staticBaseUrl}/${filePath.replace(/\\/g, '/')}`;
+    window.open(fileUrl, '_blank');
+  };
 
   const handleStateChange = (value) => {
     setSelectedState(value);
@@ -247,7 +283,7 @@ const LeadStages = () => {
     }
 
     if (formData.confirmationReceived === 'Yes') {
-      if (!formData.pdfFile || !formData.emlFile) {
+      if (!formData.hasConfirmationFiles && (!formData.pdfFile || !formData.emlFile)) {
         alert("Both PDF and EML files are mandatory to upload.");
         return;
       }
@@ -295,7 +331,7 @@ const LeadStages = () => {
       }
     } catch (error) {
       console.error("Error saving stage 2", error);
-      alert("Error saving confirmation");
+      alert(error?.response?.data?.message || "Error saving confirmation");
     }
   };
 
@@ -310,8 +346,8 @@ const LeadStages = () => {
         <h1 className='text-2xl font-bold'>Lead Stages: {lead?.leadNo}</h1>
       </div>
 
-      <div className="w-full mb-8 overflow-x-auto">
-        <ul className="flex items-center w-full min-w-max px-4">
+      <div className="w-full mb-6 mt-4 px-2 pb-14">
+        <ul className="flex justify-between items-center w-full px-4">
           {stages.map((stage, index) => {
             const stepNum = index + 1;
             const isActive = stepNum === currentStage;
@@ -332,7 +368,7 @@ const LeadStages = () => {
                       isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
                     {isCompleted ? '✓' : stepNum}
                   </div>
-                  <span className={`absolute top-10 text-xs font-medium whitespace-nowrap 
+                  <span className={`absolute top-10 left-1/2 -translate-x-1/2 text-xs font-medium text-center w-28 leading-tight 
                     ${isActive ? 'text-blue-600' : isCompleted ? 'text-green-500' : 'text-gray-400'}`}>
                     {stage}
                   </span>
@@ -435,12 +471,27 @@ const LeadStages = () => {
 
             {formData.confirmationReceived === 'Yes' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formData.hasConfirmationFiles && (
+                   <div className="col-span-full mb-2 text-sm text-green-600 bg-green-50 p-3 rounded border border-green-200">
+                      ✓ Files were successfully uploaded previously. You only need to upload below if you want to replace them.
+                   </div>
+                )}
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Upload PDF <span className="text-red-500">*</span></label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium">Upload PDF {!formData.hasConfirmationFiles && <span className="text-red-500">*</span>}</label>
+                    {formData.pdfPath && (
+                      <button type="button" onClick={() => handleViewFile(formData.pdfPath)} className="text-xs text-blue-600 hover:underline">View Current PDF</button>
+                    )}
+                  </div>
                   <input type="file" accept=".pdf" onChange={(e) => setFormData(prev => ({ ...prev, pdfFile: e.target.files[0] }))} className="w-full border rounded p-2 bg-white" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Upload EML <span className="text-red-500">*</span></label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium">Upload EML {!formData.hasConfirmationFiles && <span className="text-red-500">*</span>}</label>
+                    {formData.emlPath && (
+                      <button type="button" onClick={() => handleViewFile(formData.emlPath)} className="text-xs text-blue-600 hover:underline">View Current EML</button>
+                    )}
+                  </div>
                   <input type="file" accept=".eml" onChange={(e) => setFormData(prev => ({ ...prev, emlFile: e.target.files[0] }))} className="w-full border rounded p-2 bg-white" />
                 </div>
               </div>
@@ -633,8 +684,8 @@ const LeadStages = () => {
                 reported: {
                   channelPartnerPercentage: lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0,
                   channelPartnerAmount: lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0,
-                  selfPercentage: lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0,
-                  selfAmount: lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0
+                  selfPercentage: lead?.serviceProvider?.dealPercentage || 0,
+                  selfAmount: Number((((lead?.totalPayoutAmount || 0) * (lead?.serviceProvider?.dealPercentage || 0)) / 100).toFixed(2))
                 },
                 calculated: {
                   channelPartnerPercentage: formData.calculatedCPPercent,
@@ -675,7 +726,12 @@ const LeadStages = () => {
             </div>
 
             <div className="flex flex-col gap-1 border p-4 rounded bg-gray-50">
-              <label className="text-sm font-medium">Upload Calculation Received (.xlsx, .xls)</label>
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium">Upload Calculation Received (.xlsx, .xls)</label>
+                {formData.calculationFile?.filePath && (
+                  <button type="button" onClick={() => handleViewFile(formData.calculationFile.filePath)} className="text-xs text-blue-600 hover:underline">View Uploaded Calculation</button>
+                )}
+              </div>
               <input type="file" accept=".xlsx,.xls" onChange={async (e) => {
                  const file = e.target.files[0];
                  if (!file) return;
@@ -694,8 +750,8 @@ const LeadStages = () => {
                         rawCalc: calc,
                         calculatedCPPercent: calc.channelPartnerPercentage !== null ? calc.channelPartnerPercentage : (lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0),
                         calculatedCPAmount: calc.channelPartnerAmount !== null ? calc.channelPartnerAmount : (lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0),
-                        calculatedSelfPercent: calc.selfPercentage !== null ? calc.selfPercentage : (lead?.reportedThrough === 'Self' ? lead?.reportedPayoutPercentage || 0 : 0),
-                        calculatedSelfAmount: calc.selfAmount !== null ? calc.selfAmount : (lead?.reportedThrough === 'Self' ? lead?.totalPayoutAmount || 0 : 0)
+                        calculatedSelfPercent: calc.selfPercentage !== null ? calc.selfPercentage : (lead?.serviceProvider?.dealPercentage || 0),
+                        calculatedSelfAmount: calc.selfAmount !== null ? calc.selfAmount : (((lead?.totalPayoutAmount || 0) * (lead?.serviceProvider?.dealPercentage || 0)) / 100).toFixed(2)
                       }));
                       alert("Calculation loaded successfully");
                    }
@@ -724,9 +780,34 @@ const LeadStages = () => {
                        <label className="text-xs">CP Amount (₹)</label>
                        <input type="number" value={formData.calculatedCPAmount} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedCPAmount: e.target.value}))} className="border p-1" />
                        <label className="text-xs">Self %</label>
-                       <input type="number" step="0.01" value={formData.calculatedSelfPercent} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedSelfPercent: e.target.value}))} className="border p-1" />
+                       <input 
+                         type="number" 
+                         step="0.01" 
+                         value={formData.calculatedSelfPercent} 
+                         disabled={formData.calculationSameAsReported !== 'No'} 
+                         onChange={(e) => {
+                           const val = e.target.value;
+                           const baseAmount = Number(lead?.totalPayoutAmount) || 0;
+                           const computedAmt = val !== '' && !isNaN(Number(val))
+                             ? ((baseAmount * Number(val)) / 100).toFixed(2)
+                             : '';
+                           setFormData(p => ({
+                             ...p,
+                             calculatedSelfPercent: val,
+                             calculatedSelfAmount: computedAmt
+                           }));
+                         }} 
+                         className="border p-1" 
+                       />
                        <label className="text-xs">Self Amount (₹)</label>
-                       <input type="number" value={formData.calculatedSelfAmount} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedSelfAmount: e.target.value}))} className="border p-1" />
+                       <input 
+                         type="number" 
+                         step="0.01"
+                         value={formData.calculatedSelfAmount} 
+                         disabled={formData.calculationSameAsReported !== 'No'} 
+                         onChange={(e) => setFormData(p => ({ ...p, calculatedSelfAmount: e.target.value }))} 
+                         className="border p-1" 
+                       />
                     </div>
                   </div>
                 </div>
