@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 import {
   Table,
   TableBody,
@@ -169,6 +170,109 @@ const InProgressAccountLeads = () => {
         }
     };
 
+    const selectedLeads = leads.filter(lead => {
+        if (selectedIds.includes(lead._id)) return true;
+        if (lead.tranches && lead.tranches.some(t => selectedIds.includes(t._id))) return true;
+        return false;
+    });
+
+    const isAllReadyToReport = 
+        selectedIds.length > 0 && 
+        selectedLeads.length > 0 && 
+        selectedLeads.every(lead => lead.status?.trim().toLowerCase() === 'ready to report');
+
+    const handleGenerateReport = async () => {
+        if (!isAllReadyToReport) return;
+        try {
+            const reportRows = [];
+            let serialNo = 1;
+
+            selectedLeads.forEach((lead) => {
+                // If lead has tranches and any of its tranches are selected, process each selected tranche
+                const selectedTranches = (lead.tranches || []).filter(t => selectedIds.includes(t._id));
+
+                const processRow = (amount, trancheObj = null) => {
+                    const loanAmount = Number(amount) || 0;
+                    const rkplPayoutPct = Number(lead.reportedPayoutPercentage) || 0;
+                    const rkplTotalPayout = (lead.totalPayoutAmount && !trancheObj)
+                        ? Number(lead.totalPayoutAmount)
+                        : Math.round((loanAmount * rkplPayoutPct) / 100);
+
+                    const givenPercent = Number(lead.serviceProvider?.dealPercentage) || 95;
+                    const brokerPayoutPct = Number(((rkplPayoutPct * givenPercent) / 100).toFixed(2));
+                    const totalBrokerPayout = Math.round((rkplTotalPayout * givenPercent) / 100);
+
+                    const rkplUid = trancheObj 
+                        ? (trancheObj.spUid || trancheObj.paymentUid || '')
+                        : (lead.spUid || lead.paymentUid || lead.tranches?.[0]?.spUid || lead.tranches?.[0]?.paymentUid || '');
+
+                    const brokerCode = lead.serviceProvider?.code || lead.spCode || "145243";
+                    const brokerName = lead.serviceProvider?.legalName || "Urbanedge Loan Sahayak Private Limited";
+
+                    reportRows.push({
+                        "S.No.": serialNo++,
+                        "Location": lead.location?.name || lead.location || '',
+                        "Vertical": "Gagan Bhargav",
+                        "Manager": "Utsav Gupta",
+                        "Sub Manager": "Parul Gandhi",
+                        "Customer Name": lead.caseName || '',
+                        "Company Name": "RKPL",
+                        "Loan Number": lead.lanApplicationNo || '',
+                        "BANK": lead.bank?.name || lead.bank?.bankName || '',
+                        "Product": lead.product?.name || lead.product || '',
+                        "Reported Loan Amount By Broker": loanAmount,
+                        "Reported RKPL Payout %": `${rkplPayoutPct.toFixed(2)}%`,
+                        "Reported RKPL Total Payout Amount ": rkplTotalPayout,
+                        "Invoice No": "",
+                        "Lead No": lead.leadNo || '',
+                        "RKPL UID": rkplUid,
+                        "Source Type": "DSA",
+                        "Broker Code": brokerCode,
+                        "Broker Name": brokerName,
+                        "Broker Payout %": `${brokerPayoutPct.toFixed(2)}%`,
+                        "Total Broker Payout": totalBrokerPayout,
+                        "GIVEN %": `${givenPercent}%`,
+                        "Status": "Disbursed"
+                    });
+                };
+
+                if (selectedTranches.length > 0) {
+                    selectedTranches.forEach(t => {
+                        processRow(t.amount, t);
+                    });
+                } else {
+                    processRow(lead.reportedLoanAmount, null);
+                }
+            });
+
+            if (reportRows.length === 0) {
+                alert("No leads selected for report generation.");
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(reportRows);
+
+            // Set column widths based on maximum length of content or header
+            const colWidths = Object.keys(reportRows[0]).map(key => {
+                const maxLen = Math.max(
+                    key.length,
+                    ...reportRows.map(row => String(row[key] ?? '').length)
+                );
+                return { wch: Math.min(Math.max(maxLen + 2, 10), 45) };
+            });
+            worksheet['!cols'] = colWidths;
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Ready to Report");
+
+            const fileName = `Ready_To_Report_Leads_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+        } catch (error) {
+            console.error("Error generating excel report", error);
+            alert("Error generating excel report: " + (error.message || ""));
+        }
+    };
+
     if (loading) return <PageLoader />;
 
     return (
@@ -195,7 +299,15 @@ const InProgressAccountLeads = () => {
                             onClick={handleGeneratePdf}
                             className="bg-green-600 hover:bg-green-700 text-white"
                         >
-                            Generate PDF
+                            Generate Invoice
+                        </Button>
+                        <Button 
+                            onClick={handleGenerateReport}
+                            disabled={!isAllReadyToReport}
+                            className={`${isAllReadyToReport ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'}`}
+                            title={!isAllReadyToReport ? "All selected leads must have status 'Ready to report'" : "Generate Report"}
+                        >
+                            Generate Report
                         </Button>
                     </div>
                 )}
