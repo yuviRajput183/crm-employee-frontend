@@ -176,14 +176,16 @@ const InProgressAccountLeads = () => {
         return false;
     });
 
-    const isAllReadyToReport = 
-        selectedIds.length > 0 && 
-        selectedLeads.length > 0 && 
-        selectedLeads.every(lead => lead.status?.trim().toLowerCase() === 'ready to report');
+    const [exporting, setExporting] = useState(false);
 
-    const handleGenerateReport = async () => {
-        if (!isAllReadyToReport) return;
+    const handleExportAsExcel = async () => {
+        if (selectedIds.length === 0 || selectedLeads.length === 0) {
+            alert("Please select at least one lead from the table to export.");
+            return;
+        }
+
         try {
+            setExporting(true);
             const reportRows = [];
             let serialNo = 1;
 
@@ -246,13 +248,12 @@ const InProgressAccountLeads = () => {
             });
 
             if (reportRows.length === 0) {
-                alert("No leads selected for report generation.");
+                alert("No lead rows to export.");
                 return;
             }
 
+            // 1. Generate & download the Excel file
             const worksheet = XLSX.utils.json_to_sheet(reportRows);
-
-            // Set column widths based on maximum length of content or header
             const colWidths = Object.keys(reportRows[0]).map(key => {
                 const maxLen = Math.max(
                     key.length,
@@ -262,14 +263,50 @@ const InProgressAccountLeads = () => {
             });
             worksheet['!cols'] = colWidths;
 
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Ready to Report");
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const formattedDate = `${day}-${month}-${year}`;
 
-            const fileName = `Ready_To_Report_Leads_${new Date().toISOString().split('T')[0]}.xlsx`;
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, `Cases Reported`);
+
+            const fileName = `Cases_Reported_${formattedDate}.xlsx`;
             XLSX.writeFile(workbook, fileName);
+
+            // 2. Call backend to bundle the exported leads into Reported Leads
+            const token = localStorage.getItem('token');
+            const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
+
+            const selectedTrancheIds = [];
+            selectedLeads.forEach(lead => {
+                (lead.tranches || []).forEach(t => {
+                    if (selectedIds.includes(t._id)) {
+                        selectedTrancheIds.push(t._id);
+                    }
+                });
+            });
+
+            const res = await axios.post(`${baseURL}/reported-bundles/create`, {
+                leadIds: selectedLeads.map(l => l._id),
+                selectedTrancheIds,
+                bundleDate: today.toISOString()
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.data.success) {
+                const bundle = res.data.data;
+                alert(`Leads exported and bundled successfully into "${bundle.bundleName}"! They have been moved to Reported Leads.`);
+                setSelectedIds([]);
+                fetchLeads();
+            }
         } catch (error) {
-            console.error("Error generating excel report", error);
-            alert("Error generating excel report: " + (error.message || ""));
+            console.error("Error exporting excel & bundling leads", error);
+            alert("Error exporting excel: " + (error.response?.data?.message || error.message || ""));
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -302,12 +339,12 @@ const InProgressAccountLeads = () => {
                             Generate Invoice
                         </Button>
                         <Button 
-                            onClick={handleGenerateReport}
-                            disabled={!isAllReadyToReport}
-                            className={`${isAllReadyToReport ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'}`}
-                            title={!isAllReadyToReport ? "All selected leads must have status 'Ready to report'" : "Generate Report"}
+                            onClick={handleExportAsExcel}
+                            disabled={exporting}
+                            className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                            title="Export selected leads as Excel and bundle them into Reported Leads"
                         >
-                            Generate Report
+                            {exporting ? 'Exporting...' : 'Export as Excel'}
                         </Button>
                     </div>
                 )}
@@ -420,10 +457,10 @@ const InProgressAccountLeads = () => {
                                                     onChange={() => handleSelectRow(t._id)}
                                                 />
                                             </TableCell>
-                                            <TableCell className="pl-6 font-semibold text-gray-500">{leadIndex + 1}.{tIndex + 1}</TableCell>
+                                            <TableCell className="pl-6 font-semibold text-gray-500">{t.customTrancheId || `${leadIndex + 1}.${tIndex + 1}`}</TableCell>
                                             <TableCell>-</TableCell>
                                             <TableCell className="text-gray-500 italic">↳ Tranche Split</TableCell>
-                                            <TableCell className="font-bold text-blue-600">T{t.trancheNumber}</TableCell>
+                                            <TableCell className="font-bold text-blue-600">{t.customTrancheId || `T${t.trancheNumber}`}</TableCell>
                                             <TableCell className="font-bold text-green-600">₹{t.amount?.toLocaleString('en-IN')}</TableCell>
                                             <TableCell>{t.paymentUid}</TableCell>
                                             <TableCell className="text-gray-400">-</TableCell>

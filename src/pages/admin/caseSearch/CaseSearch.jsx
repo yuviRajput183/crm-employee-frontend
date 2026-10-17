@@ -392,7 +392,9 @@ const CaseSearch = ({ accountLeadId, onComplete, onBack, onContinue }) => {
           {lead.reportedLoanAmount - (lead.trancheFoundAmount || 0) === 0 && (
             <>
               <div className="mt-4 p-4 bg-green-100 text-green-800 rounded font-bold">
-                Case is fully found. No more tranches can be added.
+                {lead.status === 'Reported' 
+                  ? "Case is fully found. No more tranches can be added." 
+                  : "Case is fully found! In Progress step is finished at Stage 3 (Case Search). You can now select this lead from the In Progress table and export as Excel."}
               </div>
               <div className="flex justify-between items-center mt-6">
                 <button 
@@ -406,9 +408,9 @@ const CaseSearch = ({ accountLeadId, onComplete, onBack, onContinue }) => {
                   <button 
                     type="button"
                     onClick={onContinue}
-                    className="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700"
+                    className="bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700"
                   >
-                    Continue
+                    {lead.status === 'Reported' ? 'Continue' : 'Finish & Back to Leads'}
                   </button>
                 )}
               </div>

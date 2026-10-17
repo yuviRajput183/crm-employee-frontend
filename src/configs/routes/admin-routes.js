@@ -487,6 +487,11 @@ export const adminRoutes = [
         component: lazy(() => import('@/pages/admin/accounts/InProgressAccountLeads'))
     },
     {
+        path: "account_reported_leads",
+        name: "Reported Leads",
+        component: lazy(() => import('@/pages/admin/accounts/ReportedAccountLeads'))
+    },
+    {
         path: "account_closed_leads",
         name: "Closed Account Leads",
         component: lazy(() => import('@/pages/admin/accounts/ClosedAccountLeads'))

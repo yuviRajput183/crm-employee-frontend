@@ -14,7 +14,13 @@ import { apiGetCitiesByStateName } from '@/services/city.api';
 import { useQuery } from '@tanstack/react-query';
 import CaseSearch from '../caseSearch/CaseSearch';
 
-const stages = [
+const inProgressStages = [
+  "Banker & Case Location Details",
+  "Confirmation",
+  "Case Search"
+];
+
+const allStages = [
   "Banker & Case Location Details",
   "Confirmation",
   "Case Search",
@@ -41,6 +47,15 @@ const LeadStages = () => {
   const [loading, setLoading] = useState(true);
   const [currentStage, setCurrentStage] = useState(1);
 
+  const isReportedLead = !!(
+    lead?.bundleId ||
+    lead?.reportedAt ||
+    lead?.status === 'Reported' ||
+    currentStage > 3 ||
+    (lead?.stageNumber || 1) > 3
+  );
+  const stages = isReportedLead ? allStages : inProgressStages;
+
   const [selectedState, setSelectedState] = useState('');
   const [citiesList, setCitiesList] = useState([]);
   const [bankersList, setBankersList] = useState([]);
@@ -50,15 +65,26 @@ const LeadStages = () => {
     cityId: '',
     bankerId: '',
     confirmationReceived: '',
+    reportedPayoutPercentageSame: 'Yes',
+    reportedPayoutPercentage: '',
+    totalPayoutAmount: '',
+    reportedThrough: '',
     invoiceType: '',
     calculationSameAsReported: '',
     roundOffDifference: '',
+    remainingAmountWillCome: '',
+    remainingTrancheAmount: '',
     calculatedCPPercent: 0,
     calculatedCPAmount: 0,
     calculatedSelfPercent: 0,
     calculatedSelfAmount: 0,
     rawCalc: null
   });
+
+  const isCP = (lead?.reportedThrough || formData?.reportedThrough) === 'Channel Partner';
+ const reportedTotalAmt = Number(lead?.totalPayoutAmount || formData?.totalPayoutAmount) || 0;
+  const calculatedTotalAmt = isCP ? (Number(formData?.calculatedCPAmount) || 0) : (Number(formData?.calculatedSelfAmount) || 0);
+  const remainingDifference = Math.max(0, Number((reportedTotalAmt - calculatedTotalAmt).toFixed(2)));
 
   const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
 
@@ -109,28 +135,41 @@ const LeadStages = () => {
           }
           
           // Pre-fill Stage 4 default values from the lead model
-          updated.reportedPayoutPercentage = fetchedLead.reportedPayoutPercentage || '';
-          updated.totalPayoutAmount = fetchedLead.totalPayoutAmount || '';
+          const origPct = fetchedLead.originalReportedPayoutPercentage !== undefined && fetchedLead.originalReportedPayoutPercentage !== null
+            ? fetchedLead.originalReportedPayoutPercentage
+            : (fetchedLead.reportedPayoutPercentage ?? '');
+          const origAmt = fetchedLead.originalTotalPayoutAmount !== undefined && fetchedLead.originalTotalPayoutAmount !== null
+            ? fetchedLead.originalTotalPayoutAmount
+            : (fetchedLead.totalPayoutAmount ?? '');
+
+          updated.reportedPayoutPercentageSame = fetchedLead.reportedPayoutPercentageSame || 'Yes';
           
+          if (updated.reportedPayoutPercentageSame === 'Yes') {
+            updated.reportedPayoutPercentage = origPct;
+            updated.totalPayoutAmount = origAmt;
+          } else {
+            updated.reportedPayoutPercentage = fetchedLead.reportedPayoutPercentage !== undefined && fetchedLead.reportedPayoutPercentage !== null ? fetchedLead.reportedPayoutPercentage : origPct;
+            updated.totalPayoutAmount = fetchedLead.totalPayoutAmount !== undefined && fetchedLead.totalPayoutAmount !== null ? fetchedLead.totalPayoutAmount : origAmt;
+          }
+
           if (fetchedLead.reportedThrough) {
              updated.reportedThrough = fetchedLead.reportedThrough;
-             if (fetchedLead.reportedPayoutPercentageSame) {
-               updated.reportedPayoutPercentageSame = fetchedLead.reportedPayoutPercentageSame;
-             } else {
-               // Fallback for older leads
-               updated.reportedPayoutPercentageSame = fetchedLead.reportedPayoutPercentage ? 'No' : 'Yes';
-             }
+          } else {
+             updated.reportedThrough = fetchedLead.channelPartner1 ? 'Channel Partner' : 'Self';
           }
 
           // Stage 5 auto-selections
-          if (["CASE_FOUND", "Ready to report", "Invoiced"].includes(fetchedLead.status)) {
+          if (["CASE_FOUND", "Ready to report", "Invoiced", "Reported"].includes(fetchedLead.status)) {
             updated.invoiceType = "Standard";
           }
+
           if (fetchedLead.spInvoiceStageId) {
             const sp = fetchedLead.spInvoiceStageId;
             updated.invoiceType = sp.invoiceType || updated.invoiceType;
             updated.calculationSameAsReported = sp.calculationSameAsReported ? 'Yes' : 'No';
             updated.roundOffDifference = sp.roundOffDifference ? 'Yes' : 'No';
+            updated.remainingAmountWillCome = sp.remainingAmountWillCome ? 'Yes' : (sp.remainingAmountWillCome === false ? 'No' : '');
+            updated.remainingTrancheAmount = sp.remainingTrancheAmount || '';
             updated.calculationFile = sp.calculationFile || null;
             if (sp.calculated) {
                updated.calculatedCPPercent = sp.calculated.channelPartnerPercentage || 0;
@@ -206,22 +245,26 @@ const LeadStages = () => {
       
       const updated = { ...prev };
       
-      const spDealPercent = lead?.serviceProvider?.dealPercentage || 0;
-      const baseAmount = lead?.totalPayoutAmount || 0;
-      const defaultSelfAmt = ((baseAmount * spDealPercent) / 100).toFixed(2);
-      const defaultCPPercent = lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0;
-      const defaultCPAmount = lead?.reportedThrough === 'Channel Partner' ? baseAmount : 0;
+      const isCPLead = (lead?.reportedThrough || prev.reportedThrough) === 'Channel Partner';
+      const baseAmount = Number(lead?.totalPayoutAmount !== undefined && lead?.totalPayoutAmount !== null ? lead.totalPayoutAmount : prev.totalPayoutAmount) || 0;
+      const reportedPct = Number(lead?.reportedPayoutPercentage !== undefined && lead?.reportedPayoutPercentage !== null ? lead.reportedPayoutPercentage : prev.reportedPayoutPercentage) || 0;
+      const spDealPercent = Number(lead?.serviceProvider?.dealPercentage) || 0;
+
+      const defaultCPPercent = isCPLead ? reportedPct : 0;
+      const defaultCPAmount = isCPLead ? baseAmount : 0;
+      const defaultSelfPercent = isCPLead ? spDealPercent : reportedPct;
+      const defaultSelfAmt = isCPLead ? Number(((baseAmount * spDealPercent) / 100).toFixed(2)) : baseAmount;
 
       if (prev.rawCalc) {
-        updated.calculatedCPPercent = prev.rawCalc.channelPartnerPercentage !== null ? prev.rawCalc.channelPartnerPercentage : defaultCPPercent;
-        updated.calculatedCPAmount = prev.rawCalc.channelPartnerAmount !== null ? prev.rawCalc.channelPartnerAmount : defaultCPAmount;
-        updated.calculatedSelfPercent = prev.rawCalc.selfPercentage !== null ? prev.rawCalc.selfPercentage : spDealPercent;
+        updated.calculatedCPPercent = isCPLead && prev.rawCalc.channelPartnerPercentage !== null ? prev.rawCalc.channelPartnerPercentage : defaultCPPercent;
+        updated.calculatedCPAmount = isCPLead && prev.rawCalc.channelPartnerAmount !== null ? prev.rawCalc.channelPartnerAmount : defaultCPAmount;
+        updated.calculatedSelfPercent = prev.rawCalc.selfPercentage !== null ? prev.rawCalc.selfPercentage : defaultSelfPercent;
         updated.calculatedSelfAmount = prev.rawCalc.selfAmount !== null ? prev.rawCalc.selfAmount : defaultSelfAmt;
       } else if (!lead?.spInvoiceStageId) {
         // No file uploaded and not saved yet
         updated.calculatedCPPercent = defaultCPPercent;
         updated.calculatedCPAmount = defaultCPAmount;
-        updated.calculatedSelfPercent = spDealPercent;
+        updated.calculatedSelfPercent = defaultSelfPercent;
         updated.calculatedSelfAmount = defaultSelfAmt;
       }
       return updated;
@@ -547,7 +590,18 @@ const LeadStages = () => {
         )}
 
         {currentStage === 3 && (
-            <CaseSearch accountLeadId={lead?._id} onComplete={fetchLeadDetails} onBack={() => setCurrentStage(2)} onContinue={() => setCurrentStage(4)} />
+            <CaseSearch 
+              accountLeadId={lead?._id} 
+              onComplete={fetchLeadDetails} 
+              onBack={() => setCurrentStage(2)} 
+              onContinue={() => {
+                if (isReportedLead) {
+                  setCurrentStage(4);
+                } else {
+                  navigate('/admin/account_in_progress_leads');
+                }
+              }} 
+            />
         )}
 
         {currentStage === 4 && (
@@ -581,13 +635,22 @@ const LeadStages = () => {
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium">Reported Payout Percentage Same?</label>
               <Select 
-                value={formData.reportedPayoutPercentageSame} 
-                onValueChange={(val) => setFormData(prev => ({ 
-                  ...prev, 
-                  reportedPayoutPercentageSame: val,
-                  reportedPayoutPercentage: lead?.reportedPayoutPercentage || 0,
-                  totalPayoutAmount: lead?.totalPayoutAmount || 0
-                }))}
+                value={formData.reportedPayoutPercentageSame || 'Yes'} 
+                onValueChange={(val) => {
+                  const origPct = lead?.originalReportedPayoutPercentage !== undefined && lead?.originalReportedPayoutPercentage !== null
+                    ? lead?.originalReportedPayoutPercentage
+                    : (lead?.reportedPayoutPercentage ?? 0);
+                  const origAmt = lead?.originalTotalPayoutAmount !== undefined && lead?.originalTotalPayoutAmount !== null
+                    ? lead?.originalTotalPayoutAmount
+                    : (lead?.totalPayoutAmount ?? 0);
+
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    reportedPayoutPercentageSame: val,
+                    reportedPayoutPercentage: val === 'Yes' ? origPct : prev.reportedPayoutPercentage,
+                    totalPayoutAmount: val === 'Yes' ? origAmt : prev.totalPayoutAmount
+                  }));
+                }}
               >
                   <SelectTrigger className="w-full bg-white">
                       <SelectValue placeholder="Select Yes/No" />
@@ -605,11 +668,13 @@ const LeadStages = () => {
                 <input 
                   type="number" 
                   step="0.01"
-                  value={formData.reportedPayoutPercentage || ''}
+                  value={formData.reportedPayoutPercentage !== undefined ? formData.reportedPayoutPercentage : ''}
                   onChange={(e) => {
-                    const pct = Number(e.target.value);
-                    const amt = (lead?.reportedLoanAmount * pct) / 100;
-                    setFormData(prev => ({ ...prev, reportedPayoutPercentage: e.target.value, totalPayoutAmount: amt }));
+                    const val = e.target.value;
+                    const pct = Number(val);
+                    const loanAmt = Number(lead?.reportedLoanAmount) || 0;
+                    const amt = val !== '' && !isNaN(pct) && loanAmt > 0 ? Number(((loanAmt * pct) / 100).toFixed(2)) : '';
+                    setFormData(prev => ({ ...prev, reportedPayoutPercentage: val, totalPayoutAmount: amt }));
                   }}
                   disabled={formData.reportedPayoutPercentageSame !== 'No'}
                   className={`w-full border rounded p-2 ${formData.reportedPayoutPercentageSame !== 'No' ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}
@@ -620,8 +685,8 @@ const LeadStages = () => {
                 <label className="text-sm font-medium">Total Payout Amount (₹)</label>
                 <input 
                   type="number" 
-                  value={formData.totalPayoutAmount || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, totalPayoutAmount: e.target.value }))}
+                  value={formData.totalPayoutAmount !== undefined ? formData.totalPayoutAmount : ''}
+                  readOnly
                   disabled={true}
                   className="w-full border rounded p-2 bg-gray-100 text-gray-500"
                 />
@@ -669,23 +734,33 @@ const LeadStages = () => {
               alert("Please complete the required fields");
               return;
             }
-            if (formData.calculationSameAsReported === "No" && !formData.roundOffDifference) {
-              alert("Please select if there is a round-off difference");
-              return;
+            if (formData.calculationSameAsReported === "No") {
+              if (!formData.remainingAmountWillCome) {
+                alert("Please select if the remaining amount will come (Yes/No)");
+                return;
+              }
+              if (formData.remainingAmountWillCome === "No" && !formData.roundOffDifference) {
+                alert("Please select if there is a round-off difference");
+                return;
+              }
             }
             
-              try {
+            try {
               const token = localStorage.getItem('token');
               const res = await axios.post(`${baseURL}/lead-stages/${id}/sp-invoice/submit`, {
                 invoiceType: formData.invoiceType,
                 calculationSameAsReported: formData.calculationSameAsReported === "Yes",
                 roundOffDifference: formData.roundOffDifference === "Yes",
+                remainingAmountWillCome: formData.remainingAmountWillCome === "Yes",
+                remainingTrancheAmount: formData.remainingAmountWillCome === "Yes" 
+                  ? Number(formData.remainingTrancheAmount !== '' ? formData.remainingTrancheAmount : remainingDifference) 
+                  : 0,
                 calculationFile: formData.calculationFile, // populated after upload
                 reported: {
-                  channelPartnerPercentage: lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0,
-                  channelPartnerAmount: lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0,
-                  selfPercentage: lead?.serviceProvider?.dealPercentage || 0,
-                  selfAmount: Number((((lead?.totalPayoutAmount || 0) * (lead?.serviceProvider?.dealPercentage || 0)) / 100).toFixed(2))
+                  channelPartnerPercentage: isCP ? Number(lead?.reportedPayoutPercentage || formData.reportedPayoutPercentage) || 0 : 0,
+                  channelPartnerAmount: isCP ? Number(lead?.totalPayoutAmount || formData.totalPayoutAmount) || 0 : 0,
+                  selfPercentage: isCP ? (Number(lead?.serviceProvider?.dealPercentage) || 0) : (Number(lead?.reportedPayoutPercentage || formData.reportedPayoutPercentage) || 0),
+                  selfAmount: isCP ? Number((((Number(lead?.totalPayoutAmount || formData.totalPayoutAmount) || 0) * (Number(lead?.serviceProvider?.dealPercentage) || 0)) / 100).toFixed(2)) : (Number(lead?.totalPayoutAmount || formData.totalPayoutAmount) || 0)
                 },
                 calculated: {
                   channelPartnerPercentage: formData.calculatedCPPercent,
@@ -696,7 +771,14 @@ const LeadStages = () => {
               }, { headers: { Authorization: `Bearer ${token}` } });
               
               if (res.data.success) {
-                alert(res.data.data.status === "Recovery Required" ? "Recovery Request created!" : "SP Invoice saved successfully!");
+                const data = res.data.data;
+                if (data?.newTranche) {
+                  alert(`SP Invoice saved! A new tranche of ₹${data.newTranche.amount} with ID ${data.newTranche.customTrancheId || '1.1.a'} has been created in "In Progress" section.`);
+                } else if (data?.status === "Recovery Required") {
+                  alert("Recovery Request created!");
+                } else {
+                  alert("SP Invoice saved successfully!");
+                }
                 fetchLeadDetails();
               }
             } catch (error) {
@@ -744,14 +826,24 @@ const LeadStages = () => {
                    });
                    if (res.data.success) {
                       const calc = res.data.data.calculated;
+                      const isCPLead = (lead?.reportedThrough || formData.reportedThrough) === 'Channel Partner';
+                      const baseAmount = Number(lead?.totalPayoutAmount !== undefined && lead?.totalPayoutAmount !== null ? lead.totalPayoutAmount : formData.totalPayoutAmount) || 0;
+                      const reportedPct = Number(lead?.reportedPayoutPercentage !== undefined && lead?.reportedPayoutPercentage !== null ? lead.reportedPayoutPercentage : formData.reportedPayoutPercentage) || 0;
+                      const spDealPercent = Number(lead?.serviceProvider?.dealPercentage) || 0;
+                      
+                      const defaultCPPercent = isCPLead ? reportedPct : 0;
+                      const defaultCPAmount = isCPLead ? baseAmount : 0;
+                      const defaultSelfPercent = isCPLead ? spDealPercent : reportedPct;
+                      const defaultSelfAmt = isCPLead ? Number(((baseAmount * spDealPercent) / 100).toFixed(2)) : baseAmount;
+
                       setFormData(prev => ({
                         ...prev,
                         calculationFile: { fileName: res.data.data.fileName, filePath: res.data.data.filePath },
                         rawCalc: calc,
-                        calculatedCPPercent: calc.channelPartnerPercentage !== null ? calc.channelPartnerPercentage : (lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0),
-                        calculatedCPAmount: calc.channelPartnerAmount !== null ? calc.channelPartnerAmount : (lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0),
-                        calculatedSelfPercent: calc.selfPercentage !== null ? calc.selfPercentage : (lead?.serviceProvider?.dealPercentage || 0),
-                        calculatedSelfAmount: calc.selfAmount !== null ? calc.selfAmount : (((lead?.totalPayoutAmount || 0) * (lead?.serviceProvider?.dealPercentage || 0)) / 100).toFixed(2)
+                        calculatedCPPercent: isCPLead && calc.channelPartnerPercentage !== null ? calc.channelPartnerPercentage : defaultCPPercent,
+                        calculatedCPAmount: isCPLead && calc.channelPartnerAmount !== null ? calc.channelPartnerAmount : defaultCPAmount,
+                        calculatedSelfPercent: calc.selfPercentage !== null ? calc.selfPercentage : defaultSelfPercent,
+                        calculatedSelfAmount: calc.selfAmount !== null ? calc.selfAmount : defaultSelfAmt
                       }));
                       alert("Calculation loaded successfully");
                    }
@@ -765,20 +857,48 @@ const LeadStages = () => {
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Calculation Comparison</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="border p-4 rounded">
-                    <h4 className="font-medium mb-2">REPORTED</h4>
-                    <p className="text-sm text-gray-600">CP %: {lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0}</p>
-                    <p className="text-sm text-gray-600">CP Amount: ₹{lead?.reportedThrough === 'Channel Partner' ? lead?.totalPayoutAmount || 0 : 0}</p>
-                    <p className="text-sm text-gray-600">Self %: {lead?.serviceProvider?.dealPercentage || 0}</p>
-                    <p className="text-sm text-gray-600">Self Amount: ₹{(((lead?.totalPayoutAmount || 0) * (lead?.serviceProvider?.dealPercentage || 0)) / 100).toFixed(2)}</p>
+                  <div className="border p-4 rounded bg-white">
+                    <h4 className="font-semibold text-gray-800 mb-2 border-b pb-2">REPORTED</h4>
+                    <p className="text-sm text-gray-600">CP %: {isCP ? (lead?.reportedPayoutPercentage || formData.reportedPayoutPercentage || 0) : 0}%</p>
+                    <p className="text-sm text-gray-600">CP Amount: ₹{isCP ? (lead?.totalPayoutAmount || formData.totalPayoutAmount || 0) : 0}</p>
+                    <p className="text-sm text-gray-600">Self %: {isCP ? (lead?.serviceProvider?.dealPercentage || 0) : (lead?.reportedPayoutPercentage || formData.reportedPayoutPercentage || 0)}%</p>
+                    <p className="text-sm text-gray-600">Self Amount: ₹{isCP ? (((Number(lead?.totalPayoutAmount || formData.totalPayoutAmount) || 0) * (Number(lead?.serviceProvider?.dealPercentage) || 0)) / 100).toFixed(2) : (lead?.totalPayoutAmount || formData.totalPayoutAmount || 0)}</p>
                   </div>
-                  <div className="border p-4 rounded">
-                    <h4 className="font-medium mb-2">CALCULATED</h4>
+                  <div className="border p-4 rounded bg-white">
+                    <h4 className="font-semibold text-gray-800 mb-2 border-b pb-2">CALCULATED</h4>
                     <div className="flex flex-col gap-2">
-                       <label className="text-xs">CP %</label>
-                       <input type="number" step="0.01" value={formData.calculatedCPPercent} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedCPPercent: e.target.value}))} className="border p-1" />
-                       <label className="text-xs">CP Amount (₹)</label>
-                       <input type="number" value={formData.calculatedCPAmount} disabled={formData.calculationSameAsReported !== 'No'} onChange={(e)=>setFormData(p=>({...p, calculatedCPAmount: e.target.value}))} className="border p-1" />
+                       {isCP && (
+                         <>
+                           <label className="text-xs">CP %</label>
+                           <input 
+                             type="number" 
+                             step="0.01" 
+                             value={formData.calculatedCPPercent} 
+                             disabled={formData.calculationSameAsReported !== 'No'} 
+                             onChange={(e) => {
+                               const val = e.target.value;
+                               const loanAmt = Number(lead?.reportedLoanAmount) || 0;
+                               const computedAmt = val !== '' && !isNaN(Number(val)) && loanAmt > 0
+                                 ? Number(((loanAmt * Number(val)) / 100).toFixed(2))
+                                 : '';
+                               setFormData(p => ({
+                                 ...p, 
+                                 calculatedCPPercent: val,
+                                 calculatedCPAmount: computedAmt !== '' ? computedAmt : p.calculatedCPAmount
+                               }));
+                             }} 
+                             className="border p-1" 
+                           />
+                           <label className="text-xs">CP Amount (₹)</label>
+                           <input 
+                             type="number" 
+                             value={formData.calculatedCPAmount} 
+                             disabled={formData.calculationSameAsReported !== 'No'} 
+                             onChange={(e) => setFormData(p => ({ ...p, calculatedCPAmount: e.target.value }))} 
+                             className="border p-1" 
+                           />
+                         </>
+                       )}
                        <label className="text-xs">Self %</label>
                        <input 
                          type="number" 
@@ -787,14 +907,24 @@ const LeadStages = () => {
                          disabled={formData.calculationSameAsReported !== 'No'} 
                          onChange={(e) => {
                            const val = e.target.value;
-                           const baseAmount = Number(lead?.totalPayoutAmount) || 0;
-                           const computedAmt = val !== '' && !isNaN(Number(val))
-                             ? ((baseAmount * Number(val)) / 100).toFixed(2)
-                             : '';
+                           const isCPLead = (lead?.reportedThrough || formData.reportedThrough) === 'Channel Partner';
+                           const baseAmount = Number(lead?.totalPayoutAmount || formData.totalPayoutAmount) || 0;
+                           const loanAmt = Number(lead?.reportedLoanAmount) || 0;
+                           
+                           let computedAmt = '';
+                           if (val !== '' && !isNaN(Number(val))) {
+                             if (isCPLead) {
+                               computedAmt = Number(((baseAmount * Number(val)) / 100).toFixed(2));
+                             } else {
+                               computedAmt = loanAmt > 0 
+                                 ? Number(((loanAmt * Number(val)) / 100).toFixed(2)) 
+                                 : Number(((baseAmount * Number(val)) / 100).toFixed(2));
+                             }
+                           }
                            setFormData(p => ({
                              ...p,
                              calculatedSelfPercent: val,
-                             calculatedSelfAmount: computedAmt
+                             calculatedSelfAmount: computedAmt !== '' ? computedAmt : p.calculatedSelfAmount
                            }));
                          }} 
                          className="border p-1" 
@@ -802,7 +932,7 @@ const LeadStages = () => {
                        <label className="text-xs">Self Amount (₹)</label>
                        <input 
                          type="number" 
-                         step="0.01"
+                         step="0.01" 
                          value={formData.calculatedSelfAmount} 
                          disabled={formData.calculationSameAsReported !== 'No'} 
                          onChange={(e) => setFormData(p => ({ ...p, calculatedSelfAmount: e.target.value }))} 
@@ -818,14 +948,22 @@ const LeadStages = () => {
                     value={formData.calculationSameAsReported} 
                     onValueChange={(val) => {
                       setFormData(prev => {
-                         const updated = { ...prev, calculationSameAsReported: val };
+                         const updated = { 
+                           ...prev, 
+                           calculationSameAsReported: val,
+                           remainingAmountWillCome: val === 'Yes' ? '' : prev.remainingAmountWillCome,
+                           roundOffDifference: val === 'Yes' ? '' : prev.roundOffDifference
+                         };
                          if (val === 'Yes') {
-                            const spDealPercent = lead?.serviceProvider?.dealPercentage || 0;
-                            const baseAmount = lead?.totalPayoutAmount || 0;
-                            updated.calculatedCPPercent = lead?.reportedThrough === 'Channel Partner' ? lead?.reportedPayoutPercentage || 0 : 0;
-                            updated.calculatedCPAmount = lead?.reportedThrough === 'Channel Partner' ? baseAmount : 0;
-                            updated.calculatedSelfPercent = spDealPercent;
-                            updated.calculatedSelfAmount = ((baseAmount * spDealPercent) / 100).toFixed(2);
+                            const isCPLead = (lead?.reportedThrough || prev.reportedThrough) === 'Channel Partner';
+                            const baseAmount = Number(lead?.totalPayoutAmount !== undefined && lead?.totalPayoutAmount !== null ? lead.totalPayoutAmount : prev.totalPayoutAmount) || 0;
+                            const reportedPct = Number(lead?.reportedPayoutPercentage !== undefined && lead?.reportedPayoutPercentage !== null ? lead.reportedPayoutPercentage : prev.reportedPayoutPercentage) || 0;
+                            const spDealPercent = Number(lead?.serviceProvider?.dealPercentage) || 0;
+                            
+                            updated.calculatedCPPercent = isCPLead ? reportedPct : 0;
+                            updated.calculatedCPAmount = isCPLead ? baseAmount : 0;
+                            updated.calculatedSelfPercent = isCPLead ? spDealPercent : reportedPct;
+                            updated.calculatedSelfAmount = isCPLead ? Number(((baseAmount * spDealPercent) / 100).toFixed(2)) : baseAmount;
                          }
                          return updated;
                       });
@@ -841,27 +979,75 @@ const LeadStages = () => {
                   </Select>
                 </div>
 
-                <div className="flex flex-col gap-1 mt-4">
-                  <label className="text-sm font-medium">Is there a round off difference?</label>
-                  <Select 
-                    value={formData.roundOffDifference} 
-                    onValueChange={(val) => setFormData(prev => ({ ...prev, roundOffDifference: val }))}
-                  >
-                      <SelectTrigger className="w-full bg-white">
-                          <SelectValue placeholder="Select Option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="Yes">Yes</SelectItem>
-                          <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                  </Select>
-                </div>
+                {formData.calculationSameAsReported === "No" && (
+                  <div className="flex flex-col gap-1 mt-4">
+                    <label className="text-sm font-medium">Remaining amount will come?</label>
+                    <Select 
+                      value={formData.remainingAmountWillCome} 
+                      onValueChange={(val) => {
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          remainingAmountWillCome: val,
+                          remainingTrancheAmount: val === 'Yes' ? (prev.remainingTrancheAmount !== '' ? prev.remainingTrancheAmount : remainingDifference) : '',
+                          roundOffDifference: val === 'Yes' ? '' : prev.roundOffDifference
+                        }));
+                      }}
+                    >
+                        <SelectTrigger className="w-full bg-white">
+                            <SelectValue placeholder="Select Option (Yes/No)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Yes">Yes</SelectItem>
+                            <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-                {formData.calculationSameAsReported === "No" && formData.roundOffDifference === "No" && (
-                   <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded">
-                     <p className="text-sm text-orange-800 font-medium">Warning: Calculation differs and is not a round-off.</p>
-                     <p className="text-xs text-orange-700 mt-1">The system will dynamically check the Advisor Payout status on submission and either update the payout or trigger an Admin Recovery Request.</p>
-                   </div>
+                {formData.calculationSameAsReported === "No" && formData.remainingAmountWillCome === "Yes" && (
+                  <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm font-semibold text-blue-900">Remaining Tranche Amount (₹)</label>
+                      <span className="text-xs font-semibold px-2 py-0.5 bg-blue-200 text-blue-800 rounded">ID: 1.1.a</span>
+                    </div>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      value={formData.remainingTrancheAmount !== '' ? formData.remainingTrancheAmount : remainingDifference}
+                      onChange={(e) => setFormData(p => ({ ...p, remainingTrancheAmount: e.target.value }))}
+                      className="border p-2 rounded w-full bg-white text-sm"
+                    />
+                    <p className="text-xs text-blue-700 mt-2">
+                      ✓ A new tranche of <strong>₹{formData.remainingTrancheAmount !== '' ? formData.remainingTrancheAmount : remainingDifference}</strong> will be automatically created in the <strong>"In Progress"</strong> section with ID <strong>1.1.a</strong>.
+                    </p>
+                  </div>
+                )}
+
+                {formData.calculationSameAsReported === "No" && formData.remainingAmountWillCome === "No" && (
+                  <>
+                    <div className="flex flex-col gap-1 mt-4">
+                      <label className="text-sm font-medium">Is there a round off difference?</label>
+                      <Select 
+                        value={formData.roundOffDifference} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, roundOffDifference: val }))}
+                      >
+                          <SelectTrigger className="w-full bg-white">
+                              <SelectValue placeholder="Select Option" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="Yes">Yes</SelectItem>
+                              <SelectItem value="No">No</SelectItem>
+                          </SelectContent>
+                      </Select>
+                    </div>
+
+                    {formData.roundOffDifference === "No" && (
+                       <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded">
+                         <p className="text-sm text-orange-800 font-medium">Warning: Calculation differs and is not a round-off.</p>
+                         <p className="text-xs text-orange-700 mt-1">The system will dynamically check the Advisor Payout status on submission and either update the payout or trigger an Admin Recovery Request.</p>
+                       </div>
+                    )}
+                  </>
                 )}
                 
                 <div className="flex justify-between items-center mt-6">
