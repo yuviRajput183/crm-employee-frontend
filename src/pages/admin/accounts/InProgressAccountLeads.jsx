@@ -460,7 +460,7 @@ const InProgressAccountLeads = () => {
                                             <TableCell className="pl-6 font-semibold text-gray-500">{t.customTrancheId || `${leadIndex + 1}.${tIndex + 1}`}</TableCell>
                                             <TableCell>-</TableCell>
                                             <TableCell className="text-gray-500 italic">↳ Tranche Split</TableCell>
-                                            <TableCell className="font-bold text-blue-600">{t.customTrancheId || `T${t.trancheNumber}`}</TableCell>
+                                            <TableCell className="font-bold text-blue-600">{t.customTrancheId || (t.trancheNumber != null ? `T${t.trancheNumber}` : `T${tIndex + 1}`)}</TableCell>
                                             <TableCell className="font-bold text-green-600">₹{t.amount?.toLocaleString('en-IN')}</TableCell>
                                             <TableCell>{t.paymentUid}</TableCell>
                                             <TableCell className="text-gray-400">-</TableCell>
