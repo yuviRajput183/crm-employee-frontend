@@ -6,6 +6,7 @@ import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { apiGetAllSubProductsOfProduct } from '@/services/product.api';
 import { useForm } from 'react-hook-form';
+import { useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -92,6 +93,10 @@ const EditAccountLead = () => {
     const watchPddCleared = form.watch("pddCleared");
     const watchReportedLoanAmount = form.watch("reportedLoanAmount");
     const watchReportedPayoutPercentage = form.watch("reportedPayoutPercentage");
+    const watchPayoutAmount = form.watch("payoutAmount");
+
+    // Track which field the user last typed in to avoid circular recalculation
+    const lastEditedPayoutField = useRef(null); // 'percentage' | 'amount' | null
 
     const fetchDropdowns = async () => {
         try {
@@ -206,19 +211,33 @@ const EditAccountLead = () => {
         }
     }, [watchServiceProvider, serviceProviders, form]);
 
+    // Bidirectional payout calculation
     useEffect(() => {
         const loanAmt = parseFloat(watchReportedLoanAmount);
-        if (!isNaN(loanAmt)) {
+        if (isNaN(loanAmt) || loanAmt === 0) {
+            if (lastEditedPayoutField.current !== 'amount') form.setValue('payoutAmount', '');
+            if (lastEditedPayoutField.current !== 'percentage') form.setValue('reportedPayoutPercentage', '');
+            return;
+        }
+
+        if (lastEditedPayoutField.current === 'amount') {
+            // User typed amount → calculate percentage
+            const amt = parseFloat(watchPayoutAmount);
+            if (!isNaN(amt)) {
+                const pct = ((amt / loanAmt) * 100).toFixed(2);
+                form.setValue('reportedPayoutPercentage', pct, { shouldValidate: false });
+            }
+        } else {
+            // User typed percentage (or loan amount changed) → calculate amount (floor, no decimals)
             const payoutPct = parseFloat(watchReportedPayoutPercentage);
             if (!isNaN(payoutPct)) {
-                form.setValue('payoutAmount', ((loanAmt * payoutPct) / 100).toFixed(2));
+                const amt = Math.floor((loanAmt * payoutPct) / 100);
+                form.setValue('payoutAmount', String(amt), { shouldValidate: false });
             } else {
                 form.setValue('payoutAmount', '');
             }
-        } else {
-            form.setValue('payoutAmount', '');
         }
-    }, [watchReportedLoanAmount, watchReportedPayoutPercentage, form]);
+    }, [watchReportedLoanAmount, watchReportedPayoutPercentage, watchPayoutAmount]);
 
     const onSubmit = async (data) => {
         if (isReadOnly) return;
@@ -360,7 +379,18 @@ const EditAccountLead = () => {
                             <FormItem>
                                 <FormLabel>Reported Payout %age from Bank <span className="text-red-500">*</span></FormLabel>
                                 <FormControl>
-                                    <Input type="number" step="0.01" placeholder="Enter %age" className="shadow" disabled={isReadOnly} {...field} />
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Enter %age"
+                                        className="shadow"
+                                        disabled={isReadOnly}
+                                        {...field}
+                                        onChange={(e) => {
+                                            lastEditedPayoutField.current = 'percentage';
+                                            field.onChange(e);
+                                        }}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -370,8 +400,20 @@ const EditAccountLead = () => {
                             <FormItem>
                                 <FormLabel>Payout Amount (in ₹)</FormLabel>
                                 <FormControl>
-                                    <Input readOnly placeholder="Auto Calculated" className="shadow bg-gray-100" {...field} />
+                                    <Input
+                                        type="number"
+                                        step="1"
+                                        placeholder="Enter Amount or auto-calculated"
+                                        className="shadow"
+                                        disabled={isReadOnly}
+                                        {...field}
+                                        onChange={(e) => {
+                                            lastEditedPayoutField.current = 'amount';
+                                            field.onChange(e);
+                                        }}
+                                    />
                                 </FormControl>
+                                <p className="text-xs text-gray-400 mt-0.5">Enter amount to back-calculate %, or enter % above to auto-fill</p>
                                 <FormMessage />
                             </FormItem>
                         )} />

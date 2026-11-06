@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -123,6 +123,10 @@ const AddAccountLead = () => {
     const watchCp1DealPercentage = form.watch("cp1DealPercentage");
     const watchCp2DealPercentage = form.watch("cp2DealPercentage");
     const watchCp3DealPercentage = form.watch("cp3DealPercentage");
+    const watchPayoutAmount = form.watch("payoutAmount");
+
+    // Track which field the user last typed in to avoid circular recalculation
+    const lastEditedPayoutField = useRef(null); // 'percentage' | 'amount' | null
 
     const baseURL = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000/api/v1' : window.location.origin + '/api/v1');
 
@@ -235,52 +239,66 @@ const AddAccountLead = () => {
         fetchReferralInfo();
     }, [watchChannelPartner1, watchCaseType, form, baseURL]);
 
+    // Bidirectional payout calculation
     useEffect(() => {
         const loanAmt = parseFloat(watchReportedLoanAmount);
-        
-        if (!isNaN(loanAmt)) {
-            const payoutPct = parseFloat(watchReportedPayoutPercentage);
-            let basePayout = 0;
-            if (!isNaN(payoutPct)) {
-                basePayout = (loanAmt * payoutPct) / 100;
-                form.setValue('payoutAmount', basePayout.toFixed(2));
-            } else {
-                form.setValue('payoutAmount', '');
-            }
 
-            if (!isNaN(payoutPct)) {
-                const cp1Pct = parseFloat(watchCp1DealPercentage);
-                if (!isNaN(cp1Pct)) {
-                    form.setValue('cp1PayoutAmount', ((basePayout * cp1Pct) / 100).toFixed(2));
-                } else {
-                    form.setValue('cp1PayoutAmount', '');
-                }
-                
-                const cp2Pct = parseFloat(watchCp2DealPercentage);
-                if (!isNaN(cp2Pct)) {
-                    form.setValue('cp2PayoutAmount', ((basePayout * cp2Pct) / 100).toFixed(2));
-                } else {
-                    form.setValue('cp2PayoutAmount', '');
-                }
-                
-                const cp3Pct = parseFloat(watchCp3DealPercentage);
-                if (!isNaN(cp3Pct)) {
-                    form.setValue('cp3PayoutAmount', ((basePayout * cp3Pct) / 100).toFixed(2));
-                } else {
-                    form.setValue('cp3PayoutAmount', '');
-                }
-            } else {
-                form.setValue('cp1PayoutAmount', '');
-                form.setValue('cp2PayoutAmount', '');
-                form.setValue('cp3PayoutAmount', '');
-            }
-        } else {
-            form.setValue('payoutAmount', '');
+        if (isNaN(loanAmt) || loanAmt === 0) {
+            if (lastEditedPayoutField.current !== 'amount') form.setValue('payoutAmount', '');
+            if (lastEditedPayoutField.current !== 'percentage') form.setValue('reportedPayoutPercentage', '');
             form.setValue('cp1PayoutAmount', '');
             form.setValue('cp2PayoutAmount', '');
             form.setValue('cp3PayoutAmount', '');
+            return;
         }
-    }, [watchReportedLoanAmount, watchReportedPayoutPercentage, watchCp1DealPercentage, watchCp2DealPercentage, watchCp3DealPercentage, form]);
+
+        let basePayout = 0;
+
+        if (lastEditedPayoutField.current === 'amount') {
+            // User typed amount → back-calculate percentage (2dp)
+            const amt = parseFloat(watchPayoutAmount);
+            if (!isNaN(amt)) {
+                basePayout = amt;
+                const pct = ((amt / loanAmt) * 100).toFixed(2);
+                form.setValue('reportedPayoutPercentage', pct, { shouldValidate: false });
+            }
+        } else {
+            // User typed percentage → calculate amount (floor, whole number)
+            const payoutPct = parseFloat(watchReportedPayoutPercentage);
+            if (!isNaN(payoutPct)) {
+                basePayout = Math.floor((loanAmt * payoutPct) / 100);
+                form.setValue('payoutAmount', String(basePayout), { shouldValidate: false });
+            } else {
+                form.setValue('payoutAmount', '');
+                form.setValue('cp1PayoutAmount', '');
+                form.setValue('cp2PayoutAmount', '');
+                form.setValue('cp3PayoutAmount', '');
+                return;
+            }
+        }
+
+        // Calculate CP payout amounts using basePayout
+        const cp1Pct = parseFloat(watchCp1DealPercentage);
+        if (!isNaN(cp1Pct)) {
+            form.setValue('cp1PayoutAmount', String(Math.floor((basePayout * cp1Pct) / 100)));
+        } else {
+            form.setValue('cp1PayoutAmount', '');
+        }
+
+        const cp2Pct = parseFloat(watchCp2DealPercentage);
+        if (!isNaN(cp2Pct)) {
+            form.setValue('cp2PayoutAmount', String(Math.floor((basePayout * cp2Pct) / 100)));
+        } else {
+            form.setValue('cp2PayoutAmount', '');
+        }
+
+        const cp3Pct = parseFloat(watchCp3DealPercentage);
+        if (!isNaN(cp3Pct)) {
+            form.setValue('cp3PayoutAmount', String(Math.floor((basePayout * cp3Pct) / 100)));
+        } else {
+            form.setValue('cp3PayoutAmount', '');
+        }
+    }, [watchReportedLoanAmount, watchReportedPayoutPercentage, watchPayoutAmount, watchCp1DealPercentage, watchCp2DealPercentage, watchCp3DealPercentage]);
 
     const onSubmit = async (data) => {
         try {
@@ -438,7 +456,17 @@ const AddAccountLead = () => {
                             <FormItem>
                                 <FormLabel>Reported Payout %age from Bank <span className="text-red-500">*</span></FormLabel>
                                 <FormControl>
-                                    <Input type="number" step="0.01" placeholder="Enter %age" className="shadow" {...field} />
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Enter %age"
+                                        className="shadow"
+                                        {...field}
+                                        onChange={(e) => {
+                                            lastEditedPayoutField.current = 'percentage';
+                                            field.onChange(e);
+                                        }}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -449,8 +477,19 @@ const AddAccountLead = () => {
                             <FormItem>
                                 <FormLabel>Payout Amount (in ₹)</FormLabel>
                                 <FormControl>
-                                    <Input readOnly placeholder="Auto Calculated" className="shadow bg-gray-100" {...field} />
+                                    <Input
+                                        type="number"
+                                        step="1"
+                                        placeholder="Enter Amount or auto-calculated"
+                                        className="shadow"
+                                        {...field}
+                                        onChange={(e) => {
+                                            lastEditedPayoutField.current = 'amount';
+                                            field.onChange(e);
+                                        }}
+                                    />
                                 </FormControl>
+                                <p className="text-xs text-gray-400 mt-0.5">Enter amount to back-calculate %, or enter % above to auto-fill</p>
                                 <FormMessage />
                             </FormItem>
                         )} />

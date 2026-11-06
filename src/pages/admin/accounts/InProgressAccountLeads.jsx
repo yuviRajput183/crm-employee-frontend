@@ -12,11 +12,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import PageLoader from '@/components/loaders/PageLoader';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 const InProgressAccountLeads = () => {
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
+    const [expandedLeadIds, setExpandedLeadIds] = useState({});
+
+    const toggleLead = (leadId) => {
+        setExpandedLeadIds(prev => ({
+            ...prev,
+            [leadId]: !prev[leadId]
+        }));
+    };
     const [filters, setFilters] = useState({
         leadNo: '',
         caseName: '',
@@ -354,6 +363,7 @@ const InProgressAccountLeads = () => {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-green-900 text-white hover:bg-green-900">
+                            <TableHead className="text-white w-12 text-center">View</TableHead>
                             <TableHead className="text-white w-10">
                                 <input 
                                     type="checkbox" 
@@ -379,6 +389,7 @@ const InProgressAccountLeads = () => {
                         <TableRow className="bg-gray-100">
                             <TableHead></TableHead>
                             <TableHead></TableHead>
+                            <TableHead></TableHead>
                             <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.leadNo} onChange={e => handleFilterChange('leadNo', e.target.value)} /></TableHead>
                             <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.caseName} onChange={e => handleFilterChange('caseName', e.target.value)} /></TableHead>
                             <TableHead><input className="w-full px-1 py-0.5 border border-gray-300 rounded text-sm text-black font-normal focus:outline-none focus:ring-1 focus:ring-green-600" placeholder="Filter..." value={filters.tranche} onChange={e => handleFilterChange('tranche', e.target.value)} /></TableHead>
@@ -396,12 +407,33 @@ const InProgressAccountLeads = () => {
                     <TableBody>
                         {filteredLeads.length > 0 ? filteredLeads.flatMap((lead, leadIndex) => {
                             const rows = [];
+                            const hasTranches = lead.tranches && lead.tranches.length > 0;
+                            const isExpanded = !!expandedLeadIds[lead._id];
                             
                             // 1. Push the main lead row
                             rows.push(
                                 <TableRow key={lead._id} className={leadIndex % 2 === 0 ? "bg-gray-100" : ""}>
+                                    {/* Dropdown toggle button */}
+                                    <TableCell className="text-center p-2">
+                                        {hasTranches ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleLead(lead._id)}
+                                                className="p-1 rounded hover:bg-green-200 text-green-800 transition-colors focus:outline-none"
+                                                title={isExpanded ? "Click to collapse tranches" : "Click to view tranches"}
+                                            >
+                                                {isExpanded ? (
+                                                    <ChevronDown className="w-5 h-5 text-green-700" />
+                                                ) : (
+                                                    <ChevronRight className="w-5 h-5 text-green-700" />
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <span className="text-gray-300 text-xs">—</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>
-                                        {(!lead.tranches || lead.tranches.length === 0) && (
+                                        {!hasTranches && (
                                             <input 
                                                 type="checkbox" 
                                                 className="w-4 h-4 cursor-pointer accent-green-600"
@@ -434,21 +466,33 @@ const InProgressAccountLeads = () => {
                                         </span>
                                     </TableCell>
                                     <TableCell>
-                                        <button
-                                            onClick={() => window.location.href = `/admin/account_edit_lead/${lead._id}`}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
-                                        >
-                                            View
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => window.location.href = `/admin/account_edit_lead/${lead._id}`}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                                            >
+                                                View
+                                            </button>
+                                            {hasTranches && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleLead(lead._id)}
+                                                    className="text-xs text-green-700 hover:underline font-medium"
+                                                >
+                                                    {isExpanded ? 'Hide' : `Tranches (${lead.tranches.length})`}
+                                                </button>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             );
 
-                            // 2. Push all its associated tranches underneath
-                            if (lead.tranches && lead.tranches.length > 0) {
+                            // 2. Push all its associated tranches underneath (only when expanded)
+                            if (hasTranches && isExpanded) {
                                 lead.tranches.forEach((t, tIndex) => {
                                     rows.push(
-                                        <TableRow key={`${lead._id}-${t._id}`} className="bg-green-50 border-l-4 border-l-green-600">
+                                        <TableRow key={`${lead._id}-${t._id}`} className="bg-green-50 border-l-4 border-l-green-600 hover:bg-green-100/50">
+                                            <TableCell className="text-center text-green-700 text-xs">↳</TableCell>
                                             <TableCell>
                                                 <input 
                                                     type="checkbox" 
@@ -457,12 +501,12 @@ const InProgressAccountLeads = () => {
                                                     onChange={() => handleSelectRow(t._id)}
                                                 />
                                             </TableCell>
-                                            <TableCell className="pl-6 font-semibold text-gray-500">{t.customTrancheId || `${leadIndex + 1}.${tIndex + 1}`}</TableCell>
-                                            <TableCell>-</TableCell>
-                                            <TableCell className="text-gray-500 italic">↳ Tranche Split</TableCell>
-                                            <TableCell className="font-bold text-blue-600">{t.customTrancheId || (t.trancheNumber != null ? `T${t.trancheNumber}` : `T${tIndex + 1}`)}</TableCell>
-                                            <TableCell className="font-bold text-green-600">₹{t.amount?.toLocaleString('en-IN')}</TableCell>
-                                            <TableCell>{t.paymentUid}</TableCell>
+                                            <TableCell className="pl-6 font-semibold text-gray-500 text-xs">{t.customTrancheId || `${leadIndex + 1}.${tIndex + 1}`}</TableCell>
+                                            <TableCell className="text-gray-400">-</TableCell>
+                                            <TableCell className="text-gray-500 italic text-xs">↳ Tranche Split</TableCell>
+                                            <TableCell className="font-bold text-blue-600 text-xs">{t.customTrancheId || (t.trancheNumber != null ? `T${t.trancheNumber}` : `T${tIndex + 1}`)}</TableCell>
+                                            <TableCell className="font-bold text-green-600 text-xs">₹{t.amount?.toLocaleString('en-IN')}</TableCell>
+                                            <TableCell className="text-xs font-mono">{t.paymentUid}</TableCell>
                                             <TableCell className="text-gray-400">-</TableCell>
                                             <TableCell className="text-gray-400">-</TableCell>
                                             <TableCell className="text-gray-400">-</TableCell>

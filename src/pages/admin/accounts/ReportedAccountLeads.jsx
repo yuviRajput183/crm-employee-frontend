@@ -270,41 +270,65 @@ const ReportedAccountLeads = () => {
     // Filter bundles and their leads based on filter inputs
     const filteredBundles = bundles.reduce((acc, bundle) => {
         const df = filters;
-        const bundleMatches = checkMatch(bundle.bundleName, df.bundleName);
+        const hasAnyFilter = Object.values(df).some(v => v !== '');
+
+        // No filters active ? show everything as-is
+        if (!hasAnyFilter) {
+            acc.push(bundle);
+            return acc;
+        }
+
+        // Does the bundle name match the "Bundle Name / Lead No" filter?
+        const bundleNameFilterMatches = checkMatch(bundle.bundleName, df.bundleName);
 
         const matchingLeads = (bundle.leads || []).filter(lead => {
-            const leadMatches = 
-                checkMatch(lead.leadNo, df.bundleName) &&
-                checkMatch(lead.caseName, df.caseName) &&
-                checkMatch(lead.reportedLoanAmount, df.amount) &&
-                checkMatch(lead.lanApplicationNo, df.lanApplicationNo) &&
-                checkMatch(lead.location?.name, df.location) &&
-                checkMatch(lead.product?.name, df.product) &&
-                checkMatch(lead.bank?.name || lead.bank?.bankName, df.bank) &&
-                checkMatch(lead.serviceProvider?.legalName, df.spName) &&
-                checkMatch(lead.status, df.status);
+            const hasTranches = lead.tranches && lead.tranches.length > 0;
 
-            const tranchesMatch = (lead.tranches || []).some(t =>
-                checkMatch(t.amount, df.amount) ||
-                checkMatch(t.trancheNumber ? `T${t.trancheNumber}` : '', df.tranche) ||
-                checkMatch(t.paymentUid, df.paymentUid)
-            );
-
-            if (df.tranche || df.paymentUid) {
-                return tranchesMatch;
+            // --- Bundle Name / Lead No column ---
+            // Include lead if: filter is empty, OR bundle name matches, OR lead number matches
+            if (df.bundleName && !bundleNameFilterMatches && !checkMatch(lead.leadNo, df.bundleName)) {
+                return false;
             }
 
-            return leadMatches || tranchesMatch;
+            // --- Each lead-level filter is only applied when non-empty ---
+            if (df.caseName && !checkMatch(lead.caseName, df.caseName)) return false;
+            if (df.lanApplicationNo && !checkMatch(lead.lanApplicationNo, df.lanApplicationNo)) return false;
+            if (df.location && !checkMatch(lead.location?.name, df.location)) return false;
+            if (df.product && !checkMatch(lead.product?.name, df.product)) return false;
+            if (df.bank && !checkMatch(lead.bank?.name || lead.bank?.bankName, df.bank)) return false;
+            if (df.spName && !checkMatch(lead.serviceProvider?.legalName, df.spName)) return false;
+            if (df.status && !checkMatch(lead.status, df.status)) return false;
+
+            // --- Amount filter: check lead amount OR any tranche amount ---
+            if (df.amount) {
+                const leadAmtMatch = checkMatch(lead.reportedLoanAmount, df.amount);
+                const trancheAmtMatch = hasTranches && lead.tranches.some(t => checkMatch(t.amount, df.amount));
+                if (!leadAmtMatch && !trancheAmtMatch) return false;
+            }
+
+            // --- Tranche filter: must match at least one tranche number (e.g. "T1") ---
+            if (df.tranche) {
+                if (!hasTranches) return false;
+                if (!lead.tranches.some(t => checkMatch(t.trancheNumber != null ? `T${t.trancheNumber}` : '', df.tranche))) return false;
+            }
+
+            // --- Payment UID filter: check lead UID OR any tranche UID ---
+            if (df.paymentUid) {
+                const leadUidMatch = checkMatch(lead.spUid || lead.paymentUid, df.paymentUid);
+                const trancheUidMatch = hasTranches && lead.tranches.some(t =>
+                    checkMatch(t.spUid || t.paymentUid, df.paymentUid)
+                );
+                if (!leadUidMatch && !trancheUidMatch) return false;
+            }
+
+            return true;
         });
 
-        const hasSpecificFilter = Object.values(df).some(v => v !== '');
-        if (!hasSpecificFilter) {
+        if (matchingLeads.length > 0) {
+            acc.push({ ...bundle, leads: matchingLeads });
+        } else if (bundleNameFilterMatches && Object.entries(df).every(([k, v]) => k === 'bundleName' || v === '')) {
+            // Bundle name is the ONLY active filter and it matches ? show bundle with all its leads
             acc.push(bundle);
-        } else if (bundleMatches || matchingLeads.length > 0) {
-            acc.push({
-                ...bundle,
-                leads: matchingLeads.length > 0 ? matchingLeads : bundle.leads
-            });
         }
 
         return acc;
