@@ -32,3 +32,49 @@ export const apiLogout = async () => {
         }
     );
 };
+
+/**
+ * apiSendWhatsappLoginOtp - Sends a WhatsApp OTP to the given mobile number for login.
+ * @param {{ mobile: string }} payload
+ */
+export const apiSendWhatsappLoginOtp = async (payload) => {
+    return await axios.post(
+        `${baseURL}/auth/send-whatsapp-login-otp`,
+        payload,
+        {
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true,
+        }
+    );
+};
+
+/**
+ * apiVerifyWhatsappLoginOtp - Verifies the OTP and authenticates the user.
+ * Returns the same response structure as apiSignIn.
+ * @param {{ mobile: string, otp: string }} payload
+ */
+export const apiVerifyWhatsappLoginOtp = async (payload) => {
+    return await axios.post(
+        `${baseURL}/auth/verify-whatsapp-login-otp`,
+        payload,
+        {
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true,
+        }
+    );
+};
+
+/**
+ * apiResendWhatsappLoginOtp - Resends the WhatsApp OTP (subject to cooldown).
+ * @param {{ mobile: string }} payload
+ */
+export const apiResendWhatsappLoginOtp = async (payload) => {
+    return await axios.post(
+        `${baseURL}/auth/resend-whatsapp-login-otp`,
+        payload,
+        {
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true,
+        }
+    );
+};

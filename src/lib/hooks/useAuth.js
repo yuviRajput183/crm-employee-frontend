@@ -1,8 +1,13 @@
-import { apiLogout, apiSignIn } from "@/services/auth.api";
+import {
+    apiLogout,
+    apiSignIn,
+    apiSendWhatsappLoginOtp,
+    apiVerifyWhatsappLoginOtp,
+    apiResendWhatsappLoginOtp,
+} from "@/services/auth.api";
 import { useMutation } from "@tanstack/react-query";
 
 export const useAuth = () => {
-
 
     const signIn = useMutation({
         mutationFn: apiSignIn,
@@ -26,8 +31,32 @@ export const useAuth = () => {
         }
     });
 
+    const sendWhatsappOtp = useMutation({
+        mutationFn: apiSendWhatsappLoginOtp,
+        onError: (err) => {
+            console.log("Error in sendWhatsappOtp api call >>", err);
+        }
+    });
+
+    const verifyWhatsappOtp = useMutation({
+        mutationFn: apiVerifyWhatsappLoginOtp,
+        onError: (err) => {
+            console.log("Error in verifyWhatsappOtp api call >>", err);
+        }
+    });
+
+    const resendWhatsappOtp = useMutation({
+        mutationFn: apiResendWhatsappLoginOtp,
+        onError: (err) => {
+            console.log("Error in resendWhatsappOtp api call >>", err);
+        }
+    });
+
     return {
         signIn,
-        logOut
-    }
-}
+        logOut,
+        sendWhatsappOtp,
+        verifyWhatsappOtp,
+        resendWhatsappOtp,
+    };
+};
