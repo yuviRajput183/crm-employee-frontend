@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import logo from '@/assets/images/crm-logo.jpg';
 import {
     Form,
@@ -20,7 +20,7 @@ import { getErrorMessage, getSuccessMessage } from '@/lib/helpers/get-message';
 import { Alert } from "@/components/ui/alert";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Schema for Normal Login
+// Schema — Normal Login
 // ─────────────────────────────────────────────────────────────────────────────
 const loginSchema = z.object({
     userType: z.enum(['Advisor', 'Employee'], { required_error: 'Please select a user type' }),
@@ -29,9 +29,10 @@ const loginSchema = z.object({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Schema for WhatsApp OTP Login — Step 1 (mobile)
+// Schema — WhatsApp OTP Step 1 (user type + mobile)
 // ─────────────────────────────────────────────────────────────────────────────
 const mobileSchema = z.object({
+    userType: z.enum(['Advisor', 'Employee'], { required_error: 'Please select a user type' }),
     mobile: z
         .string()
         .min(1, { message: 'Mobile number is required' })
@@ -39,7 +40,7 @@ const mobileSchema = z.object({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Schema for WhatsApp OTP Login — Step 2 (OTP)
+// Schema — WhatsApp OTP Step 2 (OTP entry)
 // ─────────────────────────────────────────────────────────────────────────────
 const otpSchema = z.object({
     otp: z
@@ -49,7 +50,7 @@ const otpSchema = z.object({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OTP Countdown Timer Component
+// OTP Countdown Timer
 // ─────────────────────────────────────────────────────────────────────────────
 const CountdownTimer = ({ targetDate, label }) => {
     const [seconds, setSeconds] = useState(0);
@@ -89,51 +90,45 @@ const SignIn = () => {
     const [loginMethod, setLoginMethod] = useState('normal');
 
     // WhatsApp OTP flow state
-    const [otpStep, setOtpStep] = useState('mobile'); // 'mobile' | 'otp'
-    const [otpMobile, setOtpMobile] = useState('');
-    const [otpExpiresAt, setOtpExpiresAt] = useState(null);
+    const [otpStep, setOtpStep]               = useState('mobile'); // 'mobile' | 'otp'
+    const [otpMobile, setOtpMobile]           = useState('');
+    const [otpRole, setOtpRole]               = useState('');       // role carried into step 2
+    const [otpExpiresAt, setOtpExpiresAt]     = useState(null);
     const [resendAvailableAt, setResendAvailableAt] = useState(null);
-    const [otpError, setOtpError] = useState('');
-    const [otpSuccess, setOtpSuccess] = useState('');
+    const [otpError, setOtpError]             = useState('');
+    const [otpSuccess, setOtpSuccess]         = useState('');
+    const [canResend, setCanResend]           = useState(false);
 
-    // ── Normal Login Form ──────────────────────────────────────────────────────
+    // ── Normal Login ───────────────────────────────────────────────────────────
     const { mutateAsync, isLoading, isError, error, isSuccess, data } = signIn;
 
     const form = useForm({
         resolver: zodResolver(loginSchema),
-        defaultValues: {
-            userType: '',
-            username: '',
-            password: '',
-        },
+        defaultValues: { userType: '', username: '', password: '' },
     });
 
     const handleLogin = async (formData) => {
-        console.log("sign-in form data >>", formData);
         try {
             const res = await mutateAsync({
-                role: formData?.userType,
-                loginName: formData?.username,
-                password: formData?.password,
+                role: formData.userType,
+                loginName: formData.username,
+                password: formData.password,
             });
-
-            console.log("response of login api call>>", res?.data?.data);
-
             if (res?.data?.success) {
-                localStorage.setItem("token", res?.data?.data?.token);
-                localStorage.setItem("profile", JSON.stringify(res?.data?.data?.profile));
-                const redirectPath = res?.data?.data?.role === "employee" ? "/admin/dashboard" : "/advisor/dashboard";
+                localStorage.setItem('token', res?.data?.data?.token);
+                localStorage.setItem('profile', JSON.stringify(res?.data?.data?.profile));
+                const redirectPath = res?.data?.data?.role === 'employee' ? '/admin/dashboard' : '/advisor/dashboard';
                 navigate(redirectPath);
             }
         } catch (err) {
-            console.log("Error in Login Api call>>", err);
+            console.log('Error in Login Api call>>', err);
         }
     };
 
     // ── WhatsApp OTP Forms ─────────────────────────────────────────────────────
     const mobileForm = useForm({
         resolver: zodResolver(mobileSchema),
-        defaultValues: { mobile: '' },
+        defaultValues: { userType: '', mobile: '' },
     });
 
     const otpForm = useForm({
@@ -141,11 +136,12 @@ const SignIn = () => {
         defaultValues: { otp: '' },
     });
 
-    // Reset WhatsApp OTP state when switching login methods
+    // Reset WhatsApp OTP state when switching login method
     const handleMethodChange = (method) => {
         setLoginMethod(method);
         setOtpStep('mobile');
         setOtpMobile('');
+        setOtpRole('');
         setOtpExpiresAt(null);
         setResendAvailableAt(null);
         setOtpError('');
@@ -154,14 +150,30 @@ const SignIn = () => {
         otpForm.reset();
     };
 
-    // Step 1: Send OTP
+    // Resend availability — live check every second
+    useEffect(() => {
+        if (!resendAvailableAt) {
+            setCanResend(true);
+            return;
+        }
+        const check = () => setCanResend(new Date() >= new Date(resendAvailableAt));
+        check();
+        const interval = setInterval(check, 1000);
+        return () => clearInterval(interval);
+    }, [resendAvailableAt]);
+
+    // ── Step 1: Send OTP ───────────────────────────────────────────────────────
     const handleSendOtp = async (formData) => {
         setOtpError('');
         setOtpSuccess('');
         try {
-            const res = await sendWhatsappOtp.mutateAsync({ mobile: formData.mobile });
+            const res = await sendWhatsappOtp.mutateAsync({
+                mobile: formData.mobile,
+                role: formData.userType,   // pass selected user type to backend
+            });
             if (res?.data?.success) {
                 setOtpMobile(formData.mobile);
+                setOtpRole(formData.userType);   // persist for step 2
                 setOtpExpiresAt(res?.data?.data?.otpExpiresAt);
                 setResendAvailableAt(res?.data?.data?.resendAvailableAt);
                 setOtpStep('otp');
@@ -172,7 +184,7 @@ const SignIn = () => {
         }
     };
 
-    // Step 2: Verify OTP
+    // ── Step 2: Verify OTP ─────────────────────────────────────────────────────
     const handleVerifyOtp = async (formData) => {
         setOtpError('');
         setOtpSuccess('');
@@ -180,13 +192,12 @@ const SignIn = () => {
             const res = await verifyWhatsappOtp.mutateAsync({
                 mobile: otpMobile,
                 otp: formData.otp,
+                role: otpRole,             // pass the same role used in step 1
             });
-
             if (res?.data?.success) {
-                // Identical token storage pattern as normal login
-                localStorage.setItem("token", res?.data?.data?.token);
-                localStorage.setItem("profile", JSON.stringify(res?.data?.data?.profile));
-                const redirectPath = res?.data?.data?.role === "employee" ? "/admin/dashboard" : "/advisor/dashboard";
+                localStorage.setItem('token', res?.data?.data?.token);
+                localStorage.setItem('profile', JSON.stringify(res?.data?.data?.profile));
+                const redirectPath = res?.data?.data?.role === 'employee' ? '/admin/dashboard' : '/advisor/dashboard';
                 navigate(redirectPath);
             }
         } catch (err) {
@@ -194,27 +205,15 @@ const SignIn = () => {
         }
     };
 
-    // Resend OTP
-    const [canResend, setCanResend] = useState(false);
-
-    useEffect(() => {
-        if (!resendAvailableAt) {
-            setCanResend(true);
-            return;
-        }
-        const check = () => {
-            setCanResend(new Date() >= new Date(resendAvailableAt));
-        };
-        check();
-        const interval = setInterval(check, 1000);
-        return () => clearInterval(interval);
-    }, [resendAvailableAt]);
-
+    // ── Resend OTP ─────────────────────────────────────────────────────────────
     const handleResendOtp = async () => {
         setOtpError('');
         setOtpSuccess('');
         try {
-            const res = await resendWhatsappOtp.mutateAsync({ mobile: otpMobile });
+            const res = await resendWhatsappOtp.mutateAsync({
+                mobile: otpMobile,
+                role: otpRole,             // pass the same role used in step 1
+            });
             if (res?.data?.success) {
                 setOtpExpiresAt(res?.data?.data?.otpExpiresAt);
                 setResendAvailableAt(res?.data?.data?.resendAvailableAt);
@@ -226,12 +225,13 @@ const SignIn = () => {
         }
     };
 
+    // ─────────────────────────────────────────────────────────────────────────
     return (
         <div className='w-[100vw] h-[100vh] md:flex items-center justify-center overflow-y-auto'>
 
             <div className='w-[90%] md:w-[90%] lg:w-[60%] flex flex-col md:flex-row rounded-xl shadow-lg mx-auto mt-8 md:mt-0'>
 
-                {/* Logo container */}
+                {/* Logo */}
                 <div className='md:flex-4 flex items-center justify-center'>
                     <img src={logo} className='' />
                 </div>
@@ -241,7 +241,7 @@ const SignIn = () => {
                     <h1 className="text-2xl font-bold text-center mb-1">Welcome to Loan Sahayak CRM!</h1>
                     <p className="text-center mb-4 text-sm text-gray-600">Please sign in to continue</p>
 
-                    {/* ── Login Method Toggle ─────────────────────────────────── */}
+                    {/* ── Login Method Toggle ──────────────────────────────────── */}
                     <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-5">
                         <button
                             id="btn-normal-login"
@@ -272,16 +272,13 @@ const SignIn = () => {
                         </button>
                     </div>
 
-                    {/* ── Normal Login Form ───────────────────────────────────── */}
+                    {/* ── Normal Login Form ────────────────────────────────────── */}
                     {loginMethod === 'normal' && (
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4 font-semibold">
-                                {isError && (
-                                    <Alert variant="destructive">{getErrorMessage(error)}</Alert>
-                                )}
-                                {isSuccess && (
-                                    <Alert variant="success">{getSuccessMessage(data)}</Alert>
-                                )}
+                                {isError && <Alert variant="destructive">{getErrorMessage(error)}</Alert>}
+                                {isSuccess && <Alert variant="success">{getSuccessMessage(data)}</Alert>}
+
                                 <FormField
                                     control={form.control}
                                     name="userType"
@@ -342,19 +339,14 @@ const SignIn = () => {
                         </Form>
                     )}
 
-                    {/* ── WhatsApp OTP Login ──────────────────────────────────── */}
+                    {/* ── WhatsApp OTP Login ───────────────────────────────────── */}
                     {loginMethod === 'whatsapp' && (
                         <div className="space-y-4">
 
-                            {/* Global error/success alerts */}
-                            {otpError && (
-                                <Alert variant="destructive">{otpError}</Alert>
-                            )}
-                            {otpSuccess && (
-                                <Alert variant="success">{otpSuccess}</Alert>
-                            )}
+                            {otpError   && <Alert variant="destructive">{otpError}</Alert>}
+                            {otpSuccess && <Alert variant="success">{otpSuccess}</Alert>}
 
-                            {/* ── Step 1: Mobile Number Entry ──────────────────── */}
+                            {/* ── Step 1: User Type + Mobile ───────────────────── */}
                             {otpStep === 'mobile' && (
                                 <Form {...mobileForm}>
                                     <form
@@ -362,6 +354,30 @@ const SignIn = () => {
                                         onSubmit={mobileForm.handleSubmit(handleSendOtp)}
                                         className="space-y-4 font-semibold"
                                     >
+                                        {/* User Type — same options as Normal Login */}
+                                        <FormField
+                                            control={mobileForm.control}
+                                            name="userType"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>User Type</FormLabel>
+                                                    <FormControl>
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            <SelectTrigger id="select-whatsapp-usertype">
+                                                                <SelectValue placeholder="Select user type" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="Advisor">Advisor</SelectItem>
+                                                                <SelectItem value="Employee">Employee</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {/* Mobile Number */}
                                         <FormField
                                             control={mobileForm.control}
                                             name="mobile"
@@ -376,9 +392,7 @@ const SignIn = () => {
                                                             inputMode="numeric"
                                                             {...field}
                                                             onChange={(e) => {
-                                                                // Allow only digits
-                                                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                                                field.onChange(val);
+                                                                field.onChange(e.target.value.replace(/[^0-9]/g, ''));
                                                             }}
                                                         />
                                                     </FormControl>
@@ -407,11 +421,15 @@ const SignIn = () => {
                                         onSubmit={otpForm.handleSubmit(handleVerifyOtp)}
                                         className="space-y-4 font-semibold"
                                     >
-                                        {/* Mobile number display */}
+                                        {/* Summary pill — user type + mobile */}
                                         <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
                                             <div>
-                                                <p className="text-xs text-gray-500 font-normal">OTP sent to</p>
-                                                <p className="text-sm font-semibold text-gray-800">+91 {otpMobile}</p>
+                                                <p className="text-xs text-gray-500 font-normal">
+                                                    OTP sent to &nbsp;
+                                                    <span className="font-semibold text-gray-700">{otpRole}</span>
+                                                    &nbsp;·&nbsp;
+                                                    <span className="font-semibold text-gray-800">+91 {otpMobile}</span>
+                                                </p>
                                             </div>
                                             <button
                                                 id="btn-change-mobile"
@@ -421,20 +439,24 @@ const SignIn = () => {
                                                     setOtpError('');
                                                     setOtpSuccess('');
                                                     otpForm.reset();
+                                                    // Restore previous values in step-1 form
+                                                    mobileForm.setValue('userType', otpRole);
+                                                    mobileForm.setValue('mobile', otpMobile);
                                                 }}
-                                                className="text-xs text-blue-600 hover:underline font-medium"
+                                                className="text-xs text-blue-600 hover:underline font-medium ml-3 shrink-0"
                                             >
                                                 Change
                                             </button>
                                         </div>
 
-                                        {/* OTP expiry countdown */}
+                                        {/* Expiry countdown */}
                                         {otpExpiresAt && (
                                             <div className="flex justify-center">
                                                 <CountdownTimer targetDate={otpExpiresAt} label="OTP expires in" />
                                             </div>
                                         )}
 
+                                        {/* OTP input */}
                                         <FormField
                                             control={otpForm.control}
                                             name="otp"
@@ -449,8 +471,7 @@ const SignIn = () => {
                                                             inputMode="numeric"
                                                             {...field}
                                                             onChange={(e) => {
-                                                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                                                field.onChange(val);
+                                                                field.onChange(e.target.value.replace(/[^0-9]/g, ''));
                                                             }}
                                                         />
                                                     </FormControl>
@@ -468,8 +489,8 @@ const SignIn = () => {
                                             Verify &amp; Login
                                         </Button>
 
-                                        {/* Resend OTP */}
-                                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                                        {/* Resend */}
+                                        <div className="flex items-center justify-center gap-2">
                                             {canResend ? (
                                                 <button
                                                     id="btn-resend-otp"
@@ -497,9 +518,7 @@ const SignIn = () => {
                     )}
 
                 </div>
-
             </div>
-
         </div>
     );
 };
